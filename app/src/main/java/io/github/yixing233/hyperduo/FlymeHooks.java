@@ -317,18 +317,50 @@ final class FlymeHooks {
             @Override
             public void run() {
                 try {
+                    java.lang.StringBuilder seen = new java.lang.StringBuilder();
                     for (int i = 0; i < container.getChildCount(); i++) {
                         android.view.View child = container.getChildAt(i);
-                        java.lang.String name = child.getClass().getName().toLowerCase(java.util.Locale.ROOT);
-                        if (name.contains("wifi") || name.contains("signal") || name.contains("mobile")) {
+                        java.lang.Object slot = callCached(SLOT_METHODS, child, "getSlot");
+                        java.lang.String slotName = (slot instanceof java.lang.String) ? (java.lang.String) slot : null;
+                        seen.append(child.getClass().getSimpleName()).append('[').append(slotName).append("] ");
+                        boolean hide = slotName != null && MANAGED_SLOTS.contains(slotName);
+                        if (!hide && slotName == null) {
+                            java.lang.String name = child.getClass().getName().toLowerCase(java.util.Locale.ROOT);
+                            hide = name.contains("wifi") || name.contains("signal") || name.contains("mobile");
+                        }
+                        if (hide) {
                             child.setVisibility(android.view.View.GONE);
                         }
                     }
+                    log(sModule, "status icons: " + seen);
                 } catch (java.lang.Throwable t) {
                     log(sModule, "hide stock icons failed: " + t);
                 }
             }
         });
+        // Children can be attached after the first traversal; the second pass is
+        // still one-shot, it just runs late enough to see them.
+        container.postDelayed(new java.lang.Runnable() {
+            @Override
+            public void run() {
+                try {
+                    for (int i = 0; i < container.getChildCount(); i++) {
+                        android.view.View child = container.getChildAt(i);
+                        java.lang.Object slot = callCached(SLOT_METHODS, child, "getSlot");
+                        java.lang.String slotName = (slot instanceof java.lang.String) ? (java.lang.String) slot : null;
+                        boolean hide = slotName != null && MANAGED_SLOTS.contains(slotName);
+                        if (!hide && slotName == null) {
+                            java.lang.String name = child.getClass().getName().toLowerCase(java.util.Locale.ROOT);
+                            hide = name.contains("wifi") || name.contains("signal") || name.contains("mobile");
+                        }
+                        if (hide) {
+                            child.setVisibility(android.view.View.GONE);
+                        }
+                    }
+                } catch (java.lang.Throwable ignored) {
+                }
+            }
+        }, 4000);
     }
 
     private static int hookIconContainer(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
@@ -364,6 +396,17 @@ final class FlymeHooks {
                     java.lang.Object visible = io.github.yixing233.hyperduo.Refl.callByName(self, "isIconVisible");
                     io.github.yixing233.hyperduo.TrioState.setWifiPresent(java.lang.Boolean.TRUE.equals(visible));
                     io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
+                    // Flyme keeps the Wi-Fi icon outside the status icon
+                    // container (it has its own view class), so it is hidden
+                    // here, on its own update path.
+                    android.view.View wifiView = (android.view.View) self;
+                    if (io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
+                        if (wifiView.getVisibility() != android.view.View.GONE) {
+                            wifiView.setVisibility(android.view.View.GONE);
+                        }
+                    } else if (wifiView.getVisibility() == android.view.View.GONE) {
+                        wifiView.setVisibility(android.view.View.VISIBLE);
+                    }
                 }
                 return result;
             }
