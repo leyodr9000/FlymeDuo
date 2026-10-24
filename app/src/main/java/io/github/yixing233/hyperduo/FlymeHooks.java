@@ -154,35 +154,11 @@ final class FlymeHooks {
                 return null;
             }
         });
-        int measure = hook(module, io.github.yixing233.hyperduo.Refl.method(viewClass, "onMeasure", java.lang.Integer.TYPE, java.lang.Integer.TYPE), "hyperduo-flyme-battery-measure", new io.github.libxposed.api.XposedInterface.Hooker() { // from class: io.github.yixing233.hyperduo.FlymeHooks.4
-            public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
-                java.lang.Object self = chain.getThisObject();
-                if (!(self instanceof android.view.View) || !io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
-                    return chain.proceed();
-                }
-                // The control centre keeps the stock battery, so it must also keep
-                // the stock measurement: forcing the normal drawable here made it
-                // measure like a non-charging battery while it still drew the
-                // bolt, which is what pushed the icon left.
-                if (io.github.yixing233.hyperduo.FlymeHooks.inControlCenter((android.view.View) self)) {
-                    return chain.proceed();
-                }
-                java.lang.Object currentDrawable = io.github.yixing233.hyperduo.Refl.get(io.github.yixing233.hyperduo.FlymeHooks.sBatteryDrawableField, self);
-                java.lang.Object stableDrawable = io.github.yixing233.hyperduo.Refl.get(io.github.yixing233.hyperduo.FlymeHooks.sBatteryNormalDrawableField, self);
-                if (!(currentDrawable instanceof android.graphics.drawable.Drawable) || !(stableDrawable instanceof android.graphics.drawable.Drawable)) {
-                    return chain.proceed();
-                }
-                int clipWidth = io.github.yixing233.hyperduo.Refl.getInt(io.github.yixing233.hyperduo.FlymeHooks.sBatteryClipWidthField, self, 0);
-                io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryDrawableField, self, stableDrawable);
-                io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryClipWidthField, self, 0);
-                try {
-                    return chain.proceed();
-                } finally {
-                    io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryDrawableField, self, currentDrawable);
-                    io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryClipWidthField, self, java.lang.Integer.valueOf(clipWidth));
-                }
-            }
-        });
+        // The measure hook is gone on purpose. Forcing the normal drawable and a
+        // zero clip width made the view narrower than Flyme's own layout expects
+        // whenever the percentage is drawn outside the battery (or is the only
+        // thing shown), and the whole right-hand cluster shifted to compensate.
+        int measure = 0;
         int levelChanged = hook(module, io.github.yixing233.hyperduo.Refl.method(viewClass, "onBatteryLevelChanged", java.lang.Integer.TYPE, java.lang.Boolean.TYPE, java.lang.Boolean.TYPE), "hyperduo-flyme-battery-level", new io.github.libxposed.api.XposedInterface.Hooker() { // from class: io.github.yixing233.hyperduo.FlymeHooks.5
             public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
                 java.lang.Object result = chain.proceed();
