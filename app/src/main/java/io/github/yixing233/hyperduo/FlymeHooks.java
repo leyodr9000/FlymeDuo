@@ -729,24 +729,24 @@ final class FlymeHooks {
         }
         android.view.ViewGroup group = (android.view.ViewGroup) parent;
         int index = group.indexOfChild(host);
-        int size = ringSizePx(host);
+        int[] size = ringSizePx(host);
         android.view.ViewGroup.LayoutParams lp = host.getLayoutParams();
         android.view.ViewGroup.LayoutParams ringLp;
         if (lp instanceof android.widget.LinearLayout.LayoutParams) {
-            ringLp = new android.widget.LinearLayout.LayoutParams(size, size);
+            ringLp = new android.widget.LinearLayout.LayoutParams(size[0], size[1]);
             android.widget.LinearLayout.LayoutParams src = (android.widget.LinearLayout.LayoutParams) lp;
             ((android.widget.LinearLayout.LayoutParams) ringLp).gravity = src.gravity;
-            ringLp.width = size;
-            ringLp.height = size;
+            ringLp.width = size[0];
+            ringLp.height = size[1];
         } else if (lp instanceof android.view.ViewGroup.MarginLayoutParams) {
             android.view.ViewGroup.MarginLayoutParams src = (android.view.ViewGroup.MarginLayoutParams) lp;
             android.view.ViewGroup.MarginLayoutParams mp =
                     new android.view.ViewGroup.MarginLayoutParams(src);
-            mp.width = size;
-            mp.height = size;
+            mp.width = size[0];
+            mp.height = size[1];
             ringLp = mp;
         } else {
-            ringLp = new android.view.ViewGroup.LayoutParams(size, size);
+            ringLp = new android.view.ViewGroup.LayoutParams(size[0], size[1]);
         }
         io.github.yixing233.hyperduo.FlymeRingView ring =
                 new io.github.yixing233.hyperduo.FlymeRingView(host.getContext(), host);
@@ -768,27 +768,32 @@ final class FlymeHooks {
         }
     }
 
-    /** The box the ring gets: the status bar icon height, so every style matches. */
-    private static int ringSizePx(android.view.View host) {
+    /**
+     * The box the ring gets: the stock battery icon's own footprint.
+     *
+     * <p>Sizing it square from the height made the view wider than the icon it
+     * replaced, and a right-aligned row pushed everything left by the difference.
+     * That only showed after the next layout pass, which is why it looked right
+     * until the screen was left and rebuilt.
+     */
+    private static int[] ringSizePx(android.view.View host) {
         float density = host.getResources().getDisplayMetrics().density;
-        int dp = 26;
-        // Always the non-charging drawable: it is the one height that does not
-        // change with the style or with a charger plugged in, so the ring keeps
-        // one size no matter what Flyme's battery view is currently showing.
         for (java.lang.reflect.Field field : new java.lang.reflect.Field[]{
                 sBatteryNormalDrawableField, sBatteryDrawableField}) {
             try {
                 Object value = io.github.yixing233.hyperduo.Refl.get(field, host);
                 if (value instanceof android.graphics.drawable.Drawable) {
-                    int h = ((android.graphics.drawable.Drawable) value).getIntrinsicHeight();
-                    if (h > 0) {
-                        return h;
+                    android.graphics.drawable.Drawable d = (android.graphics.drawable.Drawable) value;
+                    int w = d.getIntrinsicWidth();
+                    int h = d.getIntrinsicHeight();
+                    if (w > 0 && h > 0) {
+                        return new int[]{w, h};
                     }
                 }
             } catch (java.lang.Throwable ignored) {
             }
         }
-        return java.lang.Math.round(dp * density);
+        return new int[]{java.lang.Math.round(14 * density), java.lang.Math.round(20 * density)};
     }
 
     /** True when this view lives inside the control centre rather than the status bar. */
