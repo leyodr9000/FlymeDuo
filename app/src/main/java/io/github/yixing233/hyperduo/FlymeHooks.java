@@ -369,9 +369,22 @@ final class FlymeHooks {
         }, delay);
     }
 
-    /** The single place that writes visibility for the managed slots. */
+    /**
+     * Hides the managed slots - or puts them back.
+     *
+     * <p>{@code setVisibility(GONE)} alone leaves the space behind: Flyme's
+     * container lays its slots out from {@code mIgnoredSlots}, and a slot that is
+     * merely invisible still gets its width. Adding the slot to that list is what
+     * actually frees the gap, and removing it is what restores the row without
+     * squeezing.
+     */
+    @SuppressWarnings("unchecked")
     private static void applySlotVisibility(android.view.ViewGroup container, boolean hide) {
         try {
+            java.lang.Object raw = io.github.yixing233.hyperduo.Refl.get(sIgnoredSlotsField, container);
+            java.util.List<java.lang.String> ignored = (raw instanceof java.util.List)
+                    ? (java.util.List<java.lang.String>) raw : null;
+            boolean changed = false;
             for (int i = 0; i < container.getChildCount(); i++) {
                 android.view.View child = container.getChildAt(i);
                 java.lang.Object slot = callCached(SLOT_METHODS, child, "getSlot");
@@ -382,14 +395,26 @@ final class FlymeHooks {
                 int wanted = hide ? android.view.View.GONE : android.view.View.VISIBLE;
                 if (child.getVisibility() != wanted) {
                     child.setVisibility(wanted);
+                    changed = true;
                 }
+                if (ignored != null) {
+                    if (hide) {
+                        if (!ignored.contains(slotName)) {
+                            ignored.add(slotName);
+                            changed = true;
+                        }
+                    } else if (ignored.remove(slotName)) {
+                        changed = true;
+                    }
+                }
+            }
+            if (changed) {
+                container.requestLayout();
             }
         } catch (java.lang.Throwable t) {
             log(sModule, "slot visibility failed: " + t);
         }
     }
-
-
     private static int hookIconContainer(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         java.lang.Class<?> container = io.github.yixing233.hyperduo.Refl.cls(ICON_CONTAINER, cl);
         if (container == null) {
@@ -426,17 +451,9 @@ final class FlymeHooks {
                     // does: zero means there is no Wi-Fi icon to show.
                     io.github.yixing233.hyperduo.TrioState.setWifiPresent(resId != 0 || java.lang.Boolean.TRUE.equals(visible));
                     io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
-                    // Flyme keeps the Wi-Fi icon outside the status icon
-                    // container (it has its own view class), so it is hidden
-                    // here, on its own update path.
-                    android.view.View wifiView = (android.view.View) self;
-                    if (io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
-                        if (wifiView.getVisibility() != android.view.View.GONE) {
-                            wifiView.setVisibility(android.view.View.GONE);
-                        }
-                    } else if (wifiView.getVisibility() == android.view.View.GONE) {
-                        wifiView.setVisibility(android.view.View.VISIBLE);
-                    }
+                    // The Wi-Fi view is hidden through the container slot pass,
+                    // not here: this hook also runs for the control centre copy,
+                    // which is meant to keep its stock icons.
                 }
                 return result;
             }
