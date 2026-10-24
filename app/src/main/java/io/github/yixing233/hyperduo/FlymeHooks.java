@@ -33,7 +33,44 @@ final class FlymeHooks {
     private static final java.util.Map<java.lang.Object, java.util.List<java.lang.String>> ADDED_SLOTS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
     private static final java.util.Map<android.view.ViewGroup, java.lang.Boolean> STATUS_ICON_CONTAINERS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
 
+    // Reflection on the layout path has to be cached: onLayout runs per frame,
+    // and a getMethod() per child per pass was what turned a re-layout into an
+    // ANR. The re-entry flag keeps a setVisibility() that schedules another
+    // layout pass from nesting inside this one.
+    private static final java.util.Map<java.lang.Class<?>, java.lang.reflect.Method> SLOT_METHODS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Map<java.lang.Class<?>, java.lang.reflect.Method> VISIBLE_METHODS = new java.util.concurrent.ConcurrentHashMap<>();
+    private static final java.util.Set<java.lang.Class<?>> NO_METHOD = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<java.lang.Class<?>, java.lang.Boolean>());
+    private static volatile boolean sInApply;
+
     private FlymeHooks() {
+    }
+
+    private static java.lang.Object callCached(java.util.Map<java.lang.Class<?>, java.lang.reflect.Method> cache, java.lang.Object target, java.lang.String name) {
+        if (target == null) {
+            return null;
+        }
+        java.lang.Class<?> type = target.getClass();
+        if (NO_METHOD.contains(type)) {
+            return null;
+        }
+        java.lang.reflect.Method method = cache.get(type);
+        if (method == null) {
+            try {
+                method = type.getMethod(name);
+                method.setAccessible(true);
+            } catch (java.lang.Throwable t) {
+                // Remember the miss: building the exception per call per child per
+                // layout pass is what made this path expensive enough to ANR.
+                NO_METHOD.add(type);
+                return null;
+            }
+            cache.put(type, method);
+        }
+        try {
+            return method.invoke(target);
+        } catch (java.lang.Throwable t) {
+            return null;
+        }
     }
 
     static boolean isFlyme(java.lang.ClassLoader cl) {
@@ -52,21 +89,8 @@ final class FlymeHooks {
     }
 
     static void onConfigChanged() {
-        java.util.List<android.view.ViewGroup> containers = new java.util.ArrayList<>();
-        synchronized (STATUS_ICON_CONTAINERS) {
-            containers.addAll(STATUS_ICON_CONTAINERS.keySet());
-        }
-        for (int i = 0; i < containers.size(); i++) {
-            final android.view.ViewGroup container = containers.get(i);
-            if (container != null) {
-                container.post(new java.lang.Runnable() { // from class: io.github.yixing233.hyperduo.FlymeHooks.1
-                    @Override // java.lang.Runnable
-                    public void run() {
-                        io.github.yixing233.hyperduo.FlymeHooks.applySlots(container);
-                    }
-                });
-            }
-        }
+        // Slot handling is off in this build, so a settings change only has to
+        // repaint the battery hosts.
         java.util.List<android.view.View> hosts = new java.util.ArrayList<>();
         synchronized (STATES) {
             hosts.addAll(STATES.keySet());
@@ -272,11 +296,14 @@ final class FlymeHooks {
 
     /* JADX INFO: Access modifiers changed from: private */
     public static void registerIconContainer(android.view.ViewGroup container) {
+        // Slot handling is off in this build: every path that touched the icon
+        // container ran inside onLayout, and hiding a child there re-entered the
+        // layout pass until the main thread blew its ANR budget. The ring itself
+        // only needs the battery view, so the containers are recorded and left
+        // alone.
         synchronized (STATUS_ICON_CONTAINERS) {
             STATUS_ICON_CONTAINERS.put(container, java.lang.Boolean.TRUE);
         }
-        applySlots(container);
-        updateWifiPresence(container);
     }
 
     private static int hookIconContainer(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
@@ -286,17 +313,8 @@ final class FlymeHooks {
             return 0;
         }
         sIgnoredSlotsField = io.github.yixing233.hyperduo.Refl.field(container, "mIgnoredSlots");
-        return hook(module, io.github.yixing233.hyperduo.Refl.method(container, "onLayout", java.lang.Boolean.TYPE, java.lang.Integer.TYPE, java.lang.Integer.TYPE, java.lang.Integer.TYPE, java.lang.Integer.TYPE), "hyperduo-flyme-icon-layout", new io.github.libxposed.api.XposedInterface.Hooker() { // from class: io.github.yixing233.hyperduo.FlymeHooks.11
-            public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
-                java.lang.Object result = chain.proceed();
-                java.lang.Object self = chain.getThisObject();
-                if ((self instanceof android.view.ViewGroup) && io.github.yixing233.hyperduo.FlymeHooks.isRegistered((android.view.ViewGroup) self)) {
-                    io.github.yixing233.hyperduo.FlymeHooks.applySlots((android.view.ViewGroup) self);
-                    io.github.yixing233.hyperduo.FlymeHooks.updateWifiPresence((android.view.ViewGroup) self);
-                }
-                return result;
-            }
-        });
+        // The onLayout hook is deliberately not installed: see registerIconContainer.
+        return 0;
     }
 
     private static int hookWifiState(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
@@ -565,7 +583,7 @@ final class FlymeHooks {
         if (child == null) {
             return null;
         }
-        java.lang.Object slot = io.github.yixing233.hyperduo.Refl.callByName(child, "getSlot");
+        java.lang.Object slot = callCached(SLOT_METHODS, child, "getSlot");
         if (!(slot instanceof java.lang.String)) {
             return null;
         }
@@ -603,7 +621,7 @@ final class FlymeHooks {
             if (!"wifi".equals(slotOf(child))) {
                 i++;
             } else {
-                java.lang.Object visible = io.github.yixing233.hyperduo.Refl.callByName(child, "isIconVisible");
+                java.lang.Object visible = callCached(VISIBLE_METHODS, child, "isIconVisible");
                 if (visible instanceof java.lang.Boolean) {
                     z = ((java.lang.Boolean) visible).booleanValue();
                 } else {
