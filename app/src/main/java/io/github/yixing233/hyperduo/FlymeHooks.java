@@ -149,18 +149,51 @@ final class FlymeHooks {
                     io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
                     return chain.proceed();
                 }
-                // Everything else is drawn by the ring's own view: Flyme's battery
-                // view changes width, position and visibility with the four stock
-                // styles, and a glyph drawn inside it inherits all of that.
-                io.github.yixing233.hyperduo.FlymeHooks.requestRing(host);
+                // Draw into Flyme's own view, but keep that view's box fixed (see
+                // the measure hook) and take its percentage text out of the row:
+                // together those two are what make the drawing independent of the
+                // four stock styles without adding a view of our own.
+                io.github.yixing233.hyperduo.FlymeHooks.hideBatteryExtras(host);
+                io.github.yixing233.hyperduo.FlymeHooks.requestRingRemoval(host);
+                io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
+                io.github.yixing233.hyperduo.TrioState state =
+                        io.github.yixing233.hyperduo.FlymeHooks.stateFor(host);
+                state.refresh();
+                io.github.yixing233.hyperduo.TrioRenderer.drawFlyme((android.graphics.Canvas) arg,
+                        host, state, io.github.yixing233.hyperduo.TrioConfig.get());
                 return null;
             }
         });
-        // The measure hook is gone on purpose. Forcing the normal drawable and a
-        // zero clip width made the view narrower than Flyme's own layout expects
-        // whenever the percentage is drawn outside the battery (or is the only
-        // thing shown), and the whole right-hand cluster shifted to compensate.
-        int measure = 0;
+        // The stock styles resize this view (the percentage can be part of its
+        // width) and "percentage only" even hides it when the charger is pulled.
+        // Measuring always as the non-charging battery gives the ring one box for
+        // every style; the percentage text is taken out of the row separately, so
+        // nothing is left varying that the row would have to follow.
+        int measure = hook(module, io.github.yixing233.hyperduo.Refl.method(viewClass, "onMeasure", java.lang.Integer.TYPE, java.lang.Integer.TYPE), "hyperduo-flyme-battery-measure", new io.github.libxposed.api.XposedInterface.Hooker() {
+            public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
+                java.lang.Object self = chain.getThisObject();
+                if (!(self instanceof android.view.View)
+                        || !io.github.yixing233.hyperduo.TrioConfig.get().enabled
+                        || io.github.yixing233.hyperduo.FlymeHooks.excludedRegion((android.view.View) self)) {
+                    return chain.proceed();
+                }
+                java.lang.Object currentDrawable = io.github.yixing233.hyperduo.Refl.get(io.github.yixing233.hyperduo.FlymeHooks.sBatteryDrawableField, self);
+                java.lang.Object stableDrawable = io.github.yixing233.hyperduo.Refl.get(io.github.yixing233.hyperduo.FlymeHooks.sBatteryNormalDrawableField, self);
+                if (!(currentDrawable instanceof android.graphics.drawable.Drawable)
+                        || !(stableDrawable instanceof android.graphics.drawable.Drawable)) {
+                    return chain.proceed();
+                }
+                int clipWidth = io.github.yixing233.hyperduo.Refl.getInt(io.github.yixing233.hyperduo.FlymeHooks.sBatteryClipWidthField, self, 0);
+                io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryDrawableField, self, stableDrawable);
+                io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryClipWidthField, self, 0);
+                try {
+                    return chain.proceed();
+                } finally {
+                    io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryDrawableField, self, currentDrawable);
+                    io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryClipWidthField, self, java.lang.Integer.valueOf(clipWidth));
+                }
+            }
+        });
         int levelChanged = hook(module, io.github.yixing233.hyperduo.Refl.method(viewClass, "onBatteryLevelChanged", java.lang.Integer.TYPE, java.lang.Boolean.TYPE, java.lang.Boolean.TYPE), "hyperduo-flyme-battery-level", new io.github.libxposed.api.XposedInterface.Hooker() { // from class: io.github.yixing233.hyperduo.FlymeHooks.5
             public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
                 java.lang.Object result = chain.proceed();
@@ -500,15 +533,12 @@ final class FlymeHooks {
                     if (io.github.yixing233.hyperduo.TrioState.setMobileType(type)) {
                         io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
                     }
-                    // This is Flyme's own "5G" label. The ring draws the type
-                    // itself, so the stock one is hidden whenever the module is on
-                    // - otherwise the setting for it has nothing to act on.
+                    // Flyme's own label is left alone: the ring's out-of-ring type
+                    // is not ported to this adapter yet, and hiding this one took
+                    // the type away entirely.
                     android.view.View typeView = (android.view.View) target;
-                    if (io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
-                        if (typeView.getVisibility() != android.view.View.GONE) {
-                            typeView.setVisibility(android.view.View.GONE);
-                        }
-                    } else if (typeView.getVisibility() == android.view.View.GONE) {
+                    if (!io.github.yixing233.hyperduo.TrioConfig.get().enabled
+                            && typeView.getVisibility() == android.view.View.GONE) {
                         typeView.setVisibility(android.view.View.VISIBLE);
                     }
                 }
