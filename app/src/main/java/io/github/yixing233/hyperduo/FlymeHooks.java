@@ -137,6 +137,11 @@ final class FlymeHooks {
                 if (!io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
                     return chain.proceed();
                 }
+                // The control centre carries its own battery view and keeps the
+                // stock look, so nothing is drawn there.
+                if (io.github.yixing233.hyperduo.FlymeHooks.inControlCenter(host)) {
+                    return chain.proceed();
+                }
                 io.github.yixing233.hyperduo.TrioState state = io.github.yixing233.hyperduo.FlymeHooks.stateFor(host);
                 state.refresh();
                 io.github.yixing233.hyperduo.TrioRenderer.drawFlyme((android.graphics.Canvas) arg, host, state, io.github.yixing233.hyperduo.TrioConfig.get());
@@ -661,6 +666,30 @@ final class FlymeHooks {
         if (saved != null && child.getVisibility() != saved.intValue()) {
             child.setVisibility(saved.intValue());
         }
+    }
+
+    /** Cached because it walks the parent chain, and onDraw runs every frame. */
+    private static final java.util.Map<android.view.View, java.lang.Boolean> QS_HOSTS =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<android.view.View, java.lang.Boolean>());
+
+    /** True when this view lives inside the control centre rather than the status bar. */
+    static boolean inControlCenter(android.view.View host) {
+        java.lang.Boolean cached = QS_HOSTS.get(host);
+        if (cached != null) {
+            return cached.booleanValue();
+        }
+        boolean result = false;
+        android.view.ViewParent parent = host.getParent();
+        for (int depth = 0; parent instanceof android.view.View && depth < 24; depth++) {
+            java.lang.String name = parent.getClass().getName().toLowerCase(java.util.Locale.ROOT);
+            if (name.contains("controlcenter") || name.contains("qsstatusbar") || name.contains("quickpanels")) {
+                result = true;
+                break;
+            }
+            parent = parent.getParent();
+        }
+        QS_HOSTS.put(host, java.lang.Boolean.valueOf(result));
+        return result;
     }
 
     /* JADX INFO: Access modifiers changed from: private */
