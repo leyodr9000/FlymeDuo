@@ -40,7 +40,9 @@ final class FlymeHooks {
     private static final java.util.Map<java.lang.Class<?>, java.lang.reflect.Method> SLOT_METHODS = new java.util.concurrent.ConcurrentHashMap<>();
     private static final java.util.Map<java.lang.Class<?>, java.lang.reflect.Method> VISIBLE_METHODS = new java.util.concurrent.ConcurrentHashMap<>();
     private static final java.util.Set<java.lang.Class<?>> NO_METHOD = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<java.lang.Class<?>, java.lang.Boolean>());
+    private static final java.util.Set<android.view.ViewGroup> PENDING_SLOTS = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<android.view.ViewGroup, java.lang.Boolean>());
     private static volatile boolean sInApply;
+    private static volatile long sLastSlotPass;
 
     private FlymeHooks() {
     }
@@ -89,8 +91,6 @@ final class FlymeHooks {
     }
 
     static void onConfigChanged() {
-        // Slot handling is off in this build, so a settings change only has to
-        // repaint the battery hosts.
         java.util.List<android.view.View> hosts = new java.util.ArrayList<>();
         synchronized (STATES) {
             hosts.addAll(STATES.keySet());
@@ -295,15 +295,40 @@ final class FlymeHooks {
     }
 
     /* JADX INFO: Access modifiers changed from: private */
-    public static void registerIconContainer(android.view.ViewGroup container) {
-        // Slot handling is off in this build: every path that touched the icon
-        // container ran inside onLayout, and hiding a child there re-entered the
-        // layout pass until the main thread blew its ANR budget. The ring itself
-        // only needs the battery view, so the containers are recorded and left
-        // alone.
+    public static void registerIconContainer(final android.view.ViewGroup container) {
         synchronized (STATUS_ICON_CONTAINERS) {
-            STATUS_ICON_CONTAINERS.put(container, java.lang.Boolean.TRUE);
+            if (!STATUS_ICON_CONTAINERS.containsKey(container)) {
+                STATUS_ICON_CONTAINERS.put(container, java.lang.Boolean.TRUE);
+                hideStockIconsOnce(container);
+            }
         }
+    }
+
+    /**
+     * Hides the icons the ring replaces - once, by class name.
+     *
+     * <p>No reflection, no slot bookkeeping and no callback back into the
+     * container: every variant that inspected the container on each pass put the
+     * main thread into a reflection loop that ended in an ANR, and the ring does
+     * not need the container to stay in sync - it draws from the battery view.
+     */
+    private static void hideStockIconsOnce(final android.view.ViewGroup container) {
+        container.post(new java.lang.Runnable() {
+            @Override
+            public void run() {
+                try {
+                    for (int i = 0; i < container.getChildCount(); i++) {
+                        android.view.View child = container.getChildAt(i);
+                        java.lang.String name = child.getClass().getName().toLowerCase(java.util.Locale.ROOT);
+                        if (name.contains("wifi") || name.contains("signal") || name.contains("mobile")) {
+                            child.setVisibility(android.view.View.GONE);
+                        }
+                    }
+                } catch (java.lang.Throwable t) {
+                    log(sModule, "hide stock icons failed: " + t);
+                }
+            }
+        });
     }
 
     private static int hookIconContainer(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
@@ -449,6 +474,58 @@ final class FlymeHooks {
     }
 
     /* JADX INFO: Access modifiers changed from: private */
+    /**
+     * Runs the slot pass outside the layout flow.
+     *
+     * <p>Hiding a child from inside onLayout re-entered layout and ANR'd the
+     * main thread, so the pass is queued instead: one task per container, and
+     * the visibility writes land between frames rather than during one.
+     */
+    static void scheduleSlots(final android.view.ViewGroup container) {
+        if (container == null || !isRegistered(container)) {
+            return;
+        }
+        synchronized (PENDING_SLOTS) {
+            if (!PENDING_SLOTS.add(container)) {
+                return;
+            }
+        }
+        container.post(new java.lang.Runnable() {
+            @Override
+            public void run() {
+                synchronized (PENDING_SLOTS) {
+                    PENDING_SLOTS.remove(container);
+                }
+                try {
+                    applySlots(container);
+                    updateWifiPresence(container);
+                } catch (java.lang.Throwable t) {
+                    log(sModule, "slot pass failed: " + t);
+                }
+            }
+        });
+    }
+
+    static void scheduleAllSlots() {
+        java.util.List<android.view.ViewGroup> containers = new java.util.ArrayList<>();
+        synchronized (STATUS_ICON_CONTAINERS) {
+            containers.addAll(STATUS_ICON_CONTAINERS.keySet());
+        }
+        for (int i = 0; i < containers.size(); i++) {
+            scheduleSlots(containers.get(i));
+        }
+    }
+
+    /** Rate limit for callers that fire on every icon update rather than on a change. */
+    static void scheduleSlotsThrottled() {
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (now - sLastSlotPass < 500) {
+            return;
+        }
+        sLastSlotPass = now;
+        scheduleAllSlots();
+    }
+
     public static void applySlots(android.view.ViewGroup container) {
         java.util.List<java.lang.String> current;
         if (!isRegistered(container)) {
