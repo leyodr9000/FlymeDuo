@@ -1217,6 +1217,31 @@ public final class Prefs {
      * when there is no Wi-Fi, and draws no network type at all.
      */
     public static final int DEF_MOBILE_TYPE_MODE = MOBILE_TYPE_OFF;
+
+    /**
+     * Where the ring is NOT applied, leaving the stock battery alone.
+     *
+     * <p>Flyme draws a battery of its own in the control centre and in the
+     * notification shade; those can be kept stock while the status bar carries
+     * the ring. An int rather than three booleans so the choice stays one row:
+     * all, not the control centre, not the notification centre, or neither.
+     */
+    public static final String KEY_EXCLUDE_REGIONS = "exclude_regions";
+
+    /** The ring is applied everywhere. */
+    public static final int REGION_ALL = 0;
+    /** Stock battery kept in the control centre. */
+    public static final int REGION_NO_CONTROL_CENTRE = 1;
+    /** Stock battery kept in the notification shade. */
+    public static final int REGION_NO_NOTIFICATION = 2;
+    /** Stock battery kept in both. */
+    public static final int REGION_NO_BOTH = 3;
+
+    public static final int DEF_EXCLUDE_REGIONS = REGION_ALL;
+
+    /** Highest valid {@link #KEY_EXCLUDE_REGIONS} value. */
+    public static final int MAX_EXCLUDE_REGIONS = REGION_NO_BOTH;
+
     /**
      * Off by default: the shipped look keeps the Wi-Fi arcs in the middle of the
      * ring and the battery reading small in the 12 o'clock notch.

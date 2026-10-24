@@ -106,6 +106,13 @@
 
     <string name="master_title">启用三合一图标</string>
 
+    <string name="exclude_regions_title">生效范围</string>
+    <string name="exclude_regions_summary">被排除的位置保留 Flyme 原厂电池，并由原厂的四种样式决定显示方式</string>
+    <string name="exclude_regions_all">所有位置</string>
+    <string name="exclude_regions_no_control_centre">排除控制中心</string>
+    <string name="exclude_regions_no_notification">排除通知中心</string>
+    <string name="exclude_regions_no_both">排除控制中心 + 通知中心</string>
+
     <string name="trio_style_title">三合一样式</string>
     <string name="trio_style_ring">圆环</string>
     <string name="trio_style_capsule">胶囊</string>

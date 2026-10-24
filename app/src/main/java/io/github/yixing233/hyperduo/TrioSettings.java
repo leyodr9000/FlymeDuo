@@ -39,6 +39,8 @@ public final class TrioSettings {
      * Clamped to that range wherever it is read.
      */
     public int mobileTypeMode;
+    /** See Prefs.KEY_EXCLUDE_REGIONS: which regions keep Flyme's own battery. */
+    public int excludeRegions;
     /**
      * Draws the battery percentage enlarged in the middle of the ring, with the
      * Wi-Fi arcs shrunk into the 12 o'clock notch. While charging the bolt owns
@@ -308,6 +310,7 @@ public final class TrioSettings {
         s.showValue = Prefs.DEF_SHOW_VALUE;
         s.showBolt = Prefs.DEF_SHOW_BOLT;
         s.mobileTypeMode = Prefs.DEF_MOBILE_TYPE_MODE;
+        s.excludeRegions = Prefs.DEF_EXCLUDE_REGIONS;
         s.valueCentred = Prefs.DEF_VALUE_CENTRED;
         s.navStyle = Prefs.DEF_NAV_STYLE;
         s.navLabels = Prefs.DEF_NAV_LABELS;
@@ -425,6 +428,7 @@ public final class TrioSettings {
                 s.trioStyle);
         s.showBolt = readStyledBoolean(p, Prefs.KEY_SHOW_BOLT, Prefs.DEF_SHOW_BOLT, s.trioStyle);
         s.mobileTypeMode = readMobileTypeMode(p, s.trioStyle);
+        s.excludeRegions = Prefs.clamp(p.getInt(Prefs.KEY_EXCLUDE_REGIONS, Prefs.DEF_EXCLUDE_REGIONS), 0, Prefs.MAX_EXCLUDE_REGIONS);
         s.valueCentred = readStyledBoolean(p, Prefs.KEY_VALUE_CENTRED, Prefs.DEF_VALUE_CENTRED,
                 s.trioStyle);
         s.ringZones = Prefs.decodeLayout(readRingLayout(p, s.trioStyle));
@@ -769,6 +773,7 @@ public final class TrioSettings {
         s.showSim1 = other.showSim1;
         s.showSim2 = other.showSim2;
         s.mobileTypeMode = other.mobileTypeMode;
+        s.excludeRegions = other.excludeRegions;
         s.valueCentred = other.valueCentred;
         s.dualSim = other.dualSim;
         s.signalMode = other.signalMode;

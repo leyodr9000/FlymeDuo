@@ -341,6 +341,7 @@ class SettingsRepository(context: Context) {
     fun setValueWeight(value: Int) = writeInt(Prefs.KEY_VALUE_WEIGHT, value)
     fun setClockSize(value: Int) = writeInt(Prefs.KEY_CLOCK_SIZE, value)
     fun setClockWeight(value: Int) = writeInt(Prefs.KEY_CLOCK_WEIGHT, value)
+    fun setExcludeRegions(value: Int) = writeInt(Prefs.KEY_EXCLUDE_REGIONS, value)
     fun setTypeSize(value: Int) = writeInt(Prefs.KEY_TYPE_SIZE, value)
     fun setOutTypeSize(value: Int) = writeInt(Prefs.KEY_OUT_TYPE_SIZE_DP, value)
     fun setOutSignalSize(value: Int) = writeInt(Prefs.KEY_OUT_SIGNAL_SIZE, value)
@@ -446,6 +447,7 @@ class SettingsRepository(context: Context) {
             // the look an install had when the two readings shared one size.
             prefs.putInt(Prefs.KEY_CLOCK_SIZE, snapshot.clockSize)
             prefs.putInt(Prefs.KEY_CLOCK_WEIGHT, snapshot.clockWeight)
+            prefs.putInt(Prefs.KEY_EXCLUDE_REGIONS, snapshot.excludeRegions)
             prefs.putInt(Prefs.KEY_TYPE_SIZE, snapshot.typeSize)
             prefs.putInt(Prefs.KEY_OUT_TYPE_SIZE_DP, snapshot.outTypeSize)
             prefs.putInt(Prefs.KEY_OUT_SIGNAL_SIZE, snapshot.outSignalSize)

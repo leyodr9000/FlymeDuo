@@ -41,6 +41,8 @@ internal enum class ContentControl(val owner: TrioSettingsPart) {
     // --- placement: where the piece lives -------------------------------------
     /** Master switch, then layout: both decide what exists at all. */
     Enabled(TrioSettingsPart.Appearance),
+    /** Which regions keep Flyme's own battery; sits next to the master switch. */
+    Exclude(TrioSettingsPart.Appearance),
     Style(TrioSettingsPart.Appearance),
     // --- per component: its own switch ----------------------------------------
     Wifi(TrioSettingsPart.Wifi),
@@ -106,7 +108,7 @@ internal fun ContentControlRow(
     val a = TrioAppearance.of(settings)
     val master = listOf(a.glyph to R.string.master_title)
     val positioned = when (control) {
-        ContentControl.Value -> TrioZones.Part.VALUE
+        ContentControl.Value -> TrioZones.Part.VALUE
         // Not a position row: it is a lens over the centre, not a place for the number.
         ContentControl.ChargingShowsValue -> null
         ContentControl.Bolt -> TrioZones.Part.BOLT
@@ -148,6 +150,15 @@ internal fun ContentControlRow(
     when (control) {
         ContentControl.Enabled -> ContentToggle(settings.enabled, R.string.master_title,
             null, emptyList()) { value -> update { it.setEnabled(value) } }
+        ContentControl.Exclude -> {
+            val regions = listOf(Prefs.REGION_ALL, Prefs.REGION_NO_CONTROL_CENTRE,
+                Prefs.REGION_NO_NOTIFICATION, Prefs.REGION_NO_BOTH)
+            ContentChoice(regions.indexOf(settings.excludeRegions).coerceAtLeast(0),
+                R.string.exclude_regions_title, R.string.exclude_regions_summary,
+                listOf(R.string.exclude_regions_all, R.string.exclude_regions_no_control_centre,
+                    R.string.exclude_regions_no_notification, R.string.exclude_regions_no_both),
+                master) { index -> update { it.setExcludeRegions(regions[index]) } }
+        }
         ContentControl.Style -> {
             val styles = listOf(Prefs.STYLE_RING, Prefs.STYLE_CAPSULE)
             ContentChoice(styles.indexOf(a.style).coerceAtLeast(0), R.string.trio_style_title,

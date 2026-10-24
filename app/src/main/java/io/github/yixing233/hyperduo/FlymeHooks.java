@@ -106,11 +106,11 @@ final class FlymeHooks {
                     @Override // java.lang.Runnable
                     public void run() {
                         io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
-                        // Flyme sizes this view from mDrawable + mClipWidth, and the
-                        // measure hook hands it the normal drawable while the ring
-                        // is on. Without a layout pass the view keeps that width
-                        // after the switch turns the ring off - the bolt then sits
-                        // over the outline and "100" is clipped to "1".
+                        if (io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
+                            io.github.yixing233.hyperduo.FlymeHooks.requestRing(host);
+                        } else {
+                            io.github.yixing233.hyperduo.FlymeHooks.requestRingRemoval(host);
+                        }
                         host.requestLayout();
                         host.invalidate();
                     }
@@ -139,18 +139,20 @@ final class FlymeHooks {
                 android.view.View host = (android.view.View) self;
                 io.github.yixing233.hyperduo.TrioConfig.installReceiver(host.getContext());
                 io.github.yixing233.hyperduo.TrioState.attachContext(host.getContext());
-                io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
                 if (!io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
+                    io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
+                    io.github.yixing233.hyperduo.FlymeHooks.requestRingRemoval(host);
                     return chain.proceed();
                 }
-                // The control centre carries its own battery view and keeps the
-                // stock look, so nothing is drawn there.
-                if (io.github.yixing233.hyperduo.FlymeHooks.inControlCenter(host)) {
+                // A region the user excluded keeps Flyme's own battery, stock look and all.
+                if (io.github.yixing233.hyperduo.FlymeHooks.excludedRegion(host)) {
+                    io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
                     return chain.proceed();
                 }
-                io.github.yixing233.hyperduo.TrioState state = io.github.yixing233.hyperduo.FlymeHooks.stateFor(host);
-                state.refresh();
-                io.github.yixing233.hyperduo.TrioRenderer.drawFlyme((android.graphics.Canvas) arg, host, state, io.github.yixing233.hyperduo.TrioConfig.get());
+                // Everything else is drawn by the ring's own view: Flyme's battery
+                // view changes width, position and visibility with the four stock
+                // styles, and a glyph drawn inside it inherits all of that.
+                io.github.yixing233.hyperduo.FlymeHooks.requestRing(host);
                 return null;
             }
         });
@@ -168,7 +170,9 @@ final class FlymeHooks {
                 java.lang.Object charging = chain.getArg(2);
                 if ((self instanceof android.view.View) && (value instanceof java.lang.Number) && (plugged instanceof java.lang.Boolean) && (charging instanceof java.lang.Boolean)) {
                     io.github.yixing233.hyperduo.TrioState.noteFlymeBatteryState(((java.lang.Number) value).intValue(), ((java.lang.Boolean) plugged).booleanValue(), ((java.lang.Boolean) charging).booleanValue());
-                    ((android.view.View) self).postInvalidate();
+                    // The host is hidden while the ring stands in for it, so this
+                    // goes through the shared path, which also repaints the ring.
+                    io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
                 }
                 return result;
             }
@@ -191,7 +195,7 @@ final class FlymeHooks {
                         state.lightColor = color;
                         state.darkColor = color;
                     }
-                    ((android.view.View) self).invalidate();
+                    io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
                 }
                 return result;
             }
@@ -672,24 +676,172 @@ final class FlymeHooks {
     private static final java.util.Map<android.view.View, java.lang.Boolean> QS_HOSTS =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<android.view.View, java.lang.Boolean>());
 
-    /** True when this view lives inside the control centre rather than the status bar. */
-    static boolean inControlCenter(android.view.View host) {
-        java.lang.Boolean cached = QS_HOSTS.get(host);
-        if (cached != null) {
-            return cached.booleanValue();
+    /** Battery host -> the ring view standing in for it. */
+    private static final java.util.Map<android.view.View, io.github.yixing233.hyperduo.FlymeRingView> RINGS =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<android.view.View, io.github.yixing233.hyperduo.FlymeRingView>());
+
+    private static final java.util.Set<android.view.View> RING_PENDING =
+            java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<android.view.View, java.lang.Boolean>());
+
+    /** Queues the swap to a ring view; safe to call from onDraw. */
+    static void requestRing(final android.view.View host) {
+        if (RINGS.containsKey(host) || !RING_PENDING.add(host)) {
+            return;
         }
-        boolean result = false;
+        host.post(new java.lang.Runnable() {
+            @Override
+            public void run() {
+                RING_PENDING.remove(host);
+                try {
+                    installRing(host);
+                } catch (java.lang.Throwable t) {
+                    log(sModule, "ring install failed: " + t);
+                }
+            }
+        });
+    }
+
+    /** Queues the reverse swap; safe to call from onDraw. */
+    static void requestRingRemoval(final android.view.View host) {
+        if (!RINGS.containsKey(host) || !RING_PENDING.add(host)) {
+            return;
+        }
+        host.post(new java.lang.Runnable() {
+            @Override
+            public void run() {
+                RING_PENDING.remove(host);
+                try {
+                    removeRing(host);
+                } catch (java.lang.Throwable t) {
+                    log(sModule, "ring removal failed: " + t);
+                }
+            }
+        });
+    }
+
+    private static void installRing(android.view.View host) {
+        if (RINGS.containsKey(host)) {
+            return;
+        }
+        android.view.ViewParent parent = host.getParent();
+        if (!(parent instanceof android.view.ViewGroup)) {
+            return;
+        }
+        android.view.ViewGroup group = (android.view.ViewGroup) parent;
+        int index = group.indexOfChild(host);
+        int size = ringSizePx(host);
+        android.view.ViewGroup.LayoutParams lp = host.getLayoutParams();
+        android.view.ViewGroup.LayoutParams ringLp;
+        if (lp instanceof android.widget.LinearLayout.LayoutParams) {
+            ringLp = new android.widget.LinearLayout.LayoutParams(size, size);
+            android.widget.LinearLayout.LayoutParams src = (android.widget.LinearLayout.LayoutParams) lp;
+            ((android.widget.LinearLayout.LayoutParams) ringLp).gravity = src.gravity;
+            ringLp.width = size;
+            ringLp.height = size;
+        } else if (lp instanceof android.view.ViewGroup.MarginLayoutParams) {
+            android.view.ViewGroup.MarginLayoutParams src = (android.view.ViewGroup.MarginLayoutParams) lp;
+            android.view.ViewGroup.MarginLayoutParams mp =
+                    new android.view.ViewGroup.MarginLayoutParams(src);
+            mp.width = size;
+            mp.height = size;
+            ringLp = mp;
+        } else {
+            ringLp = new android.view.ViewGroup.LayoutParams(size, size);
+        }
+        io.github.yixing233.hyperduo.FlymeRingView ring =
+                new io.github.yixing233.hyperduo.FlymeRingView(host.getContext(), host);
+        group.addView(ring, index < 0 ? 0 : index, ringLp);
+        host.setVisibility(android.view.View.GONE);
+        RINGS.put(host, ring);
+    }
+
+    private static void removeRing(android.view.View host) {
+        io.github.yixing233.hyperduo.FlymeRingView ring = RINGS.remove(host);
+        if (ring != null) {
+            android.view.ViewParent parent = ring.getParent();
+            if (parent instanceof android.view.ViewGroup) {
+                ((android.view.ViewGroup) parent).removeView(ring);
+            }
+        }
+        if (host.getVisibility() != android.view.View.VISIBLE) {
+            host.setVisibility(android.view.View.VISIBLE);
+        }
+    }
+
+    /** The box the ring gets: the status bar icon height, so every style matches. */
+    private static int ringSizePx(android.view.View host) {
+        float density = host.getResources().getDisplayMetrics().density;
+        int dp = 26;
+        // Always the non-charging drawable: it is the one height that does not
+        // change with the style or with a charger plugged in, so the ring keeps
+        // one size no matter what Flyme's battery view is currently showing.
+        for (java.lang.reflect.Field field : new java.lang.reflect.Field[]{
+                sBatteryNormalDrawableField, sBatteryDrawableField}) {
+            try {
+                Object value = io.github.yixing233.hyperduo.Refl.get(field, host);
+                if (value instanceof android.graphics.drawable.Drawable) {
+                    int h = ((android.graphics.drawable.Drawable) value).getIntrinsicHeight();
+                    if (h > 0) {
+                        return h;
+                    }
+                }
+            } catch (java.lang.Throwable ignored) {
+            }
+        }
+        return java.lang.Math.round(dp * density);
+    }
+
+    /** True when this view lives inside the control centre rather than the status bar. */
+    /** Which surface a battery host belongs to. */
+    static final int REGION_STATUS_BAR = 0;
+    static final int REGION_CONTROL_CENTRE = 1;
+    static final int REGION_NOTIFICATION = 2;
+
+    private static final java.util.Map<android.view.View, java.lang.Integer> REGION_CACHE =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<android.view.View, java.lang.Integer>());
+
+    static int regionOf(android.view.View host) {
+        java.lang.Integer cached = REGION_CACHE.get(host);
+        if (cached != null) {
+            return cached.intValue();
+        }
+        int result = REGION_STATUS_BAR;
         android.view.ViewParent parent = host.getParent();
         for (int depth = 0; parent instanceof android.view.View && depth < 24; depth++) {
             java.lang.String name = parent.getClass().getName().toLowerCase(java.util.Locale.ROOT);
             if (name.contains("controlcenter") || name.contains("qsstatusbar") || name.contains("quickpanels")) {
-                result = true;
+                result = REGION_CONTROL_CENTRE;
                 break;
+            }
+            if (name.contains("notification") || name.contains("shade")) {
+                result = REGION_NOTIFICATION;
             }
             parent = parent.getParent();
         }
-        QS_HOSTS.put(host, java.lang.Boolean.valueOf(result));
+        REGION_CACHE.put(host, java.lang.Integer.valueOf(result));
         return result;
+    }
+
+    /** True when the user asked to leave the stock battery alone in this host's region. */
+    static boolean excludedRegion(android.view.View host) {
+        int setting = io.github.yixing233.hyperduo.TrioConfig.get().excludeRegions;
+        if (setting == io.github.yixing233.hyperduo.Prefs.REGION_ALL) {
+            return false;
+        }
+        int region = regionOf(host);
+        if (region == REGION_CONTROL_CENTRE) {
+            return setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_CONTROL_CENTRE
+                    || setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_BOTH;
+        }
+        if (region == REGION_NOTIFICATION) {
+            return setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_NOTIFICATION
+                    || setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_BOTH;
+        }
+        return false;
+    }
+
+    static boolean inControlCenter(android.view.View host) {
+        return regionOf(host) != REGION_STATUS_BAR;
     }
 
     /* JADX INFO: Access modifiers changed from: private */
@@ -700,7 +852,7 @@ final class FlymeHooks {
         }
         android.view.View percent = (android.view.View) value;
         // The control centre keeps Flyme's own battery, percentage included.
-        if (inControlCenter(host)) {
+        if (excludedRegion(host)) {
             if (percent.getAlpha() != 1f) {
                 percent.setAlpha(1f);
             }
@@ -803,6 +955,12 @@ final class FlymeHooks {
             android.view.View host = hosts.get(i);
             if (host != null) {
                 host.postInvalidate();
+                // The host is hidden while the ring stands in for it, so the ring
+                // is what actually has to repaint.
+                io.github.yixing233.hyperduo.FlymeRingView ring = RINGS.get(host);
+                if (ring != null) {
+                    ring.postInvalidate();
+                }
             }
         }
     }
