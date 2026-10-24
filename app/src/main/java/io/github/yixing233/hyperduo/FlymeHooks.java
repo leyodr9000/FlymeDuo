@@ -91,6 +91,10 @@ final class FlymeHooks {
     }
 
     static void onConfigChanged() {
+        // The master switch decides what the stock icons should look like: hide
+        // them while the ring takes over, put them back and re-run layout when it
+        // does not, so a restore never leaves the row squeezed together.
+        syncStockIcons();
         java.util.List<android.view.View> hosts = new java.util.ArrayList<>();
         synchronized (STATES) {
             hosts.addAll(STATES.keySet());
@@ -255,8 +259,9 @@ final class FlymeHooks {
                 java.lang.Object self = chain.getThisObject();
                 java.lang.Object icons = io.github.yixing233.hyperduo.Refl.get(io.github.yixing233.hyperduo.FlymeHooks.sQsIconContainerField, self);
                 if (icons instanceof android.view.ViewGroup) {
-                    io.github.yixing233.hyperduo.FlymeHooks.registerIconContainer((android.view.ViewGroup) icons);
-                    io.github.yixing233.hyperduo.FlymeHooks.log(io.github.yixing233.hyperduo.FlymeHooks.sModule, "Flyme Control Center icon container captured");
+                    // Left untouched on purpose: the control centre keeps its
+                    // stock status bar, so nothing is hidden or re-laid out here.
+                    io.github.yixing233.hyperduo.FlymeHooks.log(io.github.yixing233.hyperduo.FlymeHooks.sModule, "Flyme Control Center captured (left stock)");
                 }
                 if (self instanceof android.view.View) {
                     android.view.View view = (android.view.View) self;
@@ -305,63 +310,85 @@ final class FlymeHooks {
     }
 
     /**
-     * Hides the icons the ring replaces - once, by class name.
+     * Hides exactly the three slots the ring replaces, and nothing else.
      *
-     * <p>No reflection, no slot bookkeeping and no callback back into the
-     * container: every variant that inspected the container on each pass put the
-     * main thread into a reflection loop that ended in an ANR, and the ring does
-     * not need the container to stay in sync - it draws from the battery view.
+     * <p>Children are {@code StatusBarIconView}s whose slot only shows through
+     * {@code getSlot()}. The pass runs once per capture and once more after the
+     * first traversal; it never feeds back into another pass, which is what
+     * livelocked the main thread before.
      */
     private static void hideStockIconsOnce(final android.view.ViewGroup container) {
-        container.post(new java.lang.Runnable() {
-            @Override
-            public void run() {
-                try {
-                    java.lang.StringBuilder seen = new java.lang.StringBuilder();
-                    for (int i = 0; i < container.getChildCount(); i++) {
-                        android.view.View child = container.getChildAt(i);
-                        java.lang.Object slot = callCached(SLOT_METHODS, child, "getSlot");
-                        java.lang.String slotName = (slot instanceof java.lang.String) ? (java.lang.String) slot : null;
-                        seen.append(child.getClass().getSimpleName()).append('[').append(slotName).append("] ");
-                        boolean hide = slotName != null && MANAGED_SLOTS.contains(slotName);
-                        if (!hide && slotName == null) {
-                            java.lang.String name = child.getClass().getName().toLowerCase(java.util.Locale.ROOT);
-                            hide = name.contains("wifi") || name.contains("signal") || name.contains("mobile");
-                        }
-                        if (hide) {
-                            child.setVisibility(android.view.View.GONE);
-                        }
-                    }
-                    log(sModule, "status icons: " + seen);
-                } catch (java.lang.Throwable t) {
-                    log(sModule, "hide stock icons failed: " + t);
+        hideStockChildren(container, 0);
+        hideStockChildren(container, 4000);
+    }
+
+    /** One pass over every captured container, rate limited. */
+    static void hideAllStockNow() {
+        long now = android.os.SystemClock.elapsedRealtime();
+        if (now - sLastSlotPass < 500) {
+            return;
+        }
+        sLastSlotPass = now;
+        java.util.List<android.view.ViewGroup> containers = new java.util.ArrayList<>();
+        synchronized (STATUS_ICON_CONTAINERS) {
+            containers.addAll(STATUS_ICON_CONTAINERS.keySet());
+        }
+        for (int i = 0; i < containers.size(); i++) {
+            hideStockChildren(containers.get(i), 0);
+        }
+    }
+
+    /** Applies the current on/off state to the stock icons and asks for a re-layout. */
+    static void syncStockIcons() {
+        final boolean hide = io.github.yixing233.hyperduo.TrioConfig.get().enabled;
+        java.util.List<android.view.ViewGroup> containers = new java.util.ArrayList<>();
+        synchronized (STATUS_ICON_CONTAINERS) {
+            containers.addAll(STATUS_ICON_CONTAINERS.keySet());
+        }
+        for (int i = 0; i < containers.size(); i++) {
+            final android.view.ViewGroup container = containers.get(i);
+            container.post(new java.lang.Runnable() {
+                @Override
+                public void run() {
+                    applySlotVisibility(container, hide);
+                    container.requestLayout();
                 }
-            }
-        });
-        // Children can be attached after the first traversal; the second pass is
-        // still one-shot, it just runs late enough to see them.
+            });
+        }
+    }
+
+    private static void hideStockChildren(final android.view.ViewGroup container, long delay) {
         container.postDelayed(new java.lang.Runnable() {
             @Override
             public void run() {
-                try {
-                    for (int i = 0; i < container.getChildCount(); i++) {
-                        android.view.View child = container.getChildAt(i);
-                        java.lang.Object slot = callCached(SLOT_METHODS, child, "getSlot");
-                        java.lang.String slotName = (slot instanceof java.lang.String) ? (java.lang.String) slot : null;
-                        boolean hide = slotName != null && MANAGED_SLOTS.contains(slotName);
-                        if (!hide && slotName == null) {
-                            java.lang.String name = child.getClass().getName().toLowerCase(java.util.Locale.ROOT);
-                            hide = name.contains("wifi") || name.contains("signal") || name.contains("mobile");
-                        }
-                        if (hide) {
-                            child.setVisibility(android.view.View.GONE);
-                        }
-                    }
-                } catch (java.lang.Throwable ignored) {
+                if (!io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
+                    return;
+                }
+                applySlotVisibility(container, true);
+            }
+        }, delay);
+    }
+
+    /** The single place that writes visibility for the managed slots. */
+    private static void applySlotVisibility(android.view.ViewGroup container, boolean hide) {
+        try {
+            for (int i = 0; i < container.getChildCount(); i++) {
+                android.view.View child = container.getChildAt(i);
+                java.lang.Object slot = callCached(SLOT_METHODS, child, "getSlot");
+                java.lang.String slotName = (slot instanceof java.lang.String) ? (java.lang.String) slot : null;
+                if (slotName == null || !MANAGED_SLOTS.contains(slotName)) {
+                    continue;
+                }
+                int wanted = hide ? android.view.View.GONE : android.view.View.VISIBLE;
+                if (child.getVisibility() != wanted) {
+                    child.setVisibility(wanted);
                 }
             }
-        }, 4000);
+        } catch (java.lang.Throwable t) {
+            log(sModule, "slot visibility failed: " + t);
+        }
     }
+
 
     private static int hookIconContainer(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         java.lang.Class<?> container = io.github.yixing233.hyperduo.Refl.cls(ICON_CONTAINER, cl);
@@ -394,7 +421,10 @@ final class FlymeHooks {
                         io.github.yixing233.hyperduo.TrioState.noteSignalIcon(((android.view.View) self).getResources(), resId);
                     }
                     java.lang.Object visible = io.github.yixing233.hyperduo.Refl.callByName(self, "isIconVisible");
-                    io.github.yixing233.hyperduo.TrioState.setWifiPresent(java.lang.Boolean.TRUE.equals(visible));
+                    // The view itself is hidden below, so its visibility stops
+                    // answering this after the first pass. The state's resource id
+                    // does: zero means there is no Wi-Fi icon to show.
+                    io.github.yixing233.hyperduo.TrioState.setWifiPresent(resId != 0 || java.lang.Boolean.TRUE.equals(visible));
                     io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
                     // Flyme keeps the Wi-Fi icon outside the status icon
                     // container (it has its own view class), so it is hidden
@@ -422,6 +452,10 @@ final class FlymeHooks {
                     if (io.github.yixing233.hyperduo.TrioState.pollSimsNow()) {
                         io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
                     }
+                    // Flyme re-shows the mobile view on its own updates, so the
+                    // hide is re-applied here - one pass, driven by an icon
+                    // change rather than by layout.
+                    io.github.yixing233.hyperduo.FlymeHooks.hideAllStockNow();
                     return result;
                 }
             });
@@ -516,58 +550,6 @@ final class FlymeHooks {
         return "4G+";
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
-    /**
-     * Runs the slot pass outside the layout flow.
-     *
-     * <p>Hiding a child from inside onLayout re-entered layout and ANR'd the
-     * main thread, so the pass is queued instead: one task per container, and
-     * the visibility writes land between frames rather than during one.
-     */
-    static void scheduleSlots(final android.view.ViewGroup container) {
-        if (container == null || !isRegistered(container)) {
-            return;
-        }
-        synchronized (PENDING_SLOTS) {
-            if (!PENDING_SLOTS.add(container)) {
-                return;
-            }
-        }
-        container.post(new java.lang.Runnable() {
-            @Override
-            public void run() {
-                synchronized (PENDING_SLOTS) {
-                    PENDING_SLOTS.remove(container);
-                }
-                try {
-                    applySlots(container);
-                    updateWifiPresence(container);
-                } catch (java.lang.Throwable t) {
-                    log(sModule, "slot pass failed: " + t);
-                }
-            }
-        });
-    }
-
-    static void scheduleAllSlots() {
-        java.util.List<android.view.ViewGroup> containers = new java.util.ArrayList<>();
-        synchronized (STATUS_ICON_CONTAINERS) {
-            containers.addAll(STATUS_ICON_CONTAINERS.keySet());
-        }
-        for (int i = 0; i < containers.size(); i++) {
-            scheduleSlots(containers.get(i));
-        }
-    }
-
-    /** Rate limit for callers that fire on every icon update rather than on a change. */
-    static void scheduleSlotsThrottled() {
-        long now = android.os.SystemClock.elapsedRealtime();
-        if (now - sLastSlotPass < 500) {
-            return;
-        }
-        sLastSlotPass = now;
-        scheduleAllSlots();
-    }
 
     public static void applySlots(android.view.ViewGroup container) {
         java.util.List<java.lang.String> current;
