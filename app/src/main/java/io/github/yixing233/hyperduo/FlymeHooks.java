@@ -753,6 +753,46 @@ final class FlymeHooks {
         group.addView(ring, index < 0 ? 0 : index, ringLp);
         host.setVisibility(android.view.View.GONE);
         RINGS.put(host, ring);
+        hideBatteryExtras(host);
+        ring.postDelayed(new java.lang.Runnable() {
+            @Override
+            public void run() {
+                android.view.ViewParent p = ring.getParent();
+                if (!(p instanceof android.view.ViewGroup)) {
+                    return;
+                }
+                android.view.ViewGroup g = (android.view.ViewGroup) p;
+                java.lang.StringBuilder kids = new java.lang.StringBuilder();
+                for (int i = 0; i < g.getChildCount(); i++) {
+                    android.view.View c = g.getChildAt(i);
+                    kids.append(c.getClass().getSimpleName()).append('(').append(c.getWidth())
+                            .append(c.getVisibility() == android.view.View.GONE ? "G" : "")
+                            .append(") ");
+                }
+                log(sModule, "row parent=" + g.getClass().getSimpleName() + " pW=" + g.getWidth()
+                        + " ringL=" + ring.getLeft() + " ringR=" + ring.getRight()
+                        + " ringW=" + ring.getWidth() + " kids=" + kids);
+                int[] loc = new int[2];
+                ring.getLocationOnScreen(loc);
+                int[] ploc = new int[2];
+                g.getLocationOnScreen(ploc);
+                if (g.getChildCount() > 1 && g.getChildAt(1) instanceof android.view.ViewGroup) {
+                    android.view.ViewGroup icons = (android.view.ViewGroup) g.getChildAt(1);
+                    java.lang.StringBuilder ik = new java.lang.StringBuilder();
+                    for (int i = 0; i < icons.getChildCount(); i++) {
+                        android.view.View c = icons.getChildAt(i);
+                        java.lang.Object slot = callCached(SLOT_METHODS, c, "getSlot");
+                        ik.append(slot).append('/').append(c.getWidth())
+                                .append(c.getVisibility() == android.view.View.GONE ? "G" : "").append(' ');
+                    }
+                    log(sModule, "icons w=" + icons.getWidth() + " vis=" + icons.getVisibility()
+                            + " kids=" + ik);
+                }
+                log(sModule, "row screen pX=" + ploc[0] + " ringX=" + loc[0]
+                        + " ringEnd=" + (loc[0] + ring.getWidth()) + " ringY=" + loc[1]
+                        + " screenW=" + g.getResources().getDisplayMetrics().widthPixels);
+            }
+        }, 1500);
     }
 
     private static void removeRing(android.view.View host) {
@@ -765,6 +805,50 @@ final class FlymeHooks {
         }
         if (host.getVisibility() != android.view.View.VISIBLE) {
             host.setVisibility(android.view.View.VISIBLE);
+        }
+        restoreBatteryExtras(host);
+    }
+
+    /**
+     * Hides the rest of Flyme's battery cluster.
+     *
+     * <p>The percentage is not always inside the battery view: for two of the
+     * four stock styles it is a sibling of its own ({@code FlymeBatteryTextView}),
+     * and that is why the number showed next to the ring and why the row kept
+     * changing width. Everything in the cluster that is not the ring and not the
+     * battery host itself goes.
+     */
+    static void hideBatteryExtras(android.view.View host) {
+        android.view.ViewParent parent = host.getParent();
+        if (!(parent instanceof android.view.ViewGroup)) {
+            return;
+        }
+        android.view.ViewGroup group = (android.view.ViewGroup) parent;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            android.view.View child = group.getChildAt(i);
+            if (child == host || child instanceof io.github.yixing233.hyperduo.FlymeRingView) {
+                continue;
+            }
+            if (child.getClass().getName().contains("FlymeBatteryTextView")) {
+                if (child.getVisibility() != android.view.View.GONE) {
+                    child.setVisibility(android.view.View.GONE);
+                }
+            }
+        }
+    }
+
+    static void restoreBatteryExtras(android.view.View host) {
+        android.view.ViewParent parent = host.getParent();
+        if (!(parent instanceof android.view.ViewGroup)) {
+            return;
+        }
+        android.view.ViewGroup group = (android.view.ViewGroup) parent;
+        for (int i = 0; i < group.getChildCount(); i++) {
+            android.view.View child = group.getChildAt(i);
+            if (child.getClass().getName().contains("FlymeBatteryTextView")
+                    && child.getVisibility() == android.view.View.GONE) {
+                child.setVisibility(android.view.View.VISIBLE);
+            }
         }
     }
 
@@ -959,6 +1043,7 @@ final class FlymeHooks {
         for (int i = 0; i < hosts.size(); i++) {
             android.view.View host = hosts.get(i);
             if (host != null) {
+                io.github.yixing233.hyperduo.FlymeHooks.hideBatteryExtras(host);
                 host.postInvalidate();
                 // The host is hidden while the ring stands in for it, so the ring
                 // is what actually has to repaint.
