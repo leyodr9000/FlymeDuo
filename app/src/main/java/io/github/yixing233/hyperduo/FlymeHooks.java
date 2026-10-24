@@ -106,6 +106,12 @@ final class FlymeHooks {
                     @Override // java.lang.Runnable
                     public void run() {
                         io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
+                        // Flyme sizes this view from mDrawable + mClipWidth, and the
+                        // measure hook hands it the normal drawable while the ring
+                        // is on. Without a layout pass the view keeps that width
+                        // after the switch turns the ring off - the bolt then sits
+                        // over the outline and "100" is clipped to "1".
+                        host.requestLayout();
                         host.invalidate();
                     }
                 });
@@ -152,6 +158,13 @@ final class FlymeHooks {
             public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
                 java.lang.Object self = chain.getThisObject();
                 if (!(self instanceof android.view.View) || !io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
+                    return chain.proceed();
+                }
+                // The control centre keeps the stock battery, so it must also keep
+                // the stock measurement: forcing the normal drawable here made it
+                // measure like a non-charging battery while it still drew the
+                // bolt, which is what pushed the icon left.
+                if (io.github.yixing233.hyperduo.FlymeHooks.inControlCenter((android.view.View) self)) {
                     return chain.proceed();
                 }
                 java.lang.Object currentDrawable = io.github.yixing233.hyperduo.Refl.get(io.github.yixing233.hyperduo.FlymeHooks.sBatteryDrawableField, self);
@@ -710,10 +723,20 @@ final class FlymeHooks {
             return;
         }
         android.view.View percent = (android.view.View) value;
-        if (io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
-            hideChild(percent);
-        } else {
-            restoreChild(percent);
+        // The control centre keeps Flyme's own battery, percentage included.
+        if (inControlCenter(host)) {
+            if (percent.getAlpha() != 1f) {
+                percent.setAlpha(1f);
+            }
+            return;
+        }
+        // Alpha, not visibility. Flyme measures the percentage view and pads it
+        // from its own animation state; taking it out of the layout leaves the
+        // stock battery with a stale width, which is what clipped "100" down to
+        // "1" and pushed the bolt over the battery outline.
+        float wanted = io.github.yixing233.hyperduo.TrioConfig.get().enabled ? 0f : 1f;
+        if (percent.getAlpha() != wanted) {
+            percent.setAlpha(wanted);
         }
     }
 
