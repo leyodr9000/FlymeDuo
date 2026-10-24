@@ -507,6 +507,17 @@ final class FlymeHooks {
                     if (io.github.yixing233.hyperduo.TrioState.setMobileType(type)) {
                         io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
                     }
+                    // This is Flyme's own "5G" label. The ring draws the type
+                    // itself, so the stock one is hidden whenever the module is on
+                    // - otherwise the setting for it has nothing to act on.
+                    android.view.View typeView = (android.view.View) target;
+                    if (io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
+                        if (typeView.getVisibility() != android.view.View.GONE) {
+                            typeView.setVisibility(android.view.View.GONE);
+                        }
+                    } else if (typeView.getVisibility() == android.view.View.GONE) {
+                        typeView.setVisibility(android.view.View.VISIBLE);
+                    }
                 }
                 return result;
             }
