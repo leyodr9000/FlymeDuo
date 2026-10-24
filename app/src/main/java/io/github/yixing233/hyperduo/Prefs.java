@@ -1678,9 +1678,9 @@ public final class Prefs {
     public static final int MIN_CLOCK_WEIGHT = 100;
     public static final int MAX_CLOCK_WEIGHT = 900;
     public static final int MIN_TYPE_SIZE = 16;
-    public static final int MAX_TYPE_SIZE = 44;
+    public static final int MAX_TYPE_SIZE = 56;
     /** The network type's ceiling in the CAPSULE; see {@link #MAX_CAPSULE_VALUE_SIZE}. */
-    public static final int MAX_CAPSULE_TYPE_SIZE = 50;
+    public static final int MAX_CAPSULE_TYPE_SIZE = 62;
     public static final int MIN_OUT_TYPE_SIZE = 16;
     /**
      * Higher than {@link #MAX_TYPE_SIZE} on purpose: the out-of-ring label sits
@@ -1704,7 +1704,7 @@ public final class Prefs {
      * a span that keeps the label inside the row.
      */
     public static final int MIN_OUT_TYPE_SIZE_DP = 8;
-    public static final int MAX_OUT_TYPE_SIZE_DP = 26;
+    public static final int MAX_OUT_TYPE_SIZE_DP = 44;
     /**
      * The physical span the slider offers, in density pixels: 6dp (18px at
      * density 3) is where the four bars stop being distinguishable, and 20dp
