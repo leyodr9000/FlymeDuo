@@ -207,6 +207,13 @@ final class TrioState {
     private static Field fIntensity;
     private static boolean fieldsReady;
 
+    // Flyme's battery view keeps the level in a private field the adapter only
+    // learns about through onBatteryLevelChanged, so the last reported value is
+    // kept here as a fallback for hosts whose own field reads -1.
+    private static volatile int sFlymeBatteryLevel = -1;
+    private static volatile boolean sFlymeCharging;
+    private static volatile boolean sFlymePluggedIn;
+
     final View host;
 
     // Battery state of this host.
@@ -270,11 +277,60 @@ final class TrioState {
         fieldsReady = fLevel != null;
     }
 
+    /** Flyme's battery view reports its state through a callback, not a field. */
+    static void noteFlymeBatteryState(int level, boolean pluggedIn, boolean charging) {
+        if (level >= 0 && level <= 100) {
+            sFlymeBatteryLevel = level;
+        }
+        sFlymePluggedIn = pluggedIn;
+        sFlymeCharging = charging;
+    }
+
+    private static boolean isFlymeBatteryView(View host) {
+        return host != null
+                && "com.flyme.statusbar.battery.FlymeBatteryMeterView".equals(host.getClass().getName());
+    }
+
+    private static int systemBatteryLevel(View host) {
+        try {
+            android.os.BatteryManager battery =
+                    (android.os.BatteryManager) host.getContext().getSystemService("batterymanager");
+            if (battery == null) {
+                return -1;
+            }
+            int level = battery.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY);
+            return (level < 0 || level > 100) ? -1 : level;
+        } catch (Throwable t) {
+            return -1;
+        }
+    }
+
+    private static boolean systemIsCharging(View host) {
+        try {
+            android.os.BatteryManager battery =
+                    (android.os.BatteryManager) host.getContext().getSystemService("batterymanager");
+            return battery != null && battery.isCharging();
+        } catch (Throwable t) {
+            return false;
+        }
+    }
+
     /** Re-reads every status value from the host. Cheap enough to call in onDraw. */
     void refresh() {
         ensureFields(host.getClass());
         level = Refl.getInt(fLevel, host, level);
+        if (isFlymeBatteryView(host) && sFlymeBatteryLevel >= 0) {
+            level = sFlymeBatteryLevel;
+        }
+        if (level < 0) {
+            level = systemBatteryLevel(host);
+        }
         charging = Refl.getBool(fCharging, host, charging);
+        if (!charging && isFlymeBatteryView(host)) {
+            // Flyme's view exposes charging as a drawable swap rather than a
+            // field, so trust the reported state and the system as well.
+            charging = sFlymeCharging || (sFlymePluggedIn && level < 100) || systemIsCharging(host);
+        }
         quickCharging = Refl.getBool(fQuick, host, quickCharging);
         low = Refl.getBool(fLow, host, low);
         powerSave = Refl.getBool(fPowerSave, host, powerSave);

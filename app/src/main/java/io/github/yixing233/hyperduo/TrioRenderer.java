@@ -267,6 +267,20 @@ final class TrioRenderer {
     }
 
     /**
+     * The same frame for a host that paints its own content underneath - Flyme's
+     * battery view draws the stock meter first and lets this run on top, so the
+     * canvas must not be cleared.
+     */
+    static void drawFlyme(Canvas canvas, View host, TrioState s, TrioSettings cfg) {
+        if (s == null || cfg == null) {
+            return;
+        }
+        drawInto(canvas, host.getWidth(), host.getHeight(), s.level, s.charging, s.quickCharging,
+                s.powerSave, s.low, s.wifiPresent ? s.wifiLevel : -1, s.mobileLevel,
+                s.slotLevels, s.mobileType, s.foreground(), cfg, false, s.wifiPresent);
+    }
+
+    /**
      * The same frame for a caller that has a canvas of its own instead of a host
      * view to measure - {@code GlyphDrawable} hands the icon view's own bounds
      * through, and the slot it paints into can be asked for nothing else.

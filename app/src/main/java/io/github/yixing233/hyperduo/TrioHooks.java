@@ -370,12 +370,28 @@ final class TrioHooks {
         // Read the user's settings before anything is hooked: the very first hook
         // callback already needs to know whether the module is switched on.
         TrioConfig.install(module);
+        final boolean flyme = FlymeHooks.isFlyme(cl);
         TrioConfig.addListener(new TrioConfig.Listener() {
             @Override
             public void onConfigChanged() {
-                applyConfigChange();
+                if (flyme) {
+                    FlymeHooks.onConfigChanged();
+                } else {
+                    applyConfigChange();
+                }
             }
         });
+        if (flyme) {
+            // Flyme's SystemUI shares almost nothing with MIUI's: the whole Miui*
+            // chain is absent, and the battery, Wi-Fi and icon container live in
+            // its own classes. Installing the MIUI hooks there yields three
+            // generic hits that draw into containers nobody owns, so the adapter
+            // replaces them outright.
+            int hooked = FlymeHooks.install(module, cl);
+            log(module, "HyperDuo installed, flyme adapter, hooks=" + hooked
+                    + " enabled=" + TrioConfig.get().enabled);
+            return;
+        }
         int hooked = 0;
         hooked += group(module, cl, 1);
         hooked += group(module, cl, 2);
