@@ -47,6 +47,28 @@ final class FlymeHooks {
     private FlymeHooks() {
     }
 
+    private static volatile java.lang.reflect.Method sSetMeasuredDimension;
+
+    /**
+     * {@code View.setMeasuredDimension} is protected, and this is not the view's
+     * own class - the one reflection call on the measure path, cached like the
+     * layout-path lookups above.
+     */
+    private static void setMeasuredSize(android.view.View host, int w, int h) {
+        try {
+            java.lang.reflect.Method m = sSetMeasuredDimension;
+            if (m == null) {
+                m = android.view.View.class.getDeclaredMethod("setMeasuredDimension",
+                        java.lang.Integer.TYPE, java.lang.Integer.TYPE);
+                m.setAccessible(true);
+                sSetMeasuredDimension = m;
+            }
+            m.invoke(host, w, h);
+        } catch (java.lang.Throwable t) {
+            log(sModule, "measured size override failed: " + t);
+        }
+    }
+
     private static java.lang.Object callCached(java.util.Map<java.lang.Class<?>, java.lang.reflect.Method> cache, java.lang.Object target, java.lang.String name) {
         if (target == null) {
             return null;
@@ -90,7 +112,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.30";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.31";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -200,12 +222,34 @@ final class FlymeHooks {
                 int clipWidth = io.github.yixing233.hyperduo.Refl.getInt(io.github.yixing233.hyperduo.FlymeHooks.sBatteryClipWidthField, self, 0);
                 io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryDrawableField, self, stableDrawable);
                 io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryClipWidthField, self, 0);
+                java.lang.Object drawn;
                 try {
-                    return chain.proceed();
+                    drawn = chain.proceed();
                 } finally {
                     io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryDrawableField, self, currentDrawable);
                     io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryClipWidthField, self, java.lang.Integer.valueOf(clipWidth));
                 }
+                // The scale the ring actually renders at. The stock measure above
+                // locks this view to the battery drawable's intrinsic box - a box
+                // built for a ~10dp icon - so the 120-unit design space collapsed
+                // into it and the whole glyph starved. The row is far taller than
+                // that: the height spec the parent handed in IS the row height.
+                // Measure a SQUARE of it (times the glyph-scale slider, which on
+                // Flyme therefore means "share of the status bar row", 100% = full
+                // height) and the renderer's uniform min(w,h) fit fills it. The
+                // icons container beside it carries weight=1 and absorbs the width.
+                android.view.View host = (android.view.View) self;
+                int heightSpec = ((java.lang.Number) chain.getArg(1)).intValue();
+                int specMode = android.view.View.MeasureSpec.getMode(heightSpec);
+                int specSize = android.view.View.MeasureSpec.getSize(heightSpec);
+                int rowHeight = (specMode == android.view.View.MeasureSpec.UNSPECIFIED)
+                        ? host.getMeasuredHeight() : specSize;
+                int side = java.lang.Math.round(rowHeight
+                        * io.github.yixing233.hyperduo.TrioConfig.appearance().glyphFit());
+                if (side > 0) {
+                    setMeasuredSize(host, side, side);
+                }
+                return drawn;
             }
         });
         // "Percentage only" is the one stock style that hides the whole view when
