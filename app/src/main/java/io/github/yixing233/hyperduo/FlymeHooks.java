@@ -48,6 +48,22 @@ final class FlymeHooks {
     }
 
     private static volatile java.lang.reflect.Method sSetMeasuredDimension;
+    /** The system status bar height, resolved once - the one size for every surface. */
+    private static volatile int sStatusBarHeight;
+
+    private static int statusBarHeight(android.view.View host) {
+        int v = sStatusBarHeight;
+        if (v <= 0) {
+            int id = host.getResources().getIdentifier("status_bar_height", "dimen", "android");
+            v = id != 0 ? host.getResources().getDimensionPixelSize(id) : 0;
+            if (v <= 0) {
+                v = host.getHeight();
+            }
+            sStatusBarHeight = v;
+        }
+        return v;
+    }
+
     /** One box line per battery host, so a wrong size is quotable from the log. */
     private static final java.util.Set<android.view.View> MEASURE_LOG = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<android.view.View, java.lang.Boolean>());
 
@@ -114,7 +130,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.34";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.35";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -241,30 +257,44 @@ final class FlymeHooks {
                 // height) and the renderer's uniform min(w,h) fit fills it. The
                 // icons container beside it carries weight=1 and absorbs the width.
                 android.view.View host = (android.view.View) self;
-                // The row this view actually lives in. The height spec alone does
-                // not answer on every surface - the plain status bar hands its row
-                // down in a shape the spec read misses, which is why 1.7.5-flyme.31
-                // scaled the control centre and the notification header but not the
-                // bar. By the time a child is measured the parent has just set its
-                // own size, and system_icons is match_parent on all three surfaces:
-                // its measured height IS the height the row reserved for the
-                // battery.
-                int rowHeight = 0;
+                // One size on every surface: the status bar's own height, not
+                // whatever each surface's local row happens to reserve. The plain
+                // bar's row is only ~65px - a fraction of the 140px window - so
+                // sizing by the local row left "100%" there at the stock size
+                // while the control centre's tall row ballooned the same slider.
+                int barHeight = statusBarHeight(host);
+                int localRow = 0;
                 android.view.ViewParent row = host.getParent();
                 if (row instanceof android.view.View) {
-                    rowHeight = ((android.view.View) row).getMeasuredHeight();
+                    localRow = ((android.view.View) row).getMeasuredHeight();
                 }
-                if (rowHeight <= 0) {
-                    int heightSpec = ((java.lang.Number) chain.getArg(1)).intValue();
-                    rowHeight = android.view.View.MeasureSpec.getSize(heightSpec);
+                if (barHeight <= 0 && localRow > 0) {
+                    barHeight = localRow;
                 }
-                int side = java.lang.Math.round(rowHeight
+                int side = java.lang.Math.round(barHeight
                         * io.github.yixing233.hyperduo.TrioConfig.appearance().glyphFit());
                 if (side > 0 && side < 10000) {
                     setMeasuredSize(host, side, side);
+                    if (side > localRow) {
+                        // The bar's row cannot hold the box; the window above it
+                        // can. Overdrawing past a view's bounds is clipped by
+                        // every ancestor by default, so let the chain up to an
+                        // ancestor tall enough to hold the box show the overflow.
+                        android.view.ViewParent p = host.getParent();
+                        for (int depth = 0; depth < 6 && p instanceof android.view.View; depth++) {
+                            android.view.View v = (android.view.View) p;
+                            if (v instanceof android.view.ViewGroup) {
+                                ((android.view.ViewGroup) v).setClipChildren(false);
+                            }
+                            if (v.getHeight() >= side) {
+                                break;
+                            }
+                            p = v.getParent();
+                        }
+                    }
                     if (MEASURE_LOG.add(host)) {
                         log(sModule, "battery box " + host.getClass().getSimpleName()
-                                + " row=" + rowHeight + " side=" + side
+                                + " bar=" + barHeight + " row=" + localRow + " side=" + side
                                 + " region=" + regionName(regionOf(host))
                                 + " excluded=" + excludedRegion(host));
                     }
