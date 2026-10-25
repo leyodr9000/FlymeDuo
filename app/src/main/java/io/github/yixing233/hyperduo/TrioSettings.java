@@ -261,7 +261,7 @@ public final class TrioSettings {
      * view away entirely, and turning either on brings back the same view with
      * only the requested segment drawn.
      */
-    public boolean perfTemp;
+    public boolean perfTemp;
     /** Drops the temperature unless charging; see {@link Prefs#KEY_PERF_TEMP_CHARGING_ONLY}. */
     public boolean perfTempChargingOnly;
 
@@ -923,6 +923,7 @@ public final class TrioSettings {
         }
         switch (key) {
             case Prefs.KEY_ENABLED: enabled = src.enabled; return true;
+            case Prefs.KEY_EXCLUDE_REGIONS: excludeRegions = src.excludeRegions; return true;
             case Prefs.KEY_SHOW_WIFI: showWifi = src.showWifi; return true;
             case Prefs.KEY_SHOW_MOBILE: showMobile = src.showMobile; return true;
             case Prefs.KEY_SHOW_VALUE: showValue = src.showValue; return true;
@@ -1002,6 +1003,12 @@ public final class TrioSettings {
             return defaults();
         }
         s.enabled = bundle.getBoolean(Prefs.KEY_ENABLED, Prefs.DEF_ENABLED);
+        // The scope switch travels with the snapshot like every other setting. It
+        // was missing here while the settings screen already wrote it, which made
+        // the row look live and change nothing until the next reboot.
+        s.excludeRegions = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_EXCLUDE_REGIONS, Prefs.DEF_EXCLUDE_REGIONS),
+                0, Prefs.MAX_EXCLUDE_REGIONS);
         // The style first, for the same reason as the stored read: the component switches below
         // are per arrangement.
         s.navStyle = Prefs.normalizeNavStyle(bundle.getInt(Prefs.KEY_NAV_STYLE, Prefs.DEF_NAV_STYLE));
@@ -1172,6 +1179,7 @@ public final class TrioSettings {
         b.putInt(Prefs.KEY_TRIO_STYLE, Prefs.normalizeTrioStyle(trioStyle));
         final int style = Prefs.normalizeTrioStyle(trioStyle);
         b.putBoolean(Prefs.KEY_ENABLED, enabled);
+        b.putInt(Prefs.KEY_EXCLUDE_REGIONS, excludeRegions);
         b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_WIFI, style), showWifi);
         b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_MOBILE, style), showMobile);
         b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_VALUE, style), showValue);
@@ -1240,7 +1248,7 @@ public final class TrioSettings {
      * {@code TrioConfig}, which must not notify the listeners (and re-fold every
      * container) when the delayed read saw the same values the first one did -
      * but a full comparison is also what a snapshot type ought to answer.
-     */
+     */
     /**
      * Normalises a stored font path to a non-null string.
      *
@@ -1263,6 +1271,11 @@ public final class TrioSettings {
         }
         final TrioSettings s = (TrioSettings) o;
         return enabled == s.enabled
+                // The scope switch decides per region whether the stock battery is
+                // left alone. Left out, the settings row could write it and never
+                // see its own value come back, because the screen holds the
+                // snapshot in a mutableStateOf compared with this method.
+                && excludeRegions == s.excludeRegions
                 && showWifi == s.showWifi
                 && showMobile == s.showMobile
                 && showValue == s.showValue
@@ -1372,6 +1385,7 @@ public final class TrioSettings {
         h = h * 31 + capsuleLeftDy;
         h = h * 31 + capsuleRightDx;
         h = h * 31 + capsuleRightDy;
+        h = h * 31 + excludeRegions;
         return h != 0 ? h : 1;
     }
 }

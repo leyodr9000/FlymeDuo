@@ -38,10 +38,7 @@ final class FlymeHooks {
     // ANR. The re-entry flag keeps a setVisibility() that schedules another
     // layout pass from nesting inside this one.
     private static final java.util.Map<java.lang.Class<?>, java.lang.reflect.Method> SLOT_METHODS = new java.util.concurrent.ConcurrentHashMap<>();
-    private static final java.util.Map<java.lang.Class<?>, java.lang.reflect.Method> VISIBLE_METHODS = new java.util.concurrent.ConcurrentHashMap<>();
     private static final java.util.Set<java.lang.Class<?>> NO_METHOD = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<java.lang.Class<?>, java.lang.Boolean>());
-    private static final java.util.Set<android.view.ViewGroup> PENDING_SLOTS = java.util.Collections.newSetFromMap(new java.util.WeakHashMap<android.view.ViewGroup, java.lang.Boolean>());
-    private static volatile boolean sInApply;
     private static volatile long sLastSlotPass;
 
     private FlymeHooks() {
@@ -86,15 +83,17 @@ final class FlymeHooks {
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
         sActive = true;
-        int count = 0 + hookBatteryView(module, cl);
+        int count = hookBatteryView(module, cl);
         return count + hookStatusBarCapture(module, cl) + hookControlCenterCapture(module, cl) + hookKeyguardStatusBarCapture(module, cl) + hookIconContainer(module, cl) + hookWifiState(module, cl) + hookMobileSignal(module, cl) + hookMobileTypeIcon(module, cl);
     }
 
     static void onConfigChanged() {
-        // The master switch decides what the stock icons should look like: hide
-        // them while the ring takes over, put them back and re-run layout when it
-        // does not, so a restore never leaves the row squeezed together.
+        // The master switch decides what the stock cluster should look like: take
+        // the percentage text out while the ring draws into the battery view, put
+        // it back when it does not. No view is inserted, so nothing here changes
+        // the row's geometry - that was the whole left-shift defect.
         syncStockIcons();
+        final boolean enabled = io.github.yixing233.hyperduo.TrioConfig.get().enabled;
         java.util.List<android.view.View> hosts = new java.util.ArrayList<>();
         synchronized (STATES) {
             hosts.addAll(STATES.keySet());
@@ -105,11 +104,13 @@ final class FlymeHooks {
                 host.post(new java.lang.Runnable() { // from class: io.github.yixing233.hyperduo.FlymeHooks.2
                     @Override // java.lang.Runnable
                     public void run() {
-                        io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
-                        if (io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
-                            io.github.yixing233.hyperduo.FlymeHooks.requestRing(host);
+                        if (enabled && !io.github.yixing233.hyperduo.FlymeHooks.excludedRegion(host)) {
+                            io.github.yixing233.hyperduo.FlymeHooks.hideBatteryExtras(host);
+                            io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
+                            io.github.yixing233.hyperduo.FlymeHooks.ensureHostVisible(host);
                         } else {
-                            io.github.yixing233.hyperduo.FlymeHooks.requestRingRemoval(host);
+                            io.github.yixing233.hyperduo.FlymeHooks.restoreBatteryExtras(host);
+                            io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
                         }
                         host.requestLayout();
                         host.invalidate();
@@ -140,8 +141,8 @@ final class FlymeHooks {
                 io.github.yixing233.hyperduo.TrioConfig.installReceiver(host.getContext());
                 io.github.yixing233.hyperduo.TrioState.attachContext(host.getContext());
                 if (!io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
+                    io.github.yixing233.hyperduo.FlymeHooks.restoreBatteryExtras(host);
                     io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
-                    io.github.yixing233.hyperduo.FlymeHooks.requestRingRemoval(host);
                     return chain.proceed();
                 }
                 // A region the user excluded keeps Flyme's own battery, stock look and all.
@@ -154,7 +155,6 @@ final class FlymeHooks {
                 // together those two are what make the drawing independent of the
                 // four stock styles without adding a view of our own.
                 io.github.yixing233.hyperduo.FlymeHooks.hideBatteryExtras(host);
-                io.github.yixing233.hyperduo.FlymeHooks.requestRingRemoval(host);
                 io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
                 io.github.yixing233.hyperduo.TrioState state =
                         io.github.yixing233.hyperduo.FlymeHooks.stateFor(host);
@@ -192,6 +192,23 @@ final class FlymeHooks {
                     io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryDrawableField, self, currentDrawable);
                     io.github.yixing233.hyperduo.Refl.set(io.github.yixing233.hyperduo.FlymeHooks.sBatteryClipWidthField, self, java.lang.Integer.valueOf(clipWidth));
                 }
+            }
+        });
+        // "Percentage only" is the one stock style that hides the whole view when
+        // the cable is out (FlymeBatteryMeterView.apply -> setVisibility(8)). A GONE
+        // view is not drawn, so the ring could not paint at all - and in that style
+        // the number lives in the sibling text view, which hideBatteryExtras takes
+        // out, so the cluster went blank. Coercing the host back to VISIBLE after
+        // Flyme's own decision keeps it drawn; nothing is coerced while the module
+        // is off or the region is excluded.
+        int apply = hook(module, io.github.yixing233.hyperduo.Refl.method(viewClass, "apply", java.lang.Boolean.TYPE), "hyperduo-flyme-apply", new io.github.libxposed.api.XposedInterface.Hooker() {
+            public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
+                java.lang.Object result = chain.proceed();
+                java.lang.Object self = chain.getThisObject();
+                if (self instanceof android.view.View) {
+                    io.github.yixing233.hyperduo.FlymeHooks.ensureHostVisible((android.view.View) self);
+                }
+                return result;
             }
         });
         int levelChanged = hook(module, io.github.yixing233.hyperduo.Refl.method(viewClass, "onBatteryLevelChanged", java.lang.Integer.TYPE, java.lang.Boolean.TYPE, java.lang.Boolean.TYPE), "hyperduo-flyme-battery-level", new io.github.libxposed.api.XposedInterface.Hooker() { // from class: io.github.yixing233.hyperduo.FlymeHooks.5
@@ -244,7 +261,7 @@ final class FlymeHooks {
                 return result;
             }
         });
-        return draw + measure + levelChanged + dark + detached;
+        return draw + measure + apply + levelChanged + dark + detached;
     }
 
     private static int hookStatusBarCapture(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
@@ -409,34 +426,81 @@ final class FlymeHooks {
      * actually frees the gap, and removing it is what restores the row without
      * squeezing.
      */
+    /**
+     * Hides the managed slots the ring actually stands in for - or puts them back.
+     *
+     * <p>{@code setVisibility(GONE)} alone leaves the space behind: Flyme's
+     * container lays its slots out from {@code mIgnoredSlots}, and a slot that is
+     * merely invisible still gets its width. Adding the slot to that list is what
+     * actually frees the gap.
+     *
+     * <p>Both the list entry and the view belong to somebody. This pass therefore
+     * only touches a slot when the glyph is drawing it ({@code appearance.wifi} /
+     * {@code signalDots()}), records every entry it added, and remembers the
+     * visibility it overrode, so releasing the switch never removes an entry the
+     * ROM put there and never un-hides an icon the ROM had hidden.
+     */
     @SuppressWarnings("unchecked")
     private static void applySlotVisibility(android.view.ViewGroup container, boolean hide) {
         try {
             java.lang.Object raw = io.github.yixing233.hyperduo.Refl.get(sIgnoredSlotsField, container);
-            java.util.List<java.lang.String> ignored = (raw instanceof java.util.List)
+            final java.util.List<java.lang.String> ignored = (raw instanceof java.util.List)
                     ? (java.util.List<java.lang.String>) raw : null;
+            final io.github.yixing233.hyperduo.TrioAppearance a =
+                    io.github.yixing233.hyperduo.TrioConfig.appearance();
+            final java.util.List<java.lang.String> wanted = new java.util.ArrayList<>(3);
+            if (hide && a.glyph) {
+                if (a.wifi) {
+                    wanted.add("wifi");
+                }
+                // Out of the ring the reading is handed back to the platform, so
+                // the native slot keeps its icon and only the ring's own copy of
+                // the dots is suppressed.
+                if (a.signalDots() && !a.typeOutOfRing) {
+                    wanted.add("mobile");
+                    wanted.add("stacked_mobile");
+                }
+            }
+            final java.util.List<java.lang.String> added;
+            synchronized (ADDED_SLOTS) {
+                java.util.List<java.lang.String> current = ADDED_SLOTS.get(container);
+                if (current == null) {
+                    current = new java.util.ArrayList<>();
+                    ADDED_SLOTS.put(container, current);
+                }
+                added = current;
+            }
             boolean changed = false;
+            for (int i = 0; i < wanted.size(); i++) {
+                java.lang.String slot = wanted.get(i);
+                if (ignored != null && !ignored.contains(slot)) {
+                    ignored.add(slot);
+                    synchronized (added) {
+                        added.add(slot);
+                    }
+                    changed = true;
+                }
+            }
+            for (int i = added.size() - 1; i >= 0; i--) {
+                java.lang.String slot = added.get(i);
+                if (!wanted.contains(slot)) {
+                    if (ignored != null) {
+                        ignored.remove(slot);
+                    }
+                    added.remove(i);
+                    changed = true;
+                }
+            }
             for (int i = 0; i < container.getChildCount(); i++) {
                 android.view.View child = container.getChildAt(i);
-                java.lang.Object slot = callCached(SLOT_METHODS, child, "getSlot");
-                java.lang.String slotName = (slot instanceof java.lang.String) ? (java.lang.String) slot : null;
+                java.lang.String slotName = slotOf(child);
                 if (slotName == null || !MANAGED_SLOTS.contains(slotName)) {
                     continue;
                 }
-                int wanted = hide ? android.view.View.GONE : android.view.View.VISIBLE;
-                if (child.getVisibility() != wanted) {
-                    child.setVisibility(wanted);
-                    changed = true;
-                }
-                if (ignored != null) {
-                    if (hide) {
-                        if (!ignored.contains(slotName)) {
-                            ignored.add(slotName);
-                            changed = true;
-                        }
-                    } else if (ignored.remove(slotName)) {
-                        changed = true;
-                    }
+                if (wanted.contains(slotName)) {
+                    hideChild(child);
+                } else {
+                    restoreChild(child);
                 }
             }
             if (changed) {
@@ -607,84 +671,6 @@ final class FlymeHooks {
     }
 
 
-    public static void applySlots(android.view.ViewGroup container) {
-        java.util.List<java.lang.String> current;
-        if (!isRegistered(container)) {
-            return;
-        }
-        io.github.yixing233.hyperduo.TrioAppearance appearance = io.github.yixing233.hyperduo.TrioConfig.appearance();
-        boolean enabled = appearance.glyph;
-        java.util.List<java.lang.String> wanted = new java.util.ArrayList<>(2);
-        if (enabled && appearance.wifi) {
-            wanted.add("wifi");
-        }
-        if (enabled && appearance.signalDots() && !appearance.typeOutOfRing) {
-            wanted.add("mobile");
-            wanted.add("stacked_mobile");
-        }
-        java.util.List<java.lang.String> ignored = ignoredSlots(container);
-        synchronized (ADDED_SLOTS) {
-            current = ADDED_SLOTS.get(container);
-            if (current == null) {
-                current = new java.util.ArrayList();
-                ADDED_SLOTS.put(container, current);
-            }
-        }
-        boolean slotsChanged = false;
-        for (int i = 0; i < wanted.size(); i++) {
-            java.lang.String slot = wanted.get(i);
-            if (ignored != null && !ignored.contains(slot)) {
-                ignored.add(slot);
-                if (!current.contains(slot)) {
-                    current.add(slot);
-                }
-                slotsChanged = true;
-            }
-        }
-        int i2 = current.size();
-        for (int i3 = i2 - 1; i3 >= 0; i3--) {
-            java.lang.String slot2 = current.get(i3);
-            if (!wanted.contains(slot2)) {
-                if (ignored != null) {
-                    ignored.remove(slot2);
-                }
-                current.remove(i3);
-                slotsChanged = true;
-            }
-        }
-        int count = container.getChildCount();
-        for (int i4 = 0; i4 < count; i4++) {
-            android.view.View child = container.getChildAt(i4);
-            java.lang.String slot3 = slotOf(child);
-            if (slot3 != null && MANAGED_SLOTS.contains(slot3)) {
-                if (wanted.contains(slot3)) {
-                    hideChild(child);
-                } else {
-                    restoreChild(child);
-                }
-            }
-        }
-        if (slotsChanged) {
-            container.requestLayout();
-        }
-    }
-
-    /* JADX INFO: Access modifiers changed from: private */
-    public static boolean isRegistered(android.view.ViewGroup container) {
-        boolean containsKey;
-        synchronized (STATUS_ICON_CONTAINERS) {
-            containsKey = STATUS_ICON_CONTAINERS.containsKey(container);
-        }
-        return containsKey;
-    }
-
-    private static java.util.List<java.lang.String> ignoredSlots(java.lang.Object container) {
-        java.lang.Object value = io.github.yixing233.hyperduo.Refl.get(sIgnoredSlotsField, container);
-        if (value instanceof java.util.List) {
-            return (java.util.List) value;
-        }
-        return null;
-    }
 
     private static void hideChild(android.view.View child) {
         if (!SAVED_VISIBILITY.containsKey(child)) {
@@ -702,151 +688,18 @@ final class FlymeHooks {
         }
     }
 
-    /** Cached because it walks the parent chain, and onDraw runs every frame. */
-    private static final java.util.Map<android.view.View, java.lang.Boolean> QS_HOSTS =
-            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<android.view.View, java.lang.Boolean>());
-
-    /** Battery host -> the ring view standing in for it. */
-    private static final java.util.Map<android.view.View, io.github.yixing233.hyperduo.FlymeRingView> RINGS =
-            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<android.view.View, io.github.yixing233.hyperduo.FlymeRingView>());
-
-    private static final java.util.Set<android.view.View> RING_PENDING =
-            java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<android.view.View, java.lang.Boolean>());
-
-    /** Queues the swap to a ring view; safe to call from onDraw. */
-    static void requestRing(final android.view.View host) {
-        if (RINGS.containsKey(host) || !RING_PENDING.add(host)) {
-            return;
-        }
-        host.post(new java.lang.Runnable() {
-            @Override
-            public void run() {
-                RING_PENDING.remove(host);
-                try {
-                    installRing(host);
-                } catch (java.lang.Throwable t) {
-                    log(sModule, "ring install failed: " + t);
-                }
-            }
-        });
-    }
-
-    /** Queues the reverse swap; safe to call from onDraw. */
-    static void requestRingRemoval(final android.view.View host) {
-        if (!RINGS.containsKey(host) || !RING_PENDING.add(host)) {
-            return;
-        }
-        host.post(new java.lang.Runnable() {
-            @Override
-            public void run() {
-                RING_PENDING.remove(host);
-                try {
-                    removeRing(host);
-                } catch (java.lang.Throwable t) {
-                    log(sModule, "ring removal failed: " + t);
-                }
-            }
-        });
-    }
-
-    private static void installRing(android.view.View host) {
-        if (RINGS.containsKey(host)) {
-            return;
-        }
-        android.view.ViewParent parent = host.getParent();
-        if (!(parent instanceof android.view.ViewGroup)) {
-            return;
-        }
-        android.view.ViewGroup group = (android.view.ViewGroup) parent;
-        int index = group.indexOfChild(host);
-        int[] size = ringSizePx(host);
-        android.view.ViewGroup.LayoutParams lp = host.getLayoutParams();
-        android.view.ViewGroup.LayoutParams ringLp;
-        if (lp instanceof android.widget.LinearLayout.LayoutParams) {
-            ringLp = new android.widget.LinearLayout.LayoutParams(size[0], size[1]);
-            android.widget.LinearLayout.LayoutParams src = (android.widget.LinearLayout.LayoutParams) lp;
-            ((android.widget.LinearLayout.LayoutParams) ringLp).gravity = src.gravity;
-            ringLp.width = size[0];
-            ringLp.height = size[1];
-        } else if (lp instanceof android.view.ViewGroup.MarginLayoutParams) {
-            android.view.ViewGroup.MarginLayoutParams src = (android.view.ViewGroup.MarginLayoutParams) lp;
-            android.view.ViewGroup.MarginLayoutParams mp =
-                    new android.view.ViewGroup.MarginLayoutParams(src);
-            mp.width = size[0];
-            mp.height = size[1];
-            ringLp = mp;
-        } else {
-            ringLp = new android.view.ViewGroup.LayoutParams(size[0], size[1]);
-        }
-        io.github.yixing233.hyperduo.FlymeRingView ring =
-                new io.github.yixing233.hyperduo.FlymeRingView(host.getContext(), host);
-        group.addView(ring, index < 0 ? 0 : index, ringLp);
-        host.setVisibility(android.view.View.GONE);
-        RINGS.put(host, ring);
-        hideBatteryExtras(host);
-        ring.postDelayed(new java.lang.Runnable() {
-            @Override
-            public void run() {
-                android.view.ViewParent p = ring.getParent();
-                if (!(p instanceof android.view.ViewGroup)) {
-                    return;
-                }
-                android.view.ViewGroup g = (android.view.ViewGroup) p;
-                java.lang.StringBuilder kids = new java.lang.StringBuilder();
-                for (int i = 0; i < g.getChildCount(); i++) {
-                    android.view.View c = g.getChildAt(i);
-                    kids.append(c.getClass().getSimpleName()).append('(').append(c.getWidth())
-                            .append(c.getVisibility() == android.view.View.GONE ? "G" : "")
-                            .append(") ");
-                }
-                log(sModule, "row parent=" + g.getClass().getSimpleName() + " pW=" + g.getWidth()
-                        + " ringL=" + ring.getLeft() + " ringR=" + ring.getRight()
-                        + " ringW=" + ring.getWidth() + " kids=" + kids);
-                int[] loc = new int[2];
-                ring.getLocationOnScreen(loc);
-                int[] ploc = new int[2];
-                g.getLocationOnScreen(ploc);
-                if (g.getChildCount() > 1 && g.getChildAt(1) instanceof android.view.ViewGroup) {
-                    android.view.ViewGroup icons = (android.view.ViewGroup) g.getChildAt(1);
-                    java.lang.StringBuilder ik = new java.lang.StringBuilder();
-                    for (int i = 0; i < icons.getChildCount(); i++) {
-                        android.view.View c = icons.getChildAt(i);
-                        java.lang.Object slot = callCached(SLOT_METHODS, c, "getSlot");
-                        ik.append(slot).append('/').append(c.getWidth())
-                                .append(c.getVisibility() == android.view.View.GONE ? "G" : "").append(' ');
-                    }
-                    log(sModule, "icons w=" + icons.getWidth() + " vis=" + icons.getVisibility()
-                            + " kids=" + ik);
-                }
-                log(sModule, "row screen pX=" + ploc[0] + " ringX=" + loc[0]
-                        + " ringEnd=" + (loc[0] + ring.getWidth()) + " ringY=" + loc[1]
-                        + " screenW=" + g.getResources().getDisplayMetrics().widthPixels);
-            }
-        }, 1500);
-    }
-
-    private static void removeRing(android.view.View host) {
-        io.github.yixing233.hyperduo.FlymeRingView ring = RINGS.remove(host);
-        if (ring != null) {
-            android.view.ViewParent parent = ring.getParent();
-            if (parent instanceof android.view.ViewGroup) {
-                ((android.view.ViewGroup) parent).removeView(ring);
-            }
-        }
-        if (host.getVisibility() != android.view.View.VISIBLE) {
-            host.setVisibility(android.view.View.VISIBLE);
-        }
-        restoreBatteryExtras(host);
-    }
 
     /**
-     * Hides the rest of Flyme's battery cluster.
+     * Takes the rest of Flyme's battery cluster out of the row.
      *
      * <p>The percentage is not always inside the battery view: for two of the
      * four stock styles it is a sibling of its own ({@code FlymeBatteryTextView}),
      * and that is why the number showed next to the ring and why the row kept
-     * changing width. Everything in the cluster that is not the ring and not the
-     * battery host itself goes.
+     * changing width.
+     *
+     * <p>The visibility it overrides is recorded, so turning the module off puts
+     * the text back exactly as the stock style had it - a style that kept it
+     * hidden stays hidden instead of gaining a number it never showed.
      */
     static void hideBatteryExtras(android.view.View host) {
         android.view.ViewParent parent = host.getParent();
@@ -856,17 +709,16 @@ final class FlymeHooks {
         android.view.ViewGroup group = (android.view.ViewGroup) parent;
         for (int i = 0; i < group.getChildCount(); i++) {
             android.view.View child = group.getChildAt(i);
-            if (child == host || child instanceof io.github.yixing233.hyperduo.FlymeRingView) {
+            if (child == host) {
                 continue;
             }
             if (child.getClass().getName().contains("FlymeBatteryTextView")) {
-                if (child.getVisibility() != android.view.View.GONE) {
-                    child.setVisibility(android.view.View.GONE);
-                }
+                hideChild(child);
             }
         }
     }
 
+    /** Puts back only the views {@link #hideBatteryExtras} took away. */
     static void restoreBatteryExtras(android.view.View host) {
         android.view.ViewParent parent = host.getParent();
         if (!(parent instanceof android.view.ViewGroup)) {
@@ -875,43 +727,14 @@ final class FlymeHooks {
         android.view.ViewGroup group = (android.view.ViewGroup) parent;
         for (int i = 0; i < group.getChildCount(); i++) {
             android.view.View child = group.getChildAt(i);
-            if (child.getClass().getName().contains("FlymeBatteryTextView")
-                    && child.getVisibility() == android.view.View.GONE) {
-                child.setVisibility(android.view.View.VISIBLE);
+            if (child.getClass().getName().contains("FlymeBatteryTextView")) {
+                restoreChild(child);
             }
         }
     }
 
-    /**
-     * The box the ring gets: the stock battery icon's own footprint.
-     *
-     * <p>Sizing it square from the height made the view wider than the icon it
-     * replaced, and a right-aligned row pushed everything left by the difference.
-     * That only showed after the next layout pass, which is why it looked right
-     * until the screen was left and rebuilt.
-     */
-    private static int[] ringSizePx(android.view.View host) {
-        float density = host.getResources().getDisplayMetrics().density;
-        for (java.lang.reflect.Field field : new java.lang.reflect.Field[]{
-                sBatteryNormalDrawableField, sBatteryDrawableField}) {
-            try {
-                Object value = io.github.yixing233.hyperduo.Refl.get(field, host);
-                if (value instanceof android.graphics.drawable.Drawable) {
-                    android.graphics.drawable.Drawable d = (android.graphics.drawable.Drawable) value;
-                    int w = d.getIntrinsicWidth();
-                    int h = d.getIntrinsicHeight();
-                    if (w > 0 && h > 0) {
-                        return new int[]{w, h};
-                    }
-                }
-            } catch (java.lang.Throwable ignored) {
-            }
-        }
-        return new int[]{java.lang.Math.round(14 * density), java.lang.Math.round(20 * density)};
-    }
 
-    /** True when this view lives inside the control centre rather than the status bar. */
-    /** Which surface a battery host belongs to. */
+    /** The surfaces a battery host can live on. */
     static final int REGION_STATUS_BAR = 0;
     static final int REGION_CONTROL_CENTRE = 1;
     static final int REGION_NOTIFICATION = 2;
@@ -919,23 +742,44 @@ final class FlymeHooks {
     private static final java.util.Map<android.view.View, java.lang.Integer> REGION_CACHE =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<android.view.View, java.lang.Integer>());
 
+    /**
+     * Which surface a battery host belongs to.
+     *
+     * <p>The closest decisive ancestor wins, and the order matters: the status bar
+     * itself sits inside the notification shade window on AOSP-derived ROMs, so a
+     * name containing "shade" is a fallback, not a verdict. Classifying by "has a
+     * shade ancestor" alone marked the status bar as the notification centre, and
+     * "exclude the notification centre" then took the ring out of the status bar
+     * as well.
+     */
     static int regionOf(android.view.View host) {
         java.lang.Integer cached = REGION_CACHE.get(host);
         if (cached != null) {
             return cached.intValue();
         }
         int result = REGION_STATUS_BAR;
+        boolean sawShade = false;
+        boolean decided = false;
         android.view.ViewParent parent = host.getParent();
         for (int depth = 0; parent instanceof android.view.View && depth < 24; depth++) {
             java.lang.String name = parent.getClass().getName().toLowerCase(java.util.Locale.ROOT);
-            if (name.contains("controlcenter") || name.contains("qsstatusbar") || name.contains("quickpanels")) {
+            if (name.contains("controlcenter") || name.contains("qsstatusbar") || name.contains("quickpanel")) {
                 result = REGION_CONTROL_CENTRE;
+                decided = true;
+                break;
+            }
+            if (name.contains("statusbar") || name.contains("status_bar")) {
+                result = REGION_STATUS_BAR;
+                decided = true;
                 break;
             }
             if (name.contains("notification") || name.contains("shade")) {
-                result = REGION_NOTIFICATION;
+                sawShade = true;
             }
             parent = parent.getParent();
+        }
+        if (!decided && sawShade) {
+            result = REGION_NOTIFICATION;
         }
         REGION_CACHE.put(host, java.lang.Integer.valueOf(result));
         return result;
@@ -959,8 +803,20 @@ final class FlymeHooks {
         return false;
     }
 
-    static boolean inControlCenter(android.view.View host) {
-        return regionOf(host) != REGION_STATUS_BAR;
+    /**
+     * Keeps the battery view drawable while the ring lives inside it.
+     *
+     * <p>See the {@code apply} hook: the "percentage only" style hides this very
+     * view when the cable is out, and a hidden view does not draw the ring.
+     */
+    static void ensureHostVisible(android.view.View host) {
+        if (!io.github.yixing233.hyperduo.TrioConfig.get().enabled
+                || io.github.yixing233.hyperduo.FlymeHooks.excludedRegion(host)) {
+            return;
+        }
+        if (host.getVisibility() != android.view.View.VISIBLE) {
+            host.setVisibility(android.view.View.VISIBLE);
+        }
     }
 
     /* JADX INFO: Access modifiers changed from: private */
@@ -1037,32 +893,6 @@ final class FlymeHooks {
         return null;
     }
 
-    /* JADX INFO: Access modifiers changed from: private */
-    public static void updateWifiPresence(android.view.ViewGroup container) {
-        boolean z;
-        boolean present = false;
-        int i = 0;
-        while (true) {
-            if (i >= container.getChildCount()) {
-                break;
-            }
-            android.view.View child = container.getChildAt(i);
-            if (!"wifi".equals(slotOf(child))) {
-                i++;
-            } else {
-                java.lang.Object visible = callCached(VISIBLE_METHODS, child, "isIconVisible");
-                if (visible instanceof java.lang.Boolean) {
-                    z = ((java.lang.Boolean) visible).booleanValue();
-                } else {
-                    z = child.getVisibility() == 0;
-                }
-                present = z;
-            }
-        }
-        if (io.github.yixing233.hyperduo.TrioState.setWifiPresent(present)) {
-            invalidateHosts();
-        }
-    }
 
     /* JADX INFO: Access modifiers changed from: private */
     public static void invalidateHosts() {
@@ -1073,14 +903,10 @@ final class FlymeHooks {
         for (int i = 0; i < hosts.size(); i++) {
             android.view.View host = hosts.get(i);
             if (host != null) {
-                io.github.yixing233.hyperduo.FlymeHooks.hideBatteryExtras(host);
-                host.postInvalidate();
-                // The host is hidden while the ring stands in for it, so the ring
-                // is what actually has to repaint.
-                io.github.yixing233.hyperduo.FlymeRingView ring = RINGS.get(host);
-                if (ring != null) {
-                    ring.postInvalidate();
+                if (io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
+                    io.github.yixing233.hyperduo.FlymeHooks.hideBatteryExtras(host);
                 }
+                host.postInvalidate();
             }
         }
     }
