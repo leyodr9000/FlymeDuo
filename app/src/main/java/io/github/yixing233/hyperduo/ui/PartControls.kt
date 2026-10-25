@@ -264,6 +264,11 @@ internal fun geometrySliders(): List<SliderSpec> {
             // itself, so with the glyph off there is nothing for it to act on. No
             // row is gated by it, so it can never be the reason another is shut.
             enabled = { it.glyph },
+            // The Appearance sheet no longer renders size rows and the capsule
+            // rows only exist for a capsule arrangement, so the default owner
+            // left this row defined but rendered nowhere - the battery editor is
+            // where the glyph's one whole-of-glyph size belongs.
+            editorOwner = TrioSettingsPart.Battery,
             suffix = "%",
         ),
         SliderSpec(
