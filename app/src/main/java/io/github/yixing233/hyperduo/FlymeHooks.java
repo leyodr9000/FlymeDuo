@@ -130,7 +130,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.37";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.38";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -431,9 +431,14 @@ final class FlymeHooks {
                 java.lang.Object self = chain.getThisObject();
                 java.lang.Object icons = io.github.yixing233.hyperduo.Refl.get(io.github.yixing233.hyperduo.FlymeHooks.sQsIconContainerField, self);
                 if (icons instanceof android.view.ViewGroup) {
-                    // Left untouched on purpose: the control centre keeps its
-                    // stock status bar, so nothing is hidden or re-laid out here.
-                    io.github.yixing233.hyperduo.FlymeHooks.log(io.github.yixing233.hyperduo.FlymeHooks.sModule, "Flyme Control Center captured (left stock)");
+                    // Registered like every other container: whether its wifi and
+                    // signal yield to the ring is the exclusion verdict's business,
+                    // not this hook's. "The control centre keeps its stock status
+                    // bar" was true when the ring never drew here; with the centre
+                    // unexcluded the ring draws and the stock icons beside it read
+                    // as duplicates.
+                    io.github.yixing233.hyperduo.FlymeHooks.registerIconContainer((android.view.ViewGroup) icons);
+                    io.github.yixing233.hyperduo.FlymeHooks.log(io.github.yixing233.hyperduo.FlymeHooks.sModule, "Flyme Control Center icon container captured");
                 }
                 if (self instanceof android.view.View) {
                     android.view.View view = (android.view.View) self;
