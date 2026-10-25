@@ -207,7 +207,7 @@
     <string name="clock_weight_summary">默认 700，可调 100–900。</string>
 
     <string name="type_size_title">网络类型字号</string>
-    <string name="type_size_summary">默认 32，可调 16–56。环内那一格的实际上限由文字宽度决定，超出后不再变大。</string>
+    <string name="type_size_summary">默认 32，可调 16–56。按所在格的宽度自适应：标签越宽自动越小，短标签可以放得更大。</string>
 
     <string name="out_type_size_title">环外网络类型字号</string>
     <string name="out_type_size_summary">默认 14dp，可调 8–44dp。环外标签有自己的视图，不受环内那格的宽度限制。</string>

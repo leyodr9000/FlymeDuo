@@ -531,30 +531,28 @@ final class TrioRenderer {
                     // to a fixed point instead of guessing once. (The first attempt at
                     // this multiplied the ink height by fitted/requested as well, which
                     // scaled it twice and never converged.)
-                    float fitted = maxByHeight;
+                    // The type is bounded by the WIDTH it spans - the official
+                    // constraint, and the one the size slider is meant to feel
+                    // like. The height term below is the third's ink capacity,
+                    // which for the two end thirds is the signal-dot box (28/20
+                    // design units): divided by the ink ratio it is a CONSTANT,
+                    // and it capped every label at about 32 in the top third and
+                    // 21 in the bottom no matter where the slider stood. For the
+                    // type the chord alone decides - the chord already narrows as
+                    // the ink grows, so the width fit is self-limiting - while
+                    // every other reading keeps both terms.
+                    final boolean widthOnly = part == Prefs.PART_TYPE;
+                    float fitted = widthOnly ? requested : maxByHeight;
                     for (int pass = 0; pass < 4; pass++) {
                         final float inkH = Math.max(1f, textInkHeight(text, fitted));
                         final float maxByWidth = fitSize(text, requested,
                                 TrioGeometry.zoneTextRoomW(z, a.ringStroke, inkH), suffixScale);
-                        final float next = Math.min(maxByHeight, maxByWidth);
+                        final float next = widthOnly ? maxByWidth : Math.min(maxByHeight, maxByWidth);
                         if (Math.abs(next - fitted) < 0.05f) {
                             fitted = next;
                             break;
                         }
                         fitted = next;
-                    }
-                    // The type is the one reading whose size is tuned by eye, and
-                    // the third it sits in is a placement guide, not a wall: the
-                    // fit above is a CAPACITY (how large the label can get inside
-                    // that third before touching an arc), and because the ink term
-                    // scales with the request, the capacity is a constant - the
-                    // slider moved, the ceiling did not. A request above it is
-                    // honoured as drawn instead of being silently clamped back:
-                    // the ink may cross into the neighbouring third, which is what
-                    // asking for a bigger type means, and the glyph box clips the
-                    // rest. Every other reading keeps the fitted size.
-                    if (part == Prefs.PART_TYPE && requested > fitted) {
-                        fitted = requested;
                     }
                     final float inkH = Math.max(1f, textInkHeight(text, requested));
                     // Centred in the band, and on its INK rather than its metrics: the

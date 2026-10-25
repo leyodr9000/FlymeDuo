@@ -90,7 +90,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.29";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.30";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -449,6 +449,13 @@ final class FlymeHooks {
     @SuppressWarnings("unchecked")
     private static void applySlotVisibility(android.view.ViewGroup container, boolean hide) {
         try {
+            // The keyguard header doubles as the notification centre's top row on
+            // Flyme; when that surface is excluded, its icon row stays stock along
+            // with its battery instead of losing its wifi and signal to a ring
+            // that is no longer drawn there.
+            if (hide && excludedRegion(container)) {
+                hide = false;
+            }
             java.lang.Object raw = io.github.yixing233.hyperduo.Refl.get(sIgnoredSlotsField, container);
             final java.util.List<java.lang.String> ignored = (raw instanceof java.util.List)
                     ? (java.util.List<java.lang.String>) raw : null;
@@ -890,6 +897,19 @@ final class FlymeHooks {
                 decided = true;
                 break;
             }
+            // Not a verdict. On Flyme the keyguard header is INCLUDED in the
+            // notification panel - status_bar_expanded (NotificationPanelView)
+            // pulls in keyguard_status_bar, and that header is the notification
+            // centre's own top row (and the lock screen's). Deciding on its class
+            // name, which says "statusbar", one step before the panel above it
+            // can answer is exactly why "exclude the notification centre" never
+            // reached this battery: it was filed as a status bar, and no
+            // exclusion option touches the status bar. Keep walking; the panel
+            // above decides.
+            if (name.contains("keyguardstatusbar")) {
+                parent = parent.getParent();
+                continue;
+            }
             if (name.contains("statusbar") || name.contains("status_bar")) {
                 result = REGION_STATUS_BAR;
                 decided = true;
@@ -903,8 +923,20 @@ final class FlymeHooks {
         if (!decided && sawShade) {
             result = REGION_NOTIFICATION;
         }
+        // Once per host, not per frame: the one line that answers "which surface
+        // was this battery filed under" straight from the LSPosed log.
+        log(sModule, "battery region=" + regionName(result) + " host="
+                + host.getClass().getSimpleName() + "@"
+                + java.lang.Integer.toHexString(java.lang.System.identityHashCode(host)));
         REGION_CACHE.put(host, java.lang.Integer.valueOf(result));
         return result;
+    }
+
+    private static java.lang.String regionName(int region) {
+        if (region == REGION_CONTROL_CENTRE) {
+            return "control-centre";
+        }
+        return region == REGION_NOTIFICATION ? "notification" : "status-bar";
     }
 
     /** True when the user asked to leave the stock battery alone in this host's region. */
@@ -915,15 +947,14 @@ final class FlymeHooks {
         }
         int region = regionOf(host);
         if (region == REGION_CONTROL_CENTRE) {
-            // Flyme's shade has no battery of its own: pulling it down shows the
-            // same QSStatusBar the control centre uses. Treating "notification
-            // centre" as a separate surface left that option with nothing to act
-            // on, which is why picking it looked like it did nothing at all.
             return setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_CONTROL_CENTRE
-                    || setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_BOTH
-                    || setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_NOTIFICATION;
+                    || setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_BOTH;
         }
         if (region == REGION_NOTIFICATION) {
+            // A real surface on Flyme: the notification panel's own top row is
+            // the keyguard header (see regionOf). The 1.7.5-flyme.28 shortcut
+            // that folded this option into the control centre is withdrawn - it
+            // was only needed while the panel's battery had no region of its own.
             return setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_NOTIFICATION
                     || setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_BOTH;
         }
