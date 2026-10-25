@@ -31,6 +31,9 @@ final class FlymeHooks {
     private static final java.util.Map<android.view.View, io.github.yixing233.hyperduo.TrioState> STATES = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
     private static final java.util.Map<android.view.View, java.lang.Integer> SAVED_VISIBILITY = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
     private static final java.util.Map<java.lang.Object, java.util.List<java.lang.String>> ADDED_SLOTS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
+    /** Battery host -> the out-of-ring type label mounted beside it. */
+    private static final java.util.Map<android.view.View, android.widget.TextView> TYPE_LABELS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
+    private static final java.util.Set<android.view.View> TYPE_LABEL_PENDING = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<android.view.View, java.lang.Boolean>());
     private static final java.util.Map<android.view.ViewGroup, java.lang.Boolean> STATUS_ICON_CONTAINERS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
 
     // Reflection on the layout path has to be cached: onLayout runs per frame,
@@ -112,6 +115,7 @@ final class FlymeHooks {
                             io.github.yixing233.hyperduo.FlymeHooks.restoreBatteryExtras(host);
                             io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
                         }
+                        io.github.yixing233.hyperduo.FlymeHooks.syncTypeLabel(host);
                         host.requestLayout();
                         host.invalidate();
                     }
@@ -255,6 +259,7 @@ final class FlymeHooks {
                 java.lang.Object result = chain.proceed();
                 java.lang.Object self = chain.getThisObject();
                 if (self instanceof android.view.View) {
+                    io.github.yixing233.hyperduo.FlymeHooks.removeTypeLabel((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.restoreBatteryPercent((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.STATES.remove((android.view.View) self);
                 }
@@ -418,15 +423,6 @@ final class FlymeHooks {
     }
 
     /**
-     * Hides the managed slots - or puts them back.
-     *
-     * <p>{@code setVisibility(GONE)} alone leaves the space behind: Flyme's
-     * container lays its slots out from {@code mIgnoredSlots}, and a slot that is
-     * merely invisible still gets its width. Adding the slot to that list is what
-     * actually frees the gap, and removing it is what restores the row without
-     * squeezing.
-     */
-    /**
      * Hides the managed slots the ring actually stands in for - or puts them back.
      *
      * <p>{@code setVisibility(GONE)} alone leaves the space behind: Flyme's
@@ -453,10 +449,12 @@ final class FlymeHooks {
                 if (a.wifi) {
                     wanted.add("wifi");
                 }
-                // Out of the ring the reading is handed back to the platform, so
-                // the native slot keeps its icon and only the ring's own copy of
-                // the dots is suppressed.
-                if (a.signalDots() && !a.typeOutOfRing) {
+                // The native signal icon is duplicated exactly while the ring
+                // draws the dots itself. The TYPE placement is not consulted: it
+                // says where the label goes, not whether the platform icon is
+                // still redundant - gating on it left the platform icon on screen
+                // beside a ring that already drew the same reading.
+                if (a.signalDots()) {
                     wanted.add("mobile");
                     wanted.add("stacked_mobile");
                 }
@@ -733,6 +731,119 @@ final class FlymeHooks {
         }
     }
 
+    /**
+     * Mounts, updates or removes the out-of-ring network-type label.
+     *
+     * <p>Flyme has no separate label view of its own: the type is an
+     * {@code ImageView} inside the mobile slot, and hiding that slot to make room
+     * for the ring takes the label with it. The "out of ring" placement therefore
+     * needs a view of ours in the same row, which is also the only way the
+     * out-of-ring size can mean anything - the box the ring is drawn into is the
+     * battery icon's own footprint, and a label larger than that box would simply
+     * be clipped by it.
+     *
+     * <p>Only a horizontal {@code LinearLayout} row is supported. Flyme's status
+     * bar cluster is one; the control centre is a {@code RelativeLayout} that
+     * keeps its stock battery anyway.
+     *
+     * <p>Never call this from a draw pass: it may add a view.
+     */
+    static void syncTypeLabel(android.view.View host) {
+        if (host == null) {
+            return;
+        }
+        final android.view.ViewParent parent = host.getParent();
+        final io.github.yixing233.hyperduo.TrioAppearance a =
+                io.github.yixing233.hyperduo.TrioConfig.appearance();
+        final io.github.yixing233.hyperduo.TrioState state;
+        synchronized (STATES) {
+            state = STATES.get(host);
+        }
+        final java.lang.String type = (state == null) ? "" : state.mobileType;
+        // `signalDots()` is the ownership test, not a cosmetic one: the native
+        // mobile icon carries Flyme's own type text, so mounting a label beside it
+        // would print the reading twice.
+        final boolean wanted = a.glyph
+                && a.typeOutOfRing
+                && a.signalDots()
+                && !excludedRegion(host)
+                && !type.isEmpty()
+                && (parent instanceof android.widget.LinearLayout);
+        if (!wanted) {
+            removeTypeLabel(host);
+            return;
+        }
+        final android.widget.LinearLayout row = (android.widget.LinearLayout) parent;
+        final float density = host.getResources().getDisplayMetrics().density;
+        android.widget.TextView label;
+        synchronized (STATES) {
+            label = TYPE_LABELS.get(host);
+        }
+        if (label == null || label.getParent() != row) {
+            removeTypeLabel(host);
+            label = new android.widget.TextView(host.getContext());
+            label.setSingleLine(true);
+            label.setIncludeFontPadding(false);
+            label.setGravity(android.view.Gravity.CENTER_VERTICAL);
+            final android.widget.LinearLayout.LayoutParams lp =
+                    new android.widget.LinearLayout.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                            android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.gravity = android.view.Gravity.CENTER_VERTICAL;
+            int index = row.indexOfChild(host);
+            row.addView(label, index < 0 ? row.getChildCount() : index, lp);
+            TYPE_LABELS.put(host, label);
+        }
+        final int color = (state == null) ? 0xFFFFFFFF : state.foreground();
+        label.setText(type);
+        label.setTextColor(color);
+        label.setTextSize(android.util.TypedValue.COMPLEX_UNIT_PX,
+                java.lang.Math.max(1f, a.outTypeSize * density));
+        label.setTypeface(io.github.yixing233.hyperduo.TrioRenderer.typefaceFor(a.typeWeight));
+        label.getPaint().setFakeBoldText(
+                io.github.yixing233.hyperduo.TrioRenderer.fakeBoldFor(a.typeWeight));
+        final android.widget.LinearLayout.LayoutParams lp =
+                (android.widget.LinearLayout.LayoutParams) label.getLayoutParams();
+        final int left = java.lang.Math.round(a.outTypeMarginLeft * density);
+        final int right = java.lang.Math.round(a.outTypeMarginRight * density);
+        if (lp.leftMargin != left || lp.rightMargin != right) {
+            lp.leftMargin = left;
+            lp.rightMargin = right;
+            label.setLayoutParams(lp);
+        }
+    }
+
+    /** Queues a label sync; safe to call from any hook, including a layout pass. */
+    static void requestTypeLabelSync(final android.view.View host) {
+        if (host == null || !TYPE_LABEL_PENDING.add(host)) {
+            return;
+        }
+        host.post(new java.lang.Runnable() {
+            @Override // java.lang.Runnable
+            public void run() {
+                TYPE_LABEL_PENDING.remove(host);
+                try {
+                    syncTypeLabel(host);
+                } catch (java.lang.Throwable t) {
+                    log(sModule, "type label failed: " + t);
+                }
+            }
+        });
+    }
+
+    static void removeTypeLabel(android.view.View host) {
+        final android.widget.TextView label;
+        synchronized (STATES) {
+            label = TYPE_LABELS.remove(host);
+        }
+        if (label != null) {
+            android.view.ViewParent p = label.getParent();
+            if (p instanceof android.view.ViewGroup) {
+                ((android.view.ViewGroup) p).removeView(label);
+            }
+        }
+    }
+
 
     /** The surfaces a battery host can live on. */
     static final int REGION_STATUS_BAR = 0;
@@ -793,8 +904,13 @@ final class FlymeHooks {
         }
         int region = regionOf(host);
         if (region == REGION_CONTROL_CENTRE) {
+            // Flyme's shade has no battery of its own: pulling it down shows the
+            // same QSStatusBar the control centre uses. Treating "notification
+            // centre" as a separate surface left that option with nothing to act
+            // on, which is why picking it looked like it did nothing at all.
             return setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_CONTROL_CENTRE
-                    || setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_BOTH;
+                    || setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_BOTH
+                    || setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_NOTIFICATION;
         }
         if (region == REGION_NOTIFICATION) {
             return setting == io.github.yixing233.hyperduo.Prefs.REGION_NO_NOTIFICATION
@@ -906,6 +1022,7 @@ final class FlymeHooks {
                 if (io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
                     io.github.yixing233.hyperduo.FlymeHooks.hideBatteryExtras(host);
                 }
+                io.github.yixing233.hyperduo.FlymeHooks.requestTypeLabelSync(host);
                 host.postInvalidate();
             }
         }
