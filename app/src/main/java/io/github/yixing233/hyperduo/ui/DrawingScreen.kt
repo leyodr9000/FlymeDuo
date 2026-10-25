@@ -326,7 +326,14 @@ private fun DrawingEditorCard(
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         DrawingSection(R.string.drawing_master_title, PaddingValues(0.dp)) {
-            ContentControlRow(ContentControl.Enabled, settings, update)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                ContentControlRow(ContentControl.Enabled, settings, update)
+                // Scope and overall size sit at the master's level: both decide
+                // where the icon appears and how large it is, which is the same
+                // question the switch above answers, not a component detail.
+                ContentControlRow(ContentControl.Exclude, settings, update)
+                GlyphScaleHomeRow(settings, update)
+            }
         }
 
         DrawingSection(R.string.drawing_quick_edit_title) {

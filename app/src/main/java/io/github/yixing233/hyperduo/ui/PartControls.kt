@@ -251,26 +251,9 @@ internal fun geometrySliders(): List<SliderSpec> {
             summaryRes = { R.string.capsule_length_summary },
             enabled = { it.glyph && it.capsule },
         ),
-        SliderSpec(
-            group = GeometryGroup.Scale,
-            part = null,
-            min = Prefs.MIN_GLYPH_SCALE,
-            max = Prefs.MAX_GLYPH_SCALE,
-            read = { it.glyphScale },
-            write = { r, v -> r.setGlyphScale(v) },
-            titleRes = { R.string.glyph_scale_title },
-            summaryRes = { R.string.glyph_scale_summary },
-            // Gated on the master switch and nothing else: it sizes the glyph
-            // itself, so with the glyph off there is nothing for it to act on. No
-            // row is gated by it, so it can never be the reason another is shut.
-            enabled = { it.glyph },
-            // The Appearance sheet no longer renders size rows and the capsule
-            // rows only exist for a capsule arrangement, so the default owner
-            // left this row defined but rendered nowhere - the battery editor is
-            // where the glyph's one whole-of-glyph size belongs.
-            editorOwner = TrioSettingsPart.Battery,
-            suffix = "%",
-        ),
+        // The glyph's overall size lives as a named spec so the home page's master
+        // section and the battery editor render one and the same row object.
+        glyphScaleSlider,
         SliderSpec(
             group = GeometryGroup.Scale,
             part = null,
@@ -605,6 +588,51 @@ internal fun geometrySliders(): List<SliderSpec> {
 /** The rows that size one component, for the drawing page's long-press dialog. */
 internal fun slidersForPart(part: TrioZones.Part): List<SliderSpec> =
     geometrySliders().filter { it.part == part }
+
+/**
+ * The glyph's overall size, as one named row. The battery editor draws it, and
+ * the home page draws it again beside the master switch - "how big is the icon"
+ * reads as a master-level decision there, not a component detail. One spec
+ * object on both surfaces, so the two can never disagree about min, max or gate.
+ */
+internal val glyphScaleSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_GLYPH_SCALE,
+    max = Prefs.MAX_GLYPH_SCALE,
+    read = { it.glyphScale },
+    write = { r, v -> r.setGlyphScale(v) },
+    titleRes = { R.string.glyph_scale_title },
+    summaryRes = { R.string.glyph_scale_summary },
+    // Gated on the master switch and nothing else: it sizes the glyph itself,
+    // so with the glyph off there is nothing for it to act on. No row is gated
+    // by it, so it can never be the reason another is shut.
+    enabled = { it.glyph },
+    editorOwner = TrioSettingsPart.Battery,
+    suffix = "%",
+)
+
+/**
+ * That row as the home page's master section draws it, tooltip and all.
+ */
+@Composable
+internal fun GlyphScaleHomeRow(
+    settings: TrioSettings,
+    update: ((SettingsRepository) -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val a = TrioAppearance.of(settings)
+    val hint = gateHintFor(glyphScaleSlider, a)
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        if (hint == null) {
+            SliderRow(glyphScaleSlider, settings, update)
+        } else {
+            TooltipBox(text = hint, enabled = true) {
+                SliderRow(glyphScaleSlider, settings, update)
+            }
+        }
+    }
+}
 
 /**
  * The capsule container's own parameters: its length and the two interior cells' offsets.
