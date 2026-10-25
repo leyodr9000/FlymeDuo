@@ -388,7 +388,8 @@ final class TrioHooks {
             // generic hits that draw into containers nobody owns, so the adapter
             // replaces them outright.
             int hooked = FlymeHooks.install(module, cl);
-            log(module, "HyperDuo installed, flyme adapter, hooks=" + hooked
+            log(module, "HyperDuo installed, flyme adapter build "
+                    + FlymeHooks.ADAPTER_BUILD + ", hooks=" + hooked
                     + " enabled=" + TrioConfig.get().enabled);
             return;
         }

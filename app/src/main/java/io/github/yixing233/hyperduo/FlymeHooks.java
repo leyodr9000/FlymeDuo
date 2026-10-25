@@ -83,9 +83,19 @@ final class FlymeHooks {
         return sActive;
     }
 
+    /**
+     * Build marker, printed once at install time. An updated module APK does not
+     * reload into a running SystemUI - the old dex keeps executing until the
+     * process is killed - so "installed the new APK but nothing changed" is
+     * indistinguishable from "the fix does not work" unless the log can say which
+     * build answered.
+     */
+    static final String ADAPTER_BUILD = "1.7.5-flyme.29";
+
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
         sActive = true;
+        log(module, "flyme adapter build " + ADAPTER_BUILD);
         int count = hookBatteryView(module, cl);
         return count + hookStatusBarCapture(module, cl) + hookControlCenterCapture(module, cl) + hookKeyguardStatusBarCapture(module, cl) + hookIconContainer(module, cl) + hookWifiState(module, cl) + hookMobileSignal(module, cl) + hookMobileTypeIcon(module, cl);
     }
@@ -446,18 +456,19 @@ final class FlymeHooks {
                     io.github.yixing233.hyperduo.TrioConfig.appearance();
             final java.util.List<java.lang.String> wanted = new java.util.ArrayList<>(3);
             if (hide && a.glyph) {
-                if (a.wifi) {
-                    wanted.add("wifi");
-                }
-                // The native signal icon is duplicated exactly while the ring
-                // draws the dots itself. The TYPE placement is not consulted: it
-                // says where the label goes, not whether the platform icon is
-                // still redundant - gating on it left the platform icon on screen
-                // beside a ring that already drew the same reading.
-                if (a.signalDots()) {
-                    wanted.add("mobile");
-                    wanted.add("stacked_mobile");
-                }
+                // Every managed slot, every time the module owns the battery.
+                // The placement settings say what the MODULE draws and where; they
+                // are not the stock row's business. Making the native mobile icon
+                // conditional on the ring drawing its own dots - which is what
+                // 1.7.5-flyme.27/.28 did - is exactly how the stock signal icon
+                // ended up on screen beside the ring: any placement the condition
+                // did not cover (type outside the ring, signal outside the ring,
+                // the card not dealt a slot) kept the native icon, and with it
+                // Flyme's own type text. The 1.7.5-flyme.11 baseline this port
+                // started from hid all three unconditionally.
+                wanted.add("wifi");
+                wanted.add("mobile");
+                wanted.add("stacked_mobile");
             }
             final java.util.List<java.lang.String> added;
             synchronized (ADDED_SLOTS) {
@@ -760,12 +771,12 @@ final class FlymeHooks {
             state = STATES.get(host);
         }
         final java.lang.String type = (state == null) ? "" : state.mobileType;
-        // `signalDots()` is the ownership test, not a cosmetic one: the native
-        // mobile icon carries Flyme's own type text, so mounting a label beside it
-        // would print the reading twice.
+        // The native mobile slot is hidden for the whole time the module owns the
+        // battery (see applySlotVisibility), so the platform's own type text is
+        // gone with it - this label is the only place the reading appears, and it
+        // must not depend on where the signal dots happen to sit.
         final boolean wanted = a.glyph
                 && a.typeOutOfRing
-                && a.signalDots()
                 && !excludedRegion(host)
                 && !type.isEmpty()
                 && (parent instanceof android.widget.LinearLayout);
@@ -1019,8 +1030,16 @@ final class FlymeHooks {
         for (int i = 0; i < hosts.size(); i++) {
             android.view.View host = hosts.get(i);
             if (host != null) {
-                if (io.github.yixing233.hyperduo.TrioConfig.get().enabled) {
+                // The excluded check is the whole point: this path runs on every
+                // battery event, and hiding the percent sibling for an excluded
+                // host too (which is what 1.7.5-flyme.27/.28 did) took the control
+                // centre's own percentage away while the user had explicitly asked
+                // to leave that surface stock - the exclusion looked dead.
+                if (io.github.yixing233.hyperduo.TrioConfig.get().enabled
+                        && !io.github.yixing233.hyperduo.FlymeHooks.excludedRegion(host)) {
                     io.github.yixing233.hyperduo.FlymeHooks.hideBatteryExtras(host);
+                } else {
+                    io.github.yixing233.hyperduo.FlymeHooks.restoreBatteryExtras(host);
                 }
                 io.github.yixing233.hyperduo.FlymeHooks.requestTypeLabelSync(host);
                 host.postInvalidate();
