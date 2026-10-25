@@ -251,7 +251,7 @@
     <string name="update_retry">Retry</string>
     <string name="update_failed">Could not check for updates</string>
     <string name="update_no_release">No release has been published yet</string>
-    <string name="update_permission_needed">HyperDuo needs permission to install apps; the settings page has been opened for you.</string>
+    <string name="update_permission_needed">FlymeDuo needs permission to install apps; the settings page has been opened for you.</string>
     <string name="update_install_failed">No app on this device can handle the install.</string>
     <string name="update_release_page">Open release page</string>
     <string name="update_repo">View repository</string>
