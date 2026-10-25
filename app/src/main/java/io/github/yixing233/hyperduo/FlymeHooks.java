@@ -114,7 +114,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.32";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.33";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -336,11 +336,26 @@ final class FlymeHooks {
                     io.github.yixing233.hyperduo.FlymeHooks.removeTypeLabel((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.restoreBatteryPercent((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.STATES.remove((android.view.View) self);
+                    io.github.yixing233.hyperduo.FlymeHooks.REGION_CACHE.remove((android.view.View) self);
                 }
                 return result;
             }
         });
-        return draw + measure + apply + levelChanged + dark + detached;
+        // Re-classify on every attachment: a host inflated and measured before it
+        // met its real parent must not keep a region filed from that orphan pass,
+        // and a view re-parented onto another surface moves with this.
+        int attached = hook(module, io.github.yixing233.hyperduo.Refl.method(viewClass, "onAttachedToWindow", new java.lang.Class[0]), "hyperduo-flyme-attach", new io.github.libxposed.api.XposedInterface.Hooker() { // from class: io.github.yixing233.hyperduo.FlymeHooks.7b
+            public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
+                java.lang.Object result = chain.proceed();
+                java.lang.Object self = chain.getThisObject();
+                if (self instanceof android.view.View) {
+                    io.github.yixing233.hyperduo.FlymeHooks.REGION_CACHE.remove((android.view.View) self);
+                    io.github.yixing233.hyperduo.FlymeHooks.MEASURE_LOG.remove((android.view.View) self);
+                }
+                return result;
+            }
+        });
+        return draw + measure + apply + levelChanged + dark + detached + attached;
     }
 
     private static int hookStatusBarCapture(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
@@ -946,6 +961,15 @@ final class FlymeHooks {
      * as well.
      */
     static int regionOf(android.view.View host) {
+        if (host.getParent() == null) {
+            // Not attached: there is nothing to walk, and the default below is
+            // only a guess. Flyme measures its status rows BEFORE attaching them,
+            // so an unattached call used to cache every battery host as a status
+            // bar within a second of process start - five hosts, five wrong
+            // verdicts, and exclusion then had no surface left to act on. Not
+            // cached; the attached call classifies and caches instead.
+            return REGION_STATUS_BAR;
+        }
         java.lang.Integer cached = REGION_CACHE.get(host);
         if (cached != null) {
             return cached.intValue();
