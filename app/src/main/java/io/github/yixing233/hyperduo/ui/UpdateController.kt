@@ -36,7 +36,7 @@ import java.util.Locale
  * that the checker talks to and the one the "release page" button opens can
  * never drift apart.
  */
-private const val REPO = "yixing233/HyperDuo"
+private const val REPO = "leyodr9000/FlymeDuo"
 private const val API_LATEST = "https://api.github.com/repos/$REPO/releases/latest"
 
 /**

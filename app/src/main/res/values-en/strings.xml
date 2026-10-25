@@ -3,7 +3,8 @@
     <string name="drawing_master_title">Master switch</string>
     <string name="drawing_quick_edit_title">Quick edit</string>
     <string name="drawing_order_title">Component order</string>
-    <string name="app_name">HyperDuo</string>
+    <string name="app_name">FlymeDuo</string>
+    <string name="home_title">HyperDuo (Flyme fork)</string>
     <string name="xposed_description">Merges Wi-Fi, mobile signal and battery into a single iPhone-Duo style trio glyph in the status bar.</string>
 
 
@@ -221,7 +222,7 @@
     <string name="about_scope_count">Scoped apps</string>
     <string name="about_enabled_count">Enabled toggles</string>
     <string name="about_title">About</string>
-    <string name="about_summary">HyperDuo · an iPhone-Duo style trio status bar icon</string>
+    <string name="about_summary">FlymeDuo · an iPhone-Duo style trio status bar icon</string>
 
     <string name="info_module_version">App version</string>
     <string name="info_framework">Xposed framework</string>

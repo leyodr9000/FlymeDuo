@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
-    <string name="app_name">HyperDuo</string>
+    <string name="app_name">FlymeDuo</string>
+    <string name="home_title">HyperDuo（Flyme fork）</string>
     <string name="xposed_description">把状态栏的 Wi-Fi、移动信号与电池合并为一个仿 iPhone Duo 的三合一体图标。</string>
 
 
@@ -246,7 +247,7 @@
     <string name="about_scope_count">作用域应用</string>
     <string name="about_enabled_count">已开启显示项</string>
     <string name="about_title">关于</string>
-    <string name="about_summary">HyperDuo · 仿 iPhone Duo 三合一状态栏图标</string>
+    <string name="about_summary">FlymeDuo · 仿 iPhone Duo 三合一状态栏图标</string>
 
     <string name="info_module_version">应用版本</string>
     <string name="info_framework">Xposed 框架</string>
