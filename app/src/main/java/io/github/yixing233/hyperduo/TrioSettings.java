@@ -298,6 +298,8 @@ public final class TrioSettings {
      */
     public int glyphOffsetX;
     public int glyphOffsetY;
+    /** Horizontal shift of the stock icon area itself; see {@link Prefs#KEY_ICON_OFFSET_X}. */
+    public int iconOffsetX;
     /**
      * Demo two pretend cards, for a device with one SIM; see
      * {@link Prefs#KEY_DEMO_DUAL_SIM}. Display-only: the levels exist inside the
@@ -342,6 +344,7 @@ public final class TrioSettings {
         s.glyphScale = Prefs.DEF_GLYPH_SCALE;
         s.glyphOffsetX = Prefs.DEF_GLYPH_OFFSET;
         s.glyphOffsetY = Prefs.DEF_GLYPH_OFFSET;
+        s.iconOffsetX = Prefs.DEF_ICON_OFFSET;
         s.demoDualSim = Prefs.DEF_DEMO_DUAL_SIM;
         s.capsuleLeftDx = Prefs.DEF_CAPSULE_NUDGE;
         s.capsuleLeftDy = Prefs.DEF_CAPSULE_NUDGE;
@@ -483,6 +486,9 @@ public final class TrioSettings {
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
         s.glyphOffsetX = Prefs.clamp(
                 p.getInt(Prefs.KEY_GLYPH_OFFSET_X, Prefs.DEF_GLYPH_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+        s.iconOffsetX = Prefs.clamp(
+                p.getInt(Prefs.KEY_ICON_OFFSET_X, Prefs.DEF_ICON_OFFSET),
                 Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
         s.glyphOffsetY = Prefs.clamp(
                 p.getInt(Prefs.KEY_GLYPH_OFFSET_Y, Prefs.DEF_GLYPH_OFFSET),
@@ -880,6 +886,7 @@ public final class TrioSettings {
         s.glyphScale = glyphScale;
         s.glyphOffsetX = glyphOffsetX;
         s.glyphOffsetY = glyphOffsetY;
+        s.iconOffsetX = iconOffsetX;
         s.demoDualSim = demoDualSim;
         s.capsuleLeftDx = capsuleLeftDx;
         s.capsuleLeftDy = capsuleLeftDy;
@@ -973,6 +980,7 @@ public final class TrioSettings {
         case Prefs.KEY_PERF_WEIGHT: perfWeight = src.perfWeight; return true;
             case Prefs.KEY_GLYPH_SCALE: glyphScale = src.glyphScale; return true;
             case Prefs.KEY_GLYPH_OFFSET_X: glyphOffsetX = src.glyphOffsetX; return true;
+            case Prefs.KEY_ICON_OFFSET_X: iconOffsetX = src.iconOffsetX; return true;
             case Prefs.KEY_GLYPH_OFFSET_Y: glyphOffsetY = src.glyphOffsetY; return true;
             case Prefs.KEY_DEMO_DUAL_SIM: demoDualSim = src.demoDualSim; return true;
             case Prefs.KEY_CAPSULE_LEFT_DX: capsuleLeftDx = src.capsuleLeftDx; return true;
@@ -1083,6 +1091,9 @@ public final class TrioSettings {
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
         s.glyphOffsetX = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_GLYPH_OFFSET_X, Prefs.DEF_GLYPH_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+        s.iconOffsetX = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_ICON_OFFSET_X, Prefs.DEF_ICON_OFFSET),
                 Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
         s.glyphOffsetY = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_GLYPH_OFFSET_Y, Prefs.DEF_GLYPH_OFFSET),
@@ -1238,6 +1249,7 @@ public final class TrioSettings {
         b.putInt(Prefs.KEY_PERF_WEIGHT, perfWeight);
         b.putInt(Prefs.KEY_GLYPH_SCALE, glyphScale);
         b.putInt(Prefs.KEY_GLYPH_OFFSET_X, glyphOffsetX);
+        b.putInt(Prefs.KEY_ICON_OFFSET_X, iconOffsetX);
         b.putInt(Prefs.KEY_GLYPH_OFFSET_Y, glyphOffsetY);
         b.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, demoDualSim);
         b.putInt(Prefs.KEY_CAPSULE_LEFT_DX, capsuleLeftDx);
@@ -1360,6 +1372,7 @@ public final class TrioSettings {
                 && glyphScale == s.glyphScale
                 && glyphOffsetX == s.glyphOffsetX
                 && glyphOffsetY == s.glyphOffsetY
+                && iconOffsetX == s.iconOffsetX
                 && demoDualSim == s.demoDualSim
                 // The four capsule nudges, and the reason this defect was noticed at all:
                 // they were added to defaults(), from(), copy(), applyKeyFrom() and both
@@ -1424,6 +1437,7 @@ public final class TrioSettings {
         h = h * 31 + glyphScale;
         h = h * 31 + glyphOffsetX;
         h = h * 31 + glyphOffsetY;
+        h = h * 31 + iconOffsetX;
         h = h * 31 + (demoDualSim ? 1 : 0);
         h = h * 31 + (perfTempChargingOnly ? 1 : 0);
         h = h * 31 + capsuleLeftDx;

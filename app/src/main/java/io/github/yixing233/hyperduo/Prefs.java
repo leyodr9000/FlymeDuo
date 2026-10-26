@@ -85,6 +85,8 @@ public final class Prefs {
     public static final String KEY_GLYPH_SCALE = "glyph_scale_pct";
     /** Horizontal nudge of the whole glyph, in dp; negative moves left. */
     public static final String KEY_GLYPH_OFFSET_X = "glyph_offset_x_dp";
+    /** Horizontal shift of the status bar's own icon area, in dp; independent of the glyph. */
+    public static final String KEY_ICON_OFFSET_X = "icon_offset_x_dp";
     /** Vertical nudge of the whole glyph, in dp; negative moves up. */
     public static final String KEY_GLYPH_OFFSET_Y = "glyph_offset_y_dp";
     /** Demo two pretend cards, so a single-SIM device can preview the stacked readings. */
@@ -1382,6 +1384,8 @@ public final class Prefs {
     public static final int DEF_GLYPH_SCALE = 100;
     /** Centered by default; see {@link #KEY_GLYPH_OFFSET_X} / {@link #KEY_GLYPH_OFFSET_Y}. */
     public static final int DEF_GLYPH_OFFSET = 0;
+    /** Same span as the glyph nudge; see {@link #KEY_ICON_OFFSET_X}. */
+    public static final int DEF_ICON_OFFSET = 0;
     /** Off by default: the demo draws signal levels that no radio is reporting. */
     public static final boolean DEF_DEMO_DUAL_SIM = false;
 

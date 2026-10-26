@@ -137,7 +137,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.41";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.42";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -498,6 +498,7 @@ final class FlymeHooks {
             if (!STATUS_ICON_CONTAINERS.containsKey(container)) {
                 STATUS_ICON_CONTAINERS.put(container, java.lang.Boolean.TRUE);
                 hideStockIconsOnce(container);
+                applyIconOffset(container);
             }
         }
     }
@@ -657,8 +658,35 @@ final class FlymeHooks {
             if (changed) {
                 container.requestLayout();
             }
+            applyIconOffset(container);
         } catch (java.lang.Throwable t) {
             log(sModule, "slot visibility failed: " + t);
+        }
+    }
+
+    /**
+     * Shifts the stock icon area as a whole, independently of the glyph.
+     *
+     * <p>translationX rather than a margin on purpose: the icon container fills
+     * the row with weight=1, and a margin would resize it - Flyme's container
+     * hides icons it no longer thinks it has room for, so resizing in order to
+     * move is exactly how icons would quietly vanish. A translation moves the
+     * drawn cluster and touches no measurement.
+     *
+     * <p>Zero while the module is off or this surface is excluded, and it rides
+     * the same paths the slot hiding does, so a config change re-lands it.
+     */
+    static void applyIconOffset(android.view.ViewGroup container) {
+        int tx = 0;
+        if (io.github.yixing233.hyperduo.TrioConfig.get().enabled
+                && !excludedRegion(container)) {
+            final io.github.yixing233.hyperduo.TrioAppearance a =
+                    io.github.yixing233.hyperduo.TrioConfig.appearance();
+            final float density = container.getResources().getDisplayMetrics().density;
+            tx = java.lang.Math.round(a.iconOffsetXDp() * density);
+        }
+        if (container.getTranslationX() != tx) {
+            container.setTranslationX(tx);
         }
     }
     private static int hookIconContainer(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {

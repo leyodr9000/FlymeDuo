@@ -259,6 +259,7 @@ internal fun geometrySliders(): List<SliderSpec> {
         // section and the battery editor render one and the same row object.
         glyphScaleSlider,
         glyphOffsetXSlider,
+        iconOffsetXSlider,
         glyphOffsetYSlider,
         SliderSpec(
             group = GeometryGroup.Scale,
@@ -651,9 +652,28 @@ internal val glyphOffsetYSlider: SliderSpec = SliderSpec(
     suffix = "dp",
 )
 
-/** The three rows the merged size-and-position group folds away. */
+/**
+ * The stock icon area's own horizontal shift, as a named row beside the glyph's.
+ * Independent on purpose: a third-party theme can get BOTH gaps wrong, so the
+ * two sides are tuned separately rather than one following the other.
+ */
+internal val iconOffsetXSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_GLYPH_OFFSET,
+    max = Prefs.MAX_GLYPH_OFFSET,
+    read = { it.iconOffsetX },
+    write = { r, v -> r.setIconOffsetX(v) },
+    titleRes = { R.string.icon_offset_x_title },
+    summaryRes = { R.string.icon_offset_summary },
+    enabled = { it.glyph },
+    editorOwner = TrioSettingsPart.Battery,
+    suffix = "dp",
+)
+
+/** The rows the merged size-and-position group folds away. */
 internal val glyphSizeSpecs: List<SliderSpec> =
-    listOf(glyphScaleSlider, glyphOffsetXSlider, glyphOffsetYSlider)
+    listOf(glyphScaleSlider, glyphOffsetXSlider, iconOffsetXSlider, glyphOffsetYSlider)
 
 /**
  * The glyph's size and position as ONE row: the collapsed header shows the three
@@ -677,6 +697,7 @@ internal fun GlyphSizeGroup(
                 settings.glyphScale,
                 a.glyphOffsetXDp(),
                 a.glyphOffsetYDp(),
+                a.iconOffsetXDp(),
             ),
             insideMargin = SettingsItemMargin,
             enabled = a.glyph,

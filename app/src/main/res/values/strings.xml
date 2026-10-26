@@ -158,11 +158,13 @@
 
     <string name="glyph_scale_title">图标整体尺寸</string>
     <string name="glyph_scale_summary">默认 100%，可调 60–100%。100% 即撑满状态栏高度，状态栏、控制中心、通知中心三处尺寸一致。</string>
-    <string name="glyph_offset_x_title">水平间距</string>
+    <string name="glyph_offset_x_title">三合一水平</string>
     <string name="glyph_offset_y_title">垂直位置</string>
-    <string name="glyph_offset_summary">水平调节三合一与左侧图标的间距（第三方主题间距不适时用）：正值加大、负值靠近，图标本身不动。垂直为环在行内的对齐微调。可调 −24 到 24 dp</string>
+    <string name="glyph_offset_summary">调三合一与左侧图标的间距（第三方主题间距不适时用）：正值远离、负值靠近，可调 −24 到 24 dp</string>
+    <string name="icon_offset_x_title">其他图标水平</string>
+    <string name="icon_offset_summary">整体左右移动原厂图标区，与三合一水平互相独立：正值右移、负值左移，可调 −24 到 24 dp</string>
     <string name="glyph_size_group_title">尺寸与位置</string>
-    <string name="glyph_size_group_summary">整体 %1$d%% · 水平 %2$ddp · 垂直 %3$ddp，点按展开</string>
+    <string name="glyph_size_group_summary">整体 %1$d%% · 三合一 %2$ddp · 图标 %4$ddp · 垂直 %3$ddp，点按展开</string>
     <string name="demo_dual_sim_title">双卡信号演示</string>
     <string name="demo_dual_sim_summary">没有第二张实体卡也能预览堆叠读数：只伪造两张卡的信号电平，不碰网络。环内双行还要求环内没有 Wi-Fi 弧线、且未在充电。</string>
 
