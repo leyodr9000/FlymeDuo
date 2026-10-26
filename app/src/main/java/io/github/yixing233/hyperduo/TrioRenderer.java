@@ -275,15 +275,24 @@ final class TrioRenderer {
         if (s == null || cfg == null) {
             return;
         }
-        // The user's nudge is NOT applied here any more. It used to be a canvas
-        // translate, which moves only the drawing while the view's box stays
-        // put - the stock ink showed at the trailing edge and the row's other
-        // items never made room. The Flyme measure hook now applies the offset
-        // as the host's layout margins instead: the box itself moves, and the
-        // LinearLayout reflows the row around it.
+        // The user's nudge, in pixels: the whole glyph drawing moves within the
+        // box, the box and the row stay exactly where Flyme put them. This is
+        // deliberate - the nudge exists to re-place the glyph against whatever a
+        // third-party theme did to the row, and it must never drag the layout
+        // with it. The stock icon area has its own, independent nudge (see
+        // FlymeHooks.applyIconOffset), and the user combines the two freely.
+        final TrioAppearance flymeA = TrioAppearance.of(cfg);
+        final float flymeDensity = host.getResources().getDisplayMetrics().density;
+        final int flymeDx = Math.round(flymeA.glyphOffsetXDp() * flymeDensity);
+        final int flymeDy = Math.round(flymeA.glyphOffsetYDp() * flymeDensity);
+        final int flymeSave = canvas.save();
+        if (flymeDx != 0 || flymeDy != 0) {
+            canvas.translate(flymeDx, flymeDy);
+        }
         drawInto(canvas, host.getWidth(), host.getHeight(), s.level, s.charging, s.quickCharging,
                 s.powerSave, s.low, s.wifiPresent ? s.wifiLevel : -1, s.mobileLevel,
                 s.slotLevels, s.mobileType, s.foreground(), cfg, false, s.wifiPresent);
+        canvas.restoreToCount(flymeSave);
     }
 
     /**
