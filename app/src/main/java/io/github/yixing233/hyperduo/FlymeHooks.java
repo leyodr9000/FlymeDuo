@@ -39,13 +39,8 @@ final class FlymeHooks {
     private static final java.util.Set<android.view.View> OUT_SIGNAL_PENDING = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<android.view.View, java.lang.Boolean>());
     /** The last dual-row gate state logged, so the draw path logs on change only. */
     private static volatile java.lang.String sLastDualLog;
-    /**
-     * Captured icon container -> the view an icon-area nudge should move.
-     * Usually the container itself, except the status bar, where the whole
-     * {@code mSystemIconArea} moves so the network-speed view beside the
-     * container comes along.
-     */
-    private static final java.util.Map<android.view.ViewGroup, android.view.View> STATUS_ICON_CONTAINERS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
+    /** Captured stock icon containers; see {@link #applyIconOffset}. */
+    private static final java.util.Map<android.view.ViewGroup, java.lang.Boolean> STATUS_ICON_CONTAINERS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
 
     // Reflection on the layout path has to be cached: onLayout runs per frame,
     // and a getMethod() per child per pass was what turned a re-layout into an
@@ -141,7 +136,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.43";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.44";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -416,11 +411,7 @@ final class FlymeHooks {
                 if (area instanceof android.view.View) {
                     android.view.ViewGroup found = io.github.yixing233.hyperduo.FlymeHooks.findIconContainer((android.view.View) area);
                     if (found != null) {
-                        // The AREA is the shift target, not the container: the
-                        // network-speed view lives beside the container inside
-                        // mSystemIconArea, and an icon-area nudge that left the
-                        // speed text behind would read as a bug.
-                        io.github.yixing233.hyperduo.FlymeHooks.registerIconContainer(found, (android.view.View) area);
+                        io.github.yixing233.hyperduo.FlymeHooks.registerIconContainer(found);
                         io.github.yixing233.hyperduo.FlymeHooks.log(io.github.yixing233.hyperduo.FlymeHooks.sModule, "Flyme status icon container captured: " + found.getClass().getName());
                     } else {
                         io.github.yixing233.hyperduo.FlymeHooks.log(io.github.yixing233.hyperduo.FlymeHooks.sModule, "StatusIconContainer not found under mSystemIconArea");
@@ -495,15 +486,9 @@ final class FlymeHooks {
 
     /* JADX INFO: Access modifiers changed from: private */
     public static void registerIconContainer(final android.view.ViewGroup container) {
-        registerIconContainer(container, container);
-    }
-
-    /* JADX INFO: Access modifiers changed from: private */
-    public static void registerIconContainer(final android.view.ViewGroup container,
-                                             final android.view.View shiftTarget) {
         synchronized (STATUS_ICON_CONTAINERS) {
             if (!STATUS_ICON_CONTAINERS.containsKey(container)) {
-                STATUS_ICON_CONTAINERS.put(container, shiftTarget);
+                STATUS_ICON_CONTAINERS.put(container, java.lang.Boolean.TRUE);
                 hideStockIconsOnce(container);
                 applyIconOffset(container);
             }
@@ -1355,13 +1340,39 @@ final class FlymeHooks {
         return (java.lang.String) slot;
     }
 
+    /** True when the view is one of this module's battery hosts. */
+    private static boolean isGlyphHost(android.view.View v) {
+        synchronized (STATES) {
+            return STATES.containsKey(v);
+        }
+    }
+
+    /** True for views this module injected into a stock row; they ride the glyph side. */
+    private static boolean isModuleView(android.view.View v) {
+        synchronized (TYPE_LABELS) {
+            if (TYPE_LABELS.containsValue(v)) {
+                return true;
+            }
+        }
+        synchronized (OUT_SIGNAL_VIEWS) {
+            return OUT_SIGNAL_VIEWS.containsValue(v);
+        }
+    }
+
     /**
-     * Shifts the stock icon area as a whole, independently of the glyph.
+     * Shifts the stock icons as a whole, independently of the glyph.
      *
-     * <p>The shift target is usually the captured container itself, except the
-     * status bar, where it is the whole {@code mSystemIconArea}: the network
-     * speed indicator lives beside the icon container inside that area, and
-     * moving only the container would leave the speed text behind.
+     * <p>The targets are the stock children sitting BEFORE the battery host in
+     * the same row - the status icon container and, on Flyme, the network speed
+     * view beside it. The battery host itself is skipped: it is the glyph's own
+     * box, and moving it is exactly what the glyph slider does - this one must
+     * not drag the ring along, which is why the whole icon AREA is never moved
+     * (the battery lives inside mSystemIconArea, so translating that area would
+     * carry the glyph with it).
+     *
+     * <p>When the row has no battery host of ours (the control centre keeps its
+     * own stock battery), only the captured container moves, so nothing else on
+     * that surface follows.
      *
      * <p>translationX rather than a margin on purpose: the container fills the
      * row with weight=1, and a margin would resize it - Flyme's container hides
@@ -1373,13 +1384,6 @@ final class FlymeHooks {
      * the same paths the slot hiding does, so a config change re-lands it.
      */
     static void applyIconOffset(android.view.ViewGroup container) {
-        android.view.View target = container;
-        synchronized (STATUS_ICON_CONTAINERS) {
-            final android.view.View mapped = STATUS_ICON_CONTAINERS.get(container);
-            if (mapped != null) {
-                target = mapped;
-            }
-        }
         int tx = 0;
         if (io.github.yixing233.hyperduo.TrioConfig.get().enabled
                 && !excludedRegion(container)) {
@@ -1388,8 +1392,38 @@ final class FlymeHooks {
             final float density = container.getResources().getDisplayMetrics().density;
             tx = java.lang.Math.round(a.iconOffsetXDp() * density);
         }
-        if (target.getTranslationX() != tx) {
-            target.setTranslationX(tx);
+        final android.view.ViewParent vp = container.getParent();
+        if (!(vp instanceof android.view.ViewGroup)) {
+            if (container.getTranslationX() != tx) {
+                container.setTranslationX(tx);
+            }
+            return;
+        }
+        final android.view.ViewGroup row = (android.view.ViewGroup) vp;
+        boolean hasGlyphHost = false;
+        for (int i = 0; i < row.getChildCount(); i++) {
+            if (isGlyphHost(row.getChildAt(i))) {
+                hasGlyphHost = true;
+                break;
+            }
+        }
+        if (!hasGlyphHost) {
+            if (container.getTranslationX() != tx) {
+                container.setTranslationX(tx);
+            }
+            return;
+        }
+        for (int i = 0; i < row.getChildCount(); i++) {
+            final android.view.View child = row.getChildAt(i);
+            if (isGlyphHost(child)) {
+                break; // the battery side starts here; nothing past it belongs to the icons
+            }
+            if (isModuleView(child)) {
+                continue; // type label and out-of-ring reading ride the glyph side
+            }
+            if (child.getTranslationX() != tx) {
+                child.setTranslationX(tx);
+            }
         }
     }
 
