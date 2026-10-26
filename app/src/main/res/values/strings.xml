@@ -158,16 +158,9 @@
 
     <string name="glyph_scale_title">图标整体尺寸</string>
     <string name="glyph_scale_summary">默认 100%，可调 60–100%。100% 即撑满状态栏高度，状态栏、控制中心、通知中心三处尺寸一致。</string>
-    <string name="glyph_offset_x_title">三合一水平</string>
+    <string name="glyph_offset_x_title">水平位置</string>
     <string name="glyph_offset_y_title">垂直位置</string>
-    <string name="glyph_offset_summary">整体左右平移三合一本体，与其他图标互不影响：正值向右、负值向左，可调 −24 到 24 dp</string>
-    <string name="glyph_offset_y_summary">三合一在行内的垂直对齐微调：正值向下、负值向上，可调 −24 到 24 dp</string>
-    <string name="icon_offset_x_title">其他图标水平</string>
-    <string name="icon_offset_summary">整体平移原厂图标区（Wi-Fi、信号、网速指示器等），与三合一互相独立：正值向右、负值向左，可调 −24 到 24 dp</string>
-    <string name="glyph_size_group_title">尺寸与位置</string>
-    <string name="glyph_size_group_summary">整体 %1$d%% · 三合一 %2$ddp · 图标 %4$ddp · 垂直 %3$ddp，点按展开</string>
-    <string name="demo_dual_sim_title">双卡信号演示</string>
-    <string name="demo_dual_sim_summary">没有第二张实体卡也能预览堆叠读数：只伪造两张卡的信号电平，不碰网络。环内双行还要求环内没有 Wi-Fi 弧线、且未在充电。</string>
+    <string name="glyph_offset_summary">负值向左／上，正值向右／下，单位 dp，可调 −24 到 24；移动的是三合一本体，底色不随动</string>
 
     <string name="perf_scale_title">读数整体尺寸</string>
     <string name="perf_scale_summary">默认 100%，可调 60–150%。</string>

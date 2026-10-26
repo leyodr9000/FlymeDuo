@@ -39,13 +39,7 @@ final class FlymeHooks {
     private static final java.util.Set<android.view.View> OUT_SIGNAL_PENDING = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<android.view.View, java.lang.Boolean>());
     /** The last dual-row gate state logged, so the draw path logs on change only. */
     private static volatile java.lang.String sLastDualLog;
-    /**
-     * Captured icon container -> the view an icon-area nudge should move.
-     * Usually the container itself, except the status bar, where the whole
-     * {@code mSystemIconArea} moves so the network-speed view beside the
-     * container comes along.
-     */
-    private static final java.util.Map<android.view.ViewGroup, android.view.View> STATUS_ICON_CONTAINERS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
+    private static final java.util.Map<android.view.ViewGroup, java.lang.Boolean> STATUS_ICON_CONTAINERS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
 
     // Reflection on the layout path has to be cached: onLayout runs per frame,
     // and a getMethod() per child per pass was what turned a re-layout into an
@@ -141,7 +135,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.43";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.39";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -416,11 +410,7 @@ final class FlymeHooks {
                 if (area instanceof android.view.View) {
                     android.view.ViewGroup found = io.github.yixing233.hyperduo.FlymeHooks.findIconContainer((android.view.View) area);
                     if (found != null) {
-                        // The AREA is the shift target, not the container: the
-                        // network-speed view lives beside the container inside
-                        // mSystemIconArea, and an icon-area nudge that left the
-                        // speed text behind would read as a bug.
-                        io.github.yixing233.hyperduo.FlymeHooks.registerIconContainer(found, (android.view.View) area);
+                        io.github.yixing233.hyperduo.FlymeHooks.registerIconContainer(found);
                         io.github.yixing233.hyperduo.FlymeHooks.log(io.github.yixing233.hyperduo.FlymeHooks.sModule, "Flyme status icon container captured: " + found.getClass().getName());
                     } else {
                         io.github.yixing233.hyperduo.FlymeHooks.log(io.github.yixing233.hyperduo.FlymeHooks.sModule, "StatusIconContainer not found under mSystemIconArea");
@@ -495,17 +485,10 @@ final class FlymeHooks {
 
     /* JADX INFO: Access modifiers changed from: private */
     public static void registerIconContainer(final android.view.ViewGroup container) {
-        registerIconContainer(container, container);
-    }
-
-    /* JADX INFO: Access modifiers changed from: private */
-    public static void registerIconContainer(final android.view.ViewGroup container,
-                                             final android.view.View shiftTarget) {
         synchronized (STATUS_ICON_CONTAINERS) {
             if (!STATUS_ICON_CONTAINERS.containsKey(container)) {
-                STATUS_ICON_CONTAINERS.put(container, shiftTarget);
+                STATUS_ICON_CONTAINERS.put(container, java.lang.Boolean.TRUE);
                 hideStockIconsOnce(container);
-                applyIconOffset(container);
             }
         }
     }
@@ -665,7 +648,6 @@ final class FlymeHooks {
             if (changed) {
                 container.requestLayout();
             }
-            applyIconOffset(container);
         } catch (java.lang.Throwable t) {
             log(sModule, "slot visibility failed: " + t);
         }
@@ -1161,8 +1143,7 @@ final class FlymeHooks {
     static void logDualRowState(android.view.View host, io.github.yixing233.hyperduo.TrioState state) {
         final io.github.yixing233.hyperduo.TrioAppearance a =
                 io.github.yixing233.hyperduo.TrioConfig.appearance();
-        if (state == null || !a.glyph || !(a.dualSim || a.demoDualSim)
-                || !a.signalDots() || excludedRegion(host)) {
+        if (state == null || !a.glyph || !a.dualSim || !a.signalDots() || excludedRegion(host)) {
             return;
         }
         final boolean wifiInk = state.wifiPresent && state.wifiLevel >= 0;
@@ -1353,44 +1334,6 @@ final class FlymeHooks {
             return null;
         }
         return (java.lang.String) slot;
-    }
-
-    /**
-     * Shifts the stock icon area as a whole, independently of the glyph.
-     *
-     * <p>The shift target is usually the captured container itself, except the
-     * status bar, where it is the whole {@code mSystemIconArea}: the network
-     * speed indicator lives beside the icon container inside that area, and
-     * moving only the container would leave the speed text behind.
-     *
-     * <p>translationX rather than a margin on purpose: the container fills the
-     * row with weight=1, and a margin would resize it - Flyme's container hides
-     * icons it no longer thinks it has room for, so resizing in order to move is
-     * exactly how icons would quietly vanish. A translation moves the drawn
-     * cluster and touches no measurement.
-     *
-     * <p>Zero while the module is off or this surface is excluded, and it rides
-     * the same paths the slot hiding does, so a config change re-lands it.
-     */
-    static void applyIconOffset(android.view.ViewGroup container) {
-        android.view.View target = container;
-        synchronized (STATUS_ICON_CONTAINERS) {
-            final android.view.View mapped = STATUS_ICON_CONTAINERS.get(container);
-            if (mapped != null) {
-                target = mapped;
-            }
-        }
-        int tx = 0;
-        if (io.github.yixing233.hyperduo.TrioConfig.get().enabled
-                && !excludedRegion(container)) {
-            final io.github.yixing233.hyperduo.TrioAppearance a =
-                    io.github.yixing233.hyperduo.TrioConfig.appearance();
-            final float density = container.getResources().getDisplayMetrics().density;
-            tx = java.lang.Math.round(a.iconOffsetXDp() * density);
-        }
-        if (target.getTranslationX() != tx) {
-            target.setTranslationX(tx);
-        }
     }
 
     /* JADX INFO: Access modifiers changed from: private */

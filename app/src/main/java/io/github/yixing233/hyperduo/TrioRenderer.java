@@ -275,12 +275,10 @@ final class TrioRenderer {
         if (s == null || cfg == null) {
             return;
         }
-        // The user's nudge, in pixels: the whole glyph drawing moves within the
-        // box, the box and the row stay exactly where Flyme put them. This is
-        // deliberate - the nudge exists to re-place the glyph against whatever a
-        // third-party theme did to the row, and it must never drag the layout
-        // with it. The stock icon area has its own, independent nudge (see
-        // FlymeHooks.applyIconOffset), and the user combines the two freely.
+        // The user's nudge, in pixels: the whole glyph moves, the box does not.
+        // Flyme paints its own meter underneath, so what the nudge uncovers at
+        // the trailing edge is the stock ink - the span is clamped small (see
+        // Prefs.MIN/MAX_GLYPH_OFFSET) because this is a fit trim, not a move.
         final TrioAppearance flymeA = TrioAppearance.of(cfg);
         final float flymeDensity = host.getResources().getDisplayMetrics().density;
         final int flymeDx = Math.round(flymeA.glyphOffsetXDp() * flymeDensity);

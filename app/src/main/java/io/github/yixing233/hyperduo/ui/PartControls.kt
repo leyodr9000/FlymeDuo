@@ -23,10 +23,6 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
-import androidx.compose.runtime.getValue
-import androidx.compose.runtime.mutableStateOf
-import androidx.compose.runtime.saveable.rememberSaveable
-import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
@@ -259,7 +255,6 @@ internal fun geometrySliders(): List<SliderSpec> {
         // section and the battery editor render one and the same row object.
         glyphScaleSlider,
         glyphOffsetXSlider,
-        iconOffsetXSlider,
         glyphOffsetYSlider,
         SliderSpec(
             group = GeometryGroup.Scale,
@@ -646,80 +641,14 @@ internal val glyphOffsetYSlider: SliderSpec = SliderSpec(
     read = { it.glyphOffsetY },
     write = { r, v -> r.setGlyphOffsetY(v) },
     titleRes = { R.string.glyph_offset_y_title },
-    summaryRes = { R.string.glyph_offset_y_summary },
+    summaryRes = { R.string.glyph_offset_summary },
     enabled = { it.glyph },
     editorOwner = TrioSettingsPart.Battery,
     suffix = "dp",
 )
 
 /**
- * The stock icon area's own horizontal shift, as a named row beside the glyph's.
- * Independent on purpose: a third-party theme can get BOTH gaps wrong, so the
- * two sides are tuned separately rather than one following the other.
- */
-internal val iconOffsetXSlider: SliderSpec = SliderSpec(
-    group = GeometryGroup.Scale,
-    part = null,
-    min = Prefs.MIN_GLYPH_OFFSET,
-    max = Prefs.MAX_GLYPH_OFFSET,
-    read = { it.iconOffsetX },
-    write = { r, v -> r.setIconOffsetX(v) },
-    titleRes = { R.string.icon_offset_x_title },
-    summaryRes = { R.string.icon_offset_summary },
-    enabled = { it.glyph },
-    editorOwner = TrioSettingsPart.Battery,
-    suffix = "dp",
-)
-
-/** The rows the merged size-and-position group folds away. */
-internal val glyphSizeSpecs: List<SliderSpec> =
-    listOf(glyphScaleSlider, glyphOffsetXSlider, iconOffsetXSlider, glyphOffsetYSlider)
-
-/**
- * The glyph's size and position as ONE row: the collapsed header shows the three
- * live values, and tapping it expands the very same [SliderSpec] objects the old
- * flat list drew - one source of truth for range, gate and wording, drawn on both
- * surfaces (the home master section and the battery sheet) as one widget.
- */
-@Composable
-internal fun GlyphSizeGroup(
-    settings: TrioSettings,
-    update: ((SettingsRepository) -> Unit) -> Unit,
-    modifier: Modifier = Modifier,
-) {
-    val a = TrioAppearance.of(settings)
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        ArrowPreference(
-            title = stringResource(R.string.glyph_size_group_title),
-            summary = stringResource(
-                R.string.glyph_size_group_summary,
-                settings.glyphScale,
-                a.glyphOffsetXDp(),
-                a.glyphOffsetYDp(),
-                a.iconOffsetXDp(),
-            ),
-            insideMargin = SettingsItemMargin,
-            enabled = a.glyph,
-            onClick = { expanded = !expanded },
-        )
-        if (expanded) {
-            glyphSizeSpecs.forEach { spec ->
-                val hint = gateHintFor(spec, a)
-                if (hint == null) {
-                    SliderRow(spec, settings, update)
-                } else {
-                    TooltipBox(text = hint, enabled = true) {
-                        SliderRow(spec, settings, update)
-                    }
-                }
-            }
-        }
-    }
-}
-
-/**
- * That group as the home page's master section draws it.
+ * Those rows as the home page's master section draws them, tooltip and all.
  */
 @Composable
 internal fun GlyphScaleHomeRow(
@@ -727,7 +656,19 @@ internal fun GlyphScaleHomeRow(
     update: ((SettingsRepository) -> Unit) -> Unit,
     modifier: Modifier = Modifier,
 ) {
-    GlyphSizeGroup(settings, update, modifier)
+    val a = TrioAppearance.of(settings)
+    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
+        listOf(glyphScaleSlider, glyphOffsetXSlider, glyphOffsetYSlider).forEach { spec ->
+            val hint = gateHintFor(spec, a)
+            if (hint == null) {
+                SliderRow(spec, settings, update)
+            } else {
+                TooltipBox(text = hint, enabled = true) {
+                    SliderRow(spec, settings, update)
+                }
+            }
+        }
+    }
 }
 
 /**
@@ -824,7 +765,7 @@ internal fun PartSettingsSheet(
     ringSettings: TrioSettings = settings,
 ) {
     val a = TrioAppearance.of(settings)
-    val rows = slidersForEditor(part).filterNot { it in glyphSizeSpecs }
+    val rows = slidersForEditor(part)
     val controls = contentControlsFor(part)
     val colors = if (part == TrioSettingsPart.Appearance || part == TrioSettingsPart.Battery) RoleColor.entries
         else part.part?.let(::roleColorsForPart).orEmpty()
@@ -893,12 +834,6 @@ internal fun PartSettingsSheet(
                             onValueChange = { value -> update { it.setLowThreshold(value) } },
                         )
                     }
-                }
-
-                if (part == TrioSettingsPart.Battery) {
-                    // One folded group instead of three flat rows, the same
-                    // widget the home page's master section shows.
-                    GlyphSizeGroup(settings, update)
                 }
 
                 rows.forEach { spec ->

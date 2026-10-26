@@ -133,16 +133,9 @@
 
     <string name="glyph_scale_title">Overall icon size</string>
     <string name="glyph_scale_summary">The default is 100% and the slider covers 60–100%.</string>
-    <string name="glyph_offset_x_title">Glyph horizontal</string>
-    <string name="glyph_offset_y_title">Vertical position</string>
-    <string name="glyph_offset_summary">Moves the glyph itself left or right; the other items are untouched. Positive right, negative left; range −24 to 24 dp</string>
-    <string name="glyph_offset_y_summary">Vertical alignment of the glyph within the row: positive down, negative up; range −24 to 24 dp</string>
-    <string name="icon_offset_x_title">Icon area horizontal</string>
-    <string name="icon_offset_summary">Moves the stock icon area as a whole (Wi-Fi, signal, network speed), independently of the glyph: positive right, negative left. Range −24 to 24 dp</string>
-    <string name="glyph_size_group_title">Size &amp; position</string>
-    <string name="glyph_size_group_summary">Overall %1$d%% · glyph %2$d · icons %4$d · vertical %3$d (dp), tap to expand</string>
-    <string name="demo_dual_sim_title">Dual-SIM signal demo</string>
-    <string name="demo_dual_sim_summary">Preview the stacked readings without a second SIM: fakes the two card levels only, network untouched. The in-ring twin rows also need no Wi-Fi arcs in the ring and no charger.</string>
+    <string name="glyph_offset_x_title">Horizontal offset</string>
+    <string name="glyph_offset_y_title">Vertical offset</string>
+    <string name="glyph_offset_summary">Negative moves left or up, positive right or down, in dp; range −24 to 24. Moves the glyph itself, not its backdrop.</string>
 
     <string name="perf_scale_title">Overall reading size</string>
     <string name="perf_scale_summary">The default is 100% and the slider covers 60–150%.</string>

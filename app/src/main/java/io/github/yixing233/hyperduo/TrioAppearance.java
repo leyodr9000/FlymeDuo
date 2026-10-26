@@ -107,14 +107,6 @@ public final class TrioAppearance {
      * neither Wi-Fi ink nor a charger to report - see {@link #dualReading}.
      */
     public final boolean dualSim;
-
-    /**
-     * The demo switch: the module treats itself as holding two cards that report
-     * {@code 4}/{@code 2} while it is on. Same reading pipeline as the real
-     * switch, one explicit toggle, and nothing outside the module's own drawing
-     * changes.
-     */
-    public final boolean demoDualSim;
     /**
      * SIM 1's own row of four dots is wanted, as a component of its own.
      *
@@ -190,8 +182,6 @@ public final class TrioAppearance {
     public final int glyphOffsetX;
     /** Vertical nudge of the whole glyph, in dp; negative moves up. */
     public final int glyphOffsetY;
-    /** Horizontal shift of the stock icon area itself, in dp; independent of the glyph. */
-    public final int iconOffsetX;
 
     public final boolean roleColors;
     public final int criticalOnDark;
@@ -299,7 +289,6 @@ public final class TrioAppearance {
         signalOutOfRing = c.signalMode == Prefs.SIGNAL_OUT_RING;
         stackedSignal = c.stackedSignal;
         dualSim = c.dualSim;
-        demoDualSim = c.demoDualSim;
         showSim1 = c.showSim1;
         showSim2 = c.showSim2;
         dataSimOnly = c.dataSimOnly;
@@ -323,7 +312,6 @@ public final class TrioAppearance {
         glyphScale = c.glyphScale;
         glyphOffsetX = c.glyphOffsetX;
         glyphOffsetY = c.glyphOffsetY;
-        iconOffsetX = c.iconOffsetX;
 
         roleColors = c.roleColors;
         criticalOnDark = c.criticalOnDark;
@@ -553,7 +541,7 @@ public final class TrioAppearance {
      * @param sims how many SIM signal levels are known this frame
      */
     public boolean dualSimRows(boolean wifiInk, boolean charging, int sims) {
-        return (dualSim || demoDualSim) && signalDots() && sims >= 2 && !wifiInk && !charging;
+        return dualSim && signalDots() && sims >= 2 && !wifiInk && !charging;
     }
 
     /**
@@ -717,11 +705,6 @@ public final class TrioAppearance {
     /** The vertical nudge in dp, clamped; see {@link #glyphOffsetXDp()}. */
     public int glyphOffsetYDp() {
         return Prefs.clamp(glyphOffsetY, Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
-    }
-
-    /** The icon area's own horizontal shift in dp, clamped; see {@link #glyphOffsetXDp()}. */
-    public int iconOffsetXDp() {
-        return Prefs.clamp(iconOffsetX, Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
     }
 
     /** The same, for the reading: {@code perfScale} as a multiplier. */
