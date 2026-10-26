@@ -359,6 +359,9 @@ class SettingsRepository(context: Context) {
     fun setGlyphOffsetX(value: Int) = writeInt(Prefs.KEY_GLYPH_OFFSET_X, value)
     fun setGlyphOffsetY(value: Int) = writeInt(Prefs.KEY_GLYPH_OFFSET_Y, value)
 
+    /** The stock icon area's own horizontal shift, in dp. */
+    fun setIconOffsetX(value: Int) = writeInt(Prefs.KEY_ICON_OFFSET_X, value)
+
     /** Demo two pretend cards - display-only; see [Prefs.KEY_DEMO_DUAL_SIM]. */
     fun setDemoDualSim(value: Boolean) = writeBoolean(Prefs.KEY_DEMO_DUAL_SIM, value)
 
@@ -430,6 +433,7 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_GLYPH_SCALE, snapshot.glyphScale)
             prefs.putInt(Prefs.KEY_GLYPH_OFFSET_X, snapshot.glyphOffsetX)
             prefs.putInt(Prefs.KEY_GLYPH_OFFSET_Y, snapshot.glyphOffsetY)
+            prefs.putInt(Prefs.KEY_ICON_OFFSET_X, snapshot.iconOffsetX)
             prefs.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, snapshot.demoDualSim)
             // A key missing from this list is re-pushed as its default after every
             // framework reconnect, so a chosen font would silently revert on the
