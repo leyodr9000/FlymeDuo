@@ -39,6 +39,8 @@ final class FlymeHooks {
     private static final java.util.Set<android.view.View> OUT_SIGNAL_PENDING = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<android.view.View, java.lang.Boolean>());
     /** The last dual-row gate state logged, so the draw path logs on change only. */
     private static volatile java.lang.String sLastDualLog;
+    /** Battery host -> the "dx,dy" margins this module last wrote, for change detection. */
+    private static final java.util.Map<android.view.View, java.lang.String> GLYPH_OFFSETS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
     private static final java.util.Map<android.view.ViewGroup, java.lang.Boolean> STATUS_ICON_CONTAINERS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
 
     // Reflection on the layout path has to be cached: onLayout runs per frame,
@@ -135,7 +137,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.40";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.41";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -232,11 +234,17 @@ final class FlymeHooks {
         int measure = hook(module, io.github.yixing233.hyperduo.Refl.method(viewClass, "onMeasure", java.lang.Integer.TYPE, java.lang.Integer.TYPE), "hyperduo-flyme-battery-measure", new io.github.libxposed.api.XposedInterface.Hooker() {
             public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
                 java.lang.Object self = chain.getThisObject();
-                if (!(self instanceof android.view.View)
-                        || !io.github.yixing233.hyperduo.TrioConfig.get().enabled
-                        || io.github.yixing233.hyperduo.FlymeHooks.excludedRegion((android.view.View) self)) {
+                if (!(self instanceof android.view.View)) {
                     return chain.proceed();
                 }
+                android.view.View mself = (android.view.View) self;
+                if (!io.github.yixing233.hyperduo.TrioConfig.get().enabled
+                        || io.github.yixing233.hyperduo.FlymeHooks.excludedRegion(mself)) {
+                    // Not ours to shift: put the box back where Flyme had it.
+                    io.github.yixing233.hyperduo.FlymeHooks.resetGlyphOffset(mself);
+                    return chain.proceed();
+                }
+                io.github.yixing233.hyperduo.FlymeHooks.applyGlyphOffset(mself);
                 java.lang.Object currentDrawable = io.github.yixing233.hyperduo.Refl.get(io.github.yixing233.hyperduo.FlymeHooks.sBatteryDrawableField, self);
                 java.lang.Object stableDrawable = io.github.yixing233.hyperduo.Refl.get(io.github.yixing233.hyperduo.FlymeHooks.sBatteryNormalDrawableField, self);
                 if (!(currentDrawable instanceof android.graphics.drawable.Drawable)
@@ -371,6 +379,7 @@ final class FlymeHooks {
                 if (self instanceof android.view.View) {
                     io.github.yixing233.hyperduo.FlymeHooks.removeTypeLabel((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.forgetOutSignal((android.view.View) self);
+                    io.github.yixing233.hyperduo.FlymeHooks.resetGlyphOffset((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.restoreBatteryPercent((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.STATES.remove((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.REGION_CACHE.remove((android.view.View) self);
@@ -1335,6 +1344,73 @@ final class FlymeHooks {
             return null;
         }
         return (java.lang.String) slot;
+    }
+
+    /**
+     * Applies the user's whole-glyph nudge as the battery box's layout margins.
+     *
+     * <p>Margins, not a canvas translate: a translate moves only the drawing and
+     * the box stays put, so the stock ink showed at the trailing edge and the
+     * row never made room. As margins, the box itself moves and the row's
+     * LinearLayout reflows around it - a positive X compresses the weighted icon
+     * area to the left, a negative one gives that area its width back. This is
+     * the horizontal behaviour that reads as "the other items follow".
+     *
+     * <p>The vertical nudge moves the box inside the fixed-height row the same
+     * way, but the row's other children keep their own centring: shifting small
+     * icons off the row's optical centre reads as breakage, not as following, so
+     * vertical is deliberately a box-only adjustment.
+     *
+     * <p>Called from the measure hook, before the pass runs, so the measurement
+     * reflects the margins. The last written pair is cached per host and the
+     * write skipped when nothing changed - setLayoutParams schedules a layout
+     * pass, and this running per frame would otherwise loop the layout forever.
+     */
+    static void applyGlyphOffset(android.view.View host) {
+        final io.github.yixing233.hyperduo.TrioAppearance a =
+                io.github.yixing233.hyperduo.TrioConfig.appearance();
+        final float density = host.getResources().getDisplayMetrics().density;
+        final int dx = java.lang.Math.round(a.glyphOffsetXDp() * density);
+        final int dy = java.lang.Math.round(a.glyphOffsetYDp() * density);
+        final java.lang.String key = dx + "," + dy;
+        java.lang.String last;
+        synchronized (GLYPH_OFFSETS) {
+            last = GLYPH_OFFSETS.get(host);
+        }
+        if (key.equals(last)) {
+            return;
+        }
+        android.view.ViewGroup.LayoutParams lp = host.getLayoutParams();
+        if (!(lp instanceof android.view.ViewGroup.MarginLayoutParams)) {
+            return;
+        }
+        synchronized (GLYPH_OFFSETS) {
+            GLYPH_OFFSETS.put(host, key);
+        }
+        android.view.ViewGroup.MarginLayoutParams mlp =
+                (android.view.ViewGroup.MarginLayoutParams) lp;
+        mlp.leftMargin = dx;
+        mlp.topMargin = dy;
+        host.setLayoutParams(mlp);
+    }
+
+    /** Puts the battery box back where Flyme laid it out; a no-op if never shifted. */
+    static void resetGlyphOffset(android.view.View host) {
+        java.lang.String last;
+        synchronized (GLYPH_OFFSETS) {
+            last = GLYPH_OFFSETS.remove(host);
+        }
+        if (last == null || "0,0".equals(last)) {
+            return;
+        }
+        android.view.ViewGroup.LayoutParams lp = host.getLayoutParams();
+        if (lp instanceof android.view.ViewGroup.MarginLayoutParams) {
+            android.view.ViewGroup.MarginLayoutParams mlp =
+                    (android.view.ViewGroup.MarginLayoutParams) lp;
+            mlp.leftMargin = 0;
+            mlp.topMargin = 0;
+            host.setLayoutParams(mlp);
+        }
     }
 
     /* JADX INFO: Access modifiers changed from: private */
