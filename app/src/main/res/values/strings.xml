@@ -158,6 +158,9 @@
 
     <string name="glyph_scale_title">图标整体尺寸</string>
     <string name="glyph_scale_summary">默认 100%，可调 60–100%。100% 即撑满状态栏高度，状态栏、控制中心、通知中心三处尺寸一致。</string>
+    <string name="glyph_offset_x_title">水平位置</string>
+    <string name="glyph_offset_y_title">垂直位置</string>
+    <string name="glyph_offset_summary">负值向左／上，正值向右／下，单位 dp，可调 −24 到 24；移动的是三合一本体，底色不随动</string>
 
     <string name="perf_scale_title">读数整体尺寸</string>
     <string name="perf_scale_summary">默认 100%，可调 60–150%。</string>

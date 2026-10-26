@@ -291,6 +291,13 @@ public final class TrioSettings {
      * implies. Shrink-only; see {@link Prefs#KEY_GLYPH_SCALE}.
      */
     public int glyphScale;
+    /**
+     * Horizontal / vertical nudge of the whole glyph, in density pixels units of
+     * dp, sign as screen axes: negative X moves left, negative Y moves up. See
+     * {@link Prefs#KEY_GLYPH_OFFSET_X} / {@link Prefs#KEY_GLYPH_OFFSET_Y}.
+     */
+    public int glyphOffsetX;
+    public int glyphOffsetY;
     /** Interior cell nudges, in design units; see Prefs.KEY_CAPSULE_LEFT_DX. */
     public int capsuleLeftDx;
     public int capsuleLeftDy;
@@ -327,6 +334,8 @@ public final class TrioSettings {
         s.perfScale = Prefs.DEF_PERF_SCALE;
         s.perfWeight = Prefs.DEF_PERF_WEIGHT;
         s.glyphScale = Prefs.DEF_GLYPH_SCALE;
+        s.glyphOffsetX = Prefs.DEF_GLYPH_OFFSET;
+        s.glyphOffsetY = Prefs.DEF_GLYPH_OFFSET;
         s.capsuleLeftDx = Prefs.DEF_CAPSULE_NUDGE;
         s.capsuleLeftDy = Prefs.DEF_CAPSULE_NUDGE;
         s.capsuleRightDx = Prefs.DEF_CAPSULE_NUDGE;
@@ -465,6 +474,12 @@ public final class TrioSettings {
         s.glyphScale = Prefs.clamp(
                 p.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
+        s.glyphOffsetX = Prefs.clamp(
+                p.getInt(Prefs.KEY_GLYPH_OFFSET_X, Prefs.DEF_GLYPH_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+        s.glyphOffsetY = Prefs.clamp(
+                p.getInt(Prefs.KEY_GLYPH_OFFSET_Y, Prefs.DEF_GLYPH_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
         s.capsuleLeftDx = Prefs.clamp(p.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
                 Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X,
                 Prefs.MAX_CAPSULE_NUDGE_X);
@@ -855,6 +870,8 @@ public final class TrioSettings {
         s.perfScale = perfScale;
         s.perfWeight = perfWeight;
         s.glyphScale = glyphScale;
+        s.glyphOffsetX = glyphOffsetX;
+        s.glyphOffsetY = glyphOffsetY;
         s.capsuleLeftDx = capsuleLeftDx;
         s.capsuleLeftDy = capsuleLeftDy;
         s.capsuleRightDx = capsuleRightDx;
@@ -946,6 +963,8 @@ public final class TrioSettings {
             case Prefs.KEY_PERF_SCALE: perfScale = src.perfScale; return true;
         case Prefs.KEY_PERF_WEIGHT: perfWeight = src.perfWeight; return true;
             case Prefs.KEY_GLYPH_SCALE: glyphScale = src.glyphScale; return true;
+            case Prefs.KEY_GLYPH_OFFSET_X: glyphOffsetX = src.glyphOffsetX; return true;
+            case Prefs.KEY_GLYPH_OFFSET_Y: glyphOffsetY = src.glyphOffsetY; return true;
             case Prefs.KEY_CAPSULE_LEFT_DX: capsuleLeftDx = src.capsuleLeftDx; return true;
             case Prefs.KEY_CAPSULE_LEFT_DY: capsuleLeftDy = src.capsuleLeftDy; return true;
             case Prefs.KEY_CAPSULE_RIGHT_DX: capsuleRightDx = src.capsuleRightDx; return true;
@@ -1052,6 +1071,12 @@ public final class TrioSettings {
         s.glyphScale = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
+        s.glyphOffsetX = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_GLYPH_OFFSET_X, Prefs.DEF_GLYPH_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+        s.glyphOffsetY = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_GLYPH_OFFSET_Y, Prefs.DEF_GLYPH_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
         s.capsuleLeftDx = Prefs.clamp(bundle.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
                 Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X,
                 Prefs.MAX_CAPSULE_NUDGE_X);
@@ -1201,6 +1226,8 @@ public final class TrioSettings {
         b.putInt(Prefs.KEY_PERF_SCALE, perfScale);
         b.putInt(Prefs.KEY_PERF_WEIGHT, perfWeight);
         b.putInt(Prefs.KEY_GLYPH_SCALE, glyphScale);
+        b.putInt(Prefs.KEY_GLYPH_OFFSET_X, glyphOffsetX);
+        b.putInt(Prefs.KEY_GLYPH_OFFSET_Y, glyphOffsetY);
         b.putInt(Prefs.KEY_CAPSULE_LEFT_DX, capsuleLeftDx);
         b.putInt(Prefs.KEY_CAPSULE_LEFT_DY, capsuleLeftDy);
         b.putInt(Prefs.KEY_CAPSULE_RIGHT_DX, capsuleRightDx);
@@ -1319,6 +1346,8 @@ public final class TrioSettings {
                 // the old number on the next recomposition.
                 && perfWeight == s.perfWeight
                 && glyphScale == s.glyphScale
+                && glyphOffsetX == s.glyphOffsetX
+                && glyphOffsetY == s.glyphOffsetY
                 // The four capsule nudges, and the reason this defect was noticed at all:
                 // they were added to defaults(), from(), copy(), applyKeyFrom() and both
                 // bundle directions - the whole pipeline except this list - so the only
@@ -1380,6 +1409,8 @@ public final class TrioSettings {
         h = h * 31 + perfScale;
         h = h * 31 + perfWeight;
         h = h * 31 + glyphScale;
+        h = h * 31 + glyphOffsetX;
+        h = h * 31 + glyphOffsetY;
         h = h * 31 + (perfTempChargingOnly ? 1 : 0);
         h = h * 31 + capsuleLeftDx;
         h = h * 31 + capsuleLeftDy;

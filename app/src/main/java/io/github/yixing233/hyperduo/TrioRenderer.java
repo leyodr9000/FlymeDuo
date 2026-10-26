@@ -275,9 +275,22 @@ final class TrioRenderer {
         if (s == null || cfg == null) {
             return;
         }
+        // The user's nudge, in pixels: the whole glyph moves, the box does not.
+        // Flyme paints its own meter underneath, so what the nudge uncovers at
+        // the trailing edge is the stock ink - the span is clamped small (see
+        // Prefs.MIN/MAX_GLYPH_OFFSET) because this is a fit trim, not a move.
+        final TrioAppearance flymeA = TrioAppearance.of(cfg);
+        final float flymeDensity = host.getResources().getDisplayMetrics().density;
+        final int flymeDx = Math.round(flymeA.glyphOffsetXDp() * flymeDensity);
+        final int flymeDy = Math.round(flymeA.glyphOffsetYDp() * flymeDensity);
+        final int flymeSave = canvas.save();
+        if (flymeDx != 0 || flymeDy != 0) {
+            canvas.translate(flymeDx, flymeDy);
+        }
         drawInto(canvas, host.getWidth(), host.getHeight(), s.level, s.charging, s.quickCharging,
                 s.powerSave, s.low, s.wifiPresent ? s.wifiLevel : -1, s.mobileLevel,
                 s.slotLevels, s.mobileType, s.foreground(), cfg, false, s.wifiPresent);
+        canvas.restoreToCount(flymeSave);
     }
 
     /**

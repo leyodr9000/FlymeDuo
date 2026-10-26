@@ -34,6 +34,11 @@ final class FlymeHooks {
     /** Battery host -> the out-of-ring type label mounted beside it. */
     private static final java.util.Map<android.view.View, android.widget.TextView> TYPE_LABELS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
     private static final java.util.Set<android.view.View> TYPE_LABEL_PENDING = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<android.view.View, java.lang.Boolean>());
+    /** Battery host -> the out-of-ring stacked signal reading mounted beside it. */
+    private static final java.util.Map<android.view.View, FlymeOutSignalView> OUT_SIGNAL_VIEWS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
+    private static final java.util.Set<android.view.View> OUT_SIGNAL_PENDING = java.util.Collections.newSetFromMap(new java.util.concurrent.ConcurrentHashMap<android.view.View, java.lang.Boolean>());
+    /** The last dual-row gate state logged, so the draw path logs on change only. */
+    private static volatile java.lang.String sLastDualLog;
     private static final java.util.Map<android.view.ViewGroup, java.lang.Boolean> STATUS_ICON_CONTAINERS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
 
     // Reflection on the layout path has to be cached: onLayout runs per frame,
@@ -130,7 +135,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.38";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.39";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -213,6 +218,7 @@ final class FlymeHooks {
                 io.github.yixing233.hyperduo.TrioState state =
                         io.github.yixing233.hyperduo.FlymeHooks.stateFor(host);
                 state.refresh();
+                io.github.yixing233.hyperduo.FlymeHooks.logDualRowState(host, state);
                 io.github.yixing233.hyperduo.TrioRenderer.drawFlyme((android.graphics.Canvas) arg,
                         host, state, io.github.yixing233.hyperduo.TrioConfig.get());
                 return null;
@@ -364,6 +370,7 @@ final class FlymeHooks {
                 java.lang.Object self = chain.getThisObject();
                 if (self instanceof android.view.View) {
                     io.github.yixing233.hyperduo.FlymeHooks.removeTypeLabel((android.view.View) self);
+                    io.github.yixing233.hyperduo.FlymeHooks.forgetOutSignal((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.restoreBatteryPercent((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.STATES.remove((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.REGION_CACHE.remove((android.view.View) self);
@@ -577,19 +584,24 @@ final class FlymeHooks {
                     io.github.yixing233.hyperduo.TrioConfig.appearance();
             final java.util.List<java.lang.String> wanted = new java.util.ArrayList<>(3);
             if (hide && a.glyph) {
-                // Every managed slot, every time the module owns the battery.
-                // The placement settings say what the MODULE draws and where; they
-                // are not the stock row's business. Making the native mobile icon
-                // conditional on the ring drawing its own dots - which is what
-                // 1.7.5-flyme.27/.28 did - is exactly how the stock signal icon
-                // ended up on screen beside the ring: any placement the condition
-                // did not cover (type outside the ring, signal outside the ring,
-                // the card not dealt a slot) kept the native icon, and with it
-                // Flyme's own type text. The 1.7.5-flyme.11 baseline this port
-                // started from hid all three unconditionally.
+                // Wi-Fi folds every time the module owns the battery: the ring
+                // draws its own arcs while it is placed in the glyph, and this
+                // port has no out-of-ring Wi-Fi reading to hand the row back to.
                 wanted.add("wifi");
-                wanted.add("mobile");
-                wanted.add("stacked_mobile");
+                // Mobile folds exactly while the module draws the reading
+                // itself - in-ring dots, a per-card row, or the out-of-ring
+                // stacked view (TrioAppearance.foldsMobile). The .27/.28 lesson
+                // stands, but it condemns a NARROW condition ("the ring draws
+                // dots"), not conditionality: the narrow one let the stock icon
+                // leak beside the ring for every placement it did not cover.
+                // This aggregate folds every case the module draws, and hands
+                // the row back when it does not - which is what makes the
+                // out-of-ring switch mean something on Flyme instead of leaving
+                // the status bar with no signal at all (.29 hid it for good).
+                if (a.foldsMobile()) {
+                    wanted.add("mobile");
+                    wanted.add("stacked_mobile");
+                }
             }
             final java.util.List<java.lang.String> added;
             synchronized (ADDED_SLOTS) {
@@ -892,12 +904,16 @@ final class FlymeHooks {
             state = STATES.get(host);
         }
         final java.lang.String type = (state == null) ? "" : state.mobileType;
-        // The native mobile slot is hidden for the whole time the module owns the
-        // battery (see applySlotVisibility), so the platform's own type text is
-        // gone with it - this label is the only place the reading appears, and it
-        // must not depend on where the signal dots happen to sit.
+        // The native mobile slot is hidden while the module draws the reading
+        // itself (see applySlotVisibility), so the platform's own type text is
+        // gone with it - the label is the only place the reading appears, and it
+        // must not depend on where the signal dots happen to sit. When the module
+        // does NOT draw the reading (out of ring, stacked view off) the stock row
+        // - and the type text inside it - comes back, and the label has to go or
+        // the reading would show twice.
         final boolean wanted = a.glyph
                 && a.typeOutOfRing
+                && a.foldsMobile()
                 && !excludedRegion(host)
                 && !type.isEmpty()
                 && (parent instanceof android.widget.LinearLayout);
@@ -959,6 +975,11 @@ final class FlymeHooks {
                 } catch (java.lang.Throwable t) {
                     log(sModule, "type label failed: " + t);
                 }
+                try {
+                    syncOutSignalFlyme(host);
+                } catch (java.lang.Throwable t) {
+                    log(sModule, "out signal failed: " + t);
+                }
             }
         });
     }
@@ -973,6 +994,165 @@ final class FlymeHooks {
             if (p instanceof android.view.ViewGroup) {
                 ((android.view.ViewGroup) p).removeView(label);
             }
+        }
+    }
+
+    /**
+     * The out-of-ring stacked signal reading, Flyme edition.
+     *
+     * <p>The MIUI path mounts its own {@code OutSignalView} in the battery
+     * container; Flyme's battery lives directly in the system_icons row, so the
+     * reading mounts there instead, beside the battery and the type label. The
+     * drawing itself is the shared renderer - the same bars, dots and scale the
+     * MIUI status bar shows for the same switches.
+     */
+    private static final class FlymeOutSignalView extends android.view.View {
+        /** The glyph host the reading and the icon colour come from. */
+        android.view.View host;
+        /** Bars to light, {@code 0..4}; see TrioGeometry.STACK_COLUMNS. */
+        int bars;
+        /** Dots to light, or {@code -1} when there is no second reading. */
+        int dots = -1;
+
+        FlymeOutSignalView(android.view.View host) {
+            super(host.getContext());
+            this.host = host;
+        }
+
+        @Override
+        protected void onDraw(android.graphics.Canvas canvas) {
+            final android.view.View source = host;
+            if (source == null) {
+                return;
+            }
+            // Read per frame: the tint can change without anything invalidating
+            // this view directly (it is a foreign child in Flyme's row).
+            final io.github.yixing233.hyperduo.TrioState state = stateFor(source);
+            final int fg = (state != null) ? state.foreground() : 0xFFFFFFFF;
+            io.github.yixing233.hyperduo.TrioRenderer.drawOutSignal(canvas,
+                    getWidth(), getHeight(), bars, dots, fg,
+                    io.github.yixing233.hyperduo.TrioConfig.appearance());
+        }
+    }
+
+    /**
+     * Mounts, updates or removes the out-of-ring stacked reading for one host.
+     *
+     * <p>Posted only (via {@link #requestTypeLabelSync}), for the same reason the
+     * type label is: it may add a view, and that runnable never runs from a
+     * layout pass.
+     */
+    static void syncOutSignalFlyme(android.view.View host) {
+        if (host == null) {
+            return;
+        }
+        final android.view.ViewParent parent = host.getParent();
+        final io.github.yixing233.hyperduo.TrioAppearance a =
+                io.github.yixing233.hyperduo.TrioConfig.appearance();
+        final boolean wanted = a.glyph
+                && a.stackedOut()
+                && !excludedRegion(host)
+                && (parent instanceof android.widget.LinearLayout);
+        final FlymeOutSignalView existing;
+        synchronized (STATES) {
+            existing = OUT_SIGNAL_VIEWS.get(host);
+        }
+        if (!wanted) {
+            forgetOutSignal(host);
+            return;
+        }
+        final android.widget.LinearLayout row = (android.widget.LinearLayout) parent;
+        FlymeOutSignalView view = existing;
+        if (view == null || view.getParent() != row) {
+            if (view != null) {
+                forgetOutSignal(host);
+            }
+            view = new FlymeOutSignalView(host);
+            android.widget.LinearLayout.LayoutParams lp =
+                    new android.widget.LinearLayout.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                            android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.gravity = android.view.Gravity.CENTER_VERTICAL;
+            int index = row.indexOfChild(host);
+            row.addView(view, index < 0 ? row.getChildCount() : index, lp);
+            OUT_SIGNAL_VIEWS.put(host, view);
+        }
+        // A snapshot as fresh as the frame the user is reading: this runs from a
+        // posted runnable, so the levels are re-read here rather than trusted.
+        final io.github.yixing233.hyperduo.TrioState state = stateFor(host);
+        state.refresh();
+        final int[] reading = new int[2];
+        io.github.yixing233.hyperduo.TrioRenderer.outSignalLevels(a.dataSimOnly,
+                state.mobileLevel, state.slotLevels, io.github.yixing233.hyperduo.TrioState.sDataSlot,
+                reading);
+        // Telephony not answering yet draws unlit bars, not a missing view - the
+        // stock row is folded by now and a hole would read as no service anyway.
+        if (reading[0] < 0) {
+            reading[0] = 0;
+        }
+        final float density = host.getResources().getDisplayMetrics().density;
+        final int height = io.github.yixing233.hyperduo.TrioRenderer.outSignalHeight(
+                a.outSignalSize, density);
+        if (height <= 0) {
+            return;
+        }
+        final int width = io.github.yixing233.hyperduo.TrioRenderer.outSignalWidth(height);
+        final int margin = java.lang.Math.round(a.outSignalMargin * density);
+        view.bars = reading[0];
+        view.dots = reading[1];
+        if (view.getVisibility() != android.view.View.VISIBLE) {
+            view.setVisibility(android.view.View.VISIBLE);
+        }
+        android.widget.LinearLayout.LayoutParams lp =
+                (android.widget.LinearLayout.LayoutParams) view.getLayoutParams();
+        if (lp.width != width || lp.height != height || lp.leftMargin != margin) {
+            lp.width = width;
+            lp.height = height;
+            lp.leftMargin = margin;
+            view.setLayoutParams(lp);
+        }
+        view.invalidate();
+    }
+
+    /** Detaches the reading view from its row and forgets it; safe anywhere. */
+    static void forgetOutSignal(android.view.View host) {
+        final FlymeOutSignalView view;
+        synchronized (STATES) {
+            view = OUT_SIGNAL_VIEWS.remove(host);
+        }
+        if (view != null) {
+            android.view.ViewParent p = view.getParent();
+            if (p instanceof android.view.ViewGroup) {
+                try {
+                    ((android.view.ViewGroup) p).removeView(view);
+                } catch (java.lang.Throwable ignored) {
+                    // a row torn down under us is not worth crashing over
+                }
+            }
+        }
+    }
+
+    /**
+     * Logs, on change only, why the dual-SIM dot rows are (not) drawn.
+     *
+     * <p>The rows are gated on more than the switch - the two readings need two
+     * SIMs answering, the dots have to be the in-ring reading, and neither the
+     * Wi-Fi arcs nor the charger may own the top notch this frame. When a user
+     * reports "stacking does not work", this line says which gate is holding.
+     */
+    static void logDualRowState(android.view.View host, io.github.yixing233.hyperduo.TrioState state) {
+        final io.github.yixing233.hyperduo.TrioAppearance a =
+                io.github.yixing233.hyperduo.TrioConfig.appearance();
+        if (state == null || !a.glyph || !a.dualSim || !a.signalDots() || excludedRegion(host)) {
+            return;
+        }
+        final boolean wifiInk = state.wifiPresent && state.wifiLevel >= 0;
+        final boolean rows = a.dualSimRows(wifiInk, state.charging, state.sims);
+        final java.lang.String key = "sims=" + state.sims + " wifi=" + wifiInk
+                + " charging=" + state.charging + " rows=" + rows;
+        if (!key.equals(sLastDualLog)) {
+            sLastDualLog = key;
+            log(sModule, "dual rows: " + key);
         }
     }
 

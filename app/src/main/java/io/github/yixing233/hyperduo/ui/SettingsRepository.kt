@@ -355,6 +355,10 @@ class SettingsRepository(context: Context) {
     /** Overall size of the trio glyph, in percent - see [Prefs.KEY_GLYPH_SCALE]. */
     fun setGlyphScale(value: Int) = writeInt(Prefs.KEY_GLYPH_SCALE, value)
 
+    /** Whole-body nudges, in dp; negative moves left / up. */
+    fun setGlyphOffsetX(value: Int) = writeInt(Prefs.KEY_GLYPH_OFFSET_X, value)
+    fun setGlyphOffsetY(value: Int) = writeInt(Prefs.KEY_GLYPH_OFFSET_Y, value)
+
     /** Interior cell nudges; see [Prefs.KEY_CAPSULE_LEFT_DX]. */
     fun setCapsuleLeftDx(value: Int) = writeInt(Prefs.KEY_CAPSULE_LEFT_DX, value)
     fun setCapsuleLeftDy(value: Int) = writeInt(Prefs.KEY_CAPSULE_LEFT_DY, value)
@@ -421,6 +425,8 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_PERF_SCALE, snapshot.perfScale)
             prefs.putInt(Prefs.KEY_PERF_WEIGHT, snapshot.perfWeight)
             prefs.putInt(Prefs.KEY_GLYPH_SCALE, snapshot.glyphScale)
+            prefs.putInt(Prefs.KEY_GLYPH_OFFSET_X, snapshot.glyphOffsetX)
+            prefs.putInt(Prefs.KEY_GLYPH_OFFSET_Y, snapshot.glyphOffsetY)
             // A key missing from this list is re-pushed as its default after every
             // framework reconnect, so a chosen font would silently revert on the
             // next bind. This is the list DEVELOPMENT.md calls out for exactly that

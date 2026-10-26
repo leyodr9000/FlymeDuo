@@ -149,7 +149,7 @@ public final class TrioAppearance {
      */
     public final boolean perfPower;
     /** The battery temperature is drawn in the same out-of-ring strip. */
-    public final boolean perfTemp;
+    public final boolean perfTemp;
     /** Drops the temperature unless a charger is attached; see {@link Prefs#KEY_PERF_TEMP_CHARGING_ONLY}. */
     public final boolean perfTempChargingOnly;
     /**
@@ -177,6 +177,11 @@ public final class TrioAppearance {
      * {@code TrioRenderer.drawInto}.
      */
     public final int glyphScale;
+
+    /** Horizontal nudge of the whole glyph, in dp; negative moves left. */
+    public final int glyphOffsetX;
+    /** Vertical nudge of the whole glyph, in dp; negative moves up. */
+    public final int glyphOffsetY;
 
     public final boolean roleColors;
     public final int criticalOnDark;
@@ -300,11 +305,13 @@ public final class TrioAppearance {
         chargingShowsValue = c.chargingShowsValue;
         fontPath = c.fontPath == null ? "" : c.fontPath;
         perfPower = c.perfPower;
-        perfTemp = c.perfTemp;
+        perfTemp = c.perfTemp;
         perfTempChargingOnly = c.perfTempChargingOnly;
         perfScale = c.perfScale;
         perfWeight = c.perfWeight;
         glyphScale = c.glyphScale;
+        glyphOffsetX = c.glyphOffsetX;
+        glyphOffsetY = c.glyphOffsetY;
 
         roleColors = c.roleColors;
         criticalOnDark = c.criticalOnDark;
@@ -684,6 +691,20 @@ public final class TrioAppearance {
      */
     public float glyphFit() {
         return Prefs.clamp(glyphScale, Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE) / 100f;
+    }
+
+    /**
+     * The horizontal nudge in dp, clamped. Stated here for the same reason
+     * {@link #glyphFit} is: the broadcast path and the draw path must not be able
+     * to disagree about what a stored value means.
+     */
+    public int glyphOffsetXDp() {
+        return Prefs.clamp(glyphOffsetX, Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+    }
+
+    /** The vertical nudge in dp, clamped; see {@link #glyphOffsetXDp()}. */
+    public int glyphOffsetYDp() {
+        return Prefs.clamp(glyphOffsetY, Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
     }
 
     /** The same, for the reading: {@code perfScale} as a multiplier. */

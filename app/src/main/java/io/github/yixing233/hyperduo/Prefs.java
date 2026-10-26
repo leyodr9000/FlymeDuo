@@ -83,6 +83,10 @@ public final class Prefs {
      * <p>A brand-new key with a brand-new name.
      */
     public static final String KEY_GLYPH_SCALE = "glyph_scale_pct";
+    /** Horizontal nudge of the whole glyph, in dp; negative moves left. */
+    public static final String KEY_GLYPH_OFFSET_X = "glyph_offset_x_dp";
+    /** Vertical nudge of the whole glyph, in dp; negative moves up. */
+    public static final String KEY_GLYPH_OFFSET_Y = "glyph_offset_y_dp";
     public static final String KEY_SHOW_WIFI = "show_wifi";
     public static final String KEY_SHOW_MOBILE = "show_mobile";
     public static final String KEY_SHOW_VALUE = "show_value";
@@ -1374,6 +1378,8 @@ public final class Prefs {
      * settable, so an install that never touches the slider draws what it drew.
      */
     public static final int DEF_GLYPH_SCALE = 100;
+    /** Centered by default; see {@link #KEY_GLYPH_OFFSET_X} / {@link #KEY_GLYPH_OFFSET_Y}. */
+    public static final int DEF_GLYPH_OFFSET = 0;
 
     /**
      * Horizontal and vertical nudge for each of the capsule's two INTERIOR cells.
@@ -1779,6 +1785,9 @@ public final class Prefs {
      */
     public static final int MIN_GLYPH_SCALE = 60;
     public static final int MAX_GLYPH_SCALE = 100;
+    /** The nudge span, in dp: a few each way is what the row can visibly use. */
+    public static final int MIN_GLYPH_OFFSET = -24;
+    public static final int MAX_GLYPH_OFFSET = 24;
     /**
      * The performance-readout size span, in percent of the size the adaptive fit
      * settles on.

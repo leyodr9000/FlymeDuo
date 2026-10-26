@@ -254,6 +254,8 @@ internal fun geometrySliders(): List<SliderSpec> {
         // The glyph's overall size lives as a named spec so the home page's master
         // section and the battery editor render one and the same row object.
         glyphScaleSlider,
+        glyphOffsetXSlider,
+        glyphOffsetYSlider,
         SliderSpec(
             group = GeometryGroup.Scale,
             part = null,
@@ -613,7 +615,40 @@ internal val glyphScaleSlider: SliderSpec = SliderSpec(
 )
 
 /**
- * That row as the home page's master section draws it, tooltip and all.
+ * The glyph's whole-body horizontal nudge, as a named row beside the size row -
+ * same two surfaces, same one-object rule. Negative moves left.
+ */
+internal val glyphOffsetXSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_GLYPH_OFFSET,
+    max = Prefs.MAX_GLYPH_OFFSET,
+    read = { it.glyphOffsetX },
+    write = { r, v -> r.setGlyphOffsetX(v) },
+    titleRes = { R.string.glyph_offset_x_title },
+    summaryRes = { R.string.glyph_offset_summary },
+    enabled = { it.glyph },
+    editorOwner = TrioSettingsPart.Battery,
+    suffix = "dp",
+)
+
+/** The vertical twin of [glyphOffsetXSlider]; negative moves up. */
+internal val glyphOffsetYSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_GLYPH_OFFSET,
+    max = Prefs.MAX_GLYPH_OFFSET,
+    read = { it.glyphOffsetY },
+    write = { r, v -> r.setGlyphOffsetY(v) },
+    titleRes = { R.string.glyph_offset_y_title },
+    summaryRes = { R.string.glyph_offset_summary },
+    enabled = { it.glyph },
+    editorOwner = TrioSettingsPart.Battery,
+    suffix = "dp",
+)
+
+/**
+ * Those rows as the home page's master section draws them, tooltip and all.
  */
 @Composable
 internal fun GlyphScaleHomeRow(
@@ -622,13 +657,15 @@ internal fun GlyphScaleHomeRow(
     modifier: Modifier = Modifier,
 ) {
     val a = TrioAppearance.of(settings)
-    val hint = gateHintFor(glyphScaleSlider, a)
     Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        if (hint == null) {
-            SliderRow(glyphScaleSlider, settings, update)
-        } else {
-            TooltipBox(text = hint, enabled = true) {
-                SliderRow(glyphScaleSlider, settings, update)
+        listOf(glyphScaleSlider, glyphOffsetXSlider, glyphOffsetYSlider).forEach { spec ->
+            val hint = gateHintFor(spec, a)
+            if (hint == null) {
+                SliderRow(spec, settings, update)
+            } else {
+                TooltipBox(text = hint, enabled = true) {
+                    SliderRow(spec, settings, update)
+                }
             }
         }
     }
