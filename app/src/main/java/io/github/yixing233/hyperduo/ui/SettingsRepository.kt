@@ -359,6 +359,9 @@ class SettingsRepository(context: Context) {
     fun setGlyphOffsetX(value: Int) = writeInt(Prefs.KEY_GLYPH_OFFSET_X, value)
     fun setGlyphOffsetY(value: Int) = writeInt(Prefs.KEY_GLYPH_OFFSET_Y, value)
 
+    /** Demo two pretend cards - display-only; see [Prefs.KEY_DEMO_DUAL_SIM]. */
+    fun setDemoDualSim(value: Boolean) = writeBoolean(Prefs.KEY_DEMO_DUAL_SIM, value)
+
     /** Interior cell nudges; see [Prefs.KEY_CAPSULE_LEFT_DX]. */
     fun setCapsuleLeftDx(value: Int) = writeInt(Prefs.KEY_CAPSULE_LEFT_DX, value)
     fun setCapsuleLeftDy(value: Int) = writeInt(Prefs.KEY_CAPSULE_LEFT_DY, value)
@@ -427,6 +430,7 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_GLYPH_SCALE, snapshot.glyphScale)
             prefs.putInt(Prefs.KEY_GLYPH_OFFSET_X, snapshot.glyphOffsetX)
             prefs.putInt(Prefs.KEY_GLYPH_OFFSET_Y, snapshot.glyphOffsetY)
+            prefs.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, snapshot.demoDualSim)
             // A key missing from this list is re-pushed as its default after every
             // framework reconnect, so a chosen font would silently revert on the
             // next bind. This is the list DEVELOPMENT.md calls out for exactly that
