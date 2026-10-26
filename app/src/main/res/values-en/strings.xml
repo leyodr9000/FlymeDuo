@@ -136,6 +136,10 @@
     <string name="glyph_offset_x_title">Horizontal offset</string>
     <string name="glyph_offset_y_title">Vertical offset</string>
     <string name="glyph_offset_summary">Negative moves left or up, positive right or down, in dp; range −24 to 24. Moves the glyph itself, not its backdrop.</string>
+    <string name="glyph_size_group_title">Size &amp; position</string>
+    <string name="glyph_size_group_summary">Overall %1$d%% · X %2$ddp · Y %3$ddp, tap to expand</string>
+    <string name="demo_dual_sim_title">Dual-SIM signal demo</string>
+    <string name="demo_dual_sim_summary">Preview the stacked readings without a second SIM: fakes the two card levels only, network untouched. The in-ring twin rows also need no Wi-Fi arcs in the ring and no charger.</string>
 
     <string name="perf_scale_title">Overall reading size</string>
     <string name="perf_scale_summary">The default is 100% and the slider covers 60–150%.</string>
