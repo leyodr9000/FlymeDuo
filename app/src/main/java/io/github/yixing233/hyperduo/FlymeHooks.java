@@ -135,7 +135,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.40";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.39";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -1143,8 +1143,7 @@ final class FlymeHooks {
     static void logDualRowState(android.view.View host, io.github.yixing233.hyperduo.TrioState state) {
         final io.github.yixing233.hyperduo.TrioAppearance a =
                 io.github.yixing233.hyperduo.TrioConfig.appearance();
-        if (state == null || !a.glyph || !(a.dualSim || a.demoDualSim)
-                || !a.signalDots() || excludedRegion(host)) {
+        if (state == null || !a.glyph || !a.dualSim || !a.signalDots() || excludedRegion(host)) {
             return;
         }
         final boolean wifiInk = state.wifiPresent && state.wifiLevel >= 0;

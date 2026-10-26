@@ -161,10 +161,6 @@
     <string name="glyph_offset_x_title">水平位置</string>
     <string name="glyph_offset_y_title">垂直位置</string>
     <string name="glyph_offset_summary">负值向左／上，正值向右／下，单位 dp，可调 −24 到 24；移动的是三合一本体，底色不随动</string>
-    <string name="glyph_size_group_title">尺寸与位置</string>
-    <string name="glyph_size_group_summary">整体 %1$d%% · 水平 %2$ddp · 垂直 %3$ddp，点按展开</string>
-    <string name="demo_dual_sim_title">双卡信号演示</string>
-    <string name="demo_dual_sim_summary">没有第二张实体卡也能预览堆叠读数：只伪造两张卡的信号电平，不碰网络。环内双行还要求环内没有 Wi-Fi 弧线、且未在充电。</string>
 
     <string name="perf_scale_title">读数整体尺寸</string>
     <string name="perf_scale_summary">默认 100%，可调 60–150%。</string>
