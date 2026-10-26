@@ -107,14 +107,6 @@ public final class TrioAppearance {
      * neither Wi-Fi ink nor a charger to report - see {@link #dualReading}.
      */
     public final boolean dualSim;
-
-    /**
-     * The demo switch: the module treats itself as holding two cards that report
-     * {@code 4}/{@code 2} while it is on. Same reading pipeline as the real
-     * switch, one explicit toggle, and nothing outside the module's own drawing
-     * changes.
-     */
-    public final boolean demoDualSim;
     /**
      * SIM 1's own row of four dots is wanted, as a component of its own.
      *
@@ -297,7 +289,6 @@ public final class TrioAppearance {
         signalOutOfRing = c.signalMode == Prefs.SIGNAL_OUT_RING;
         stackedSignal = c.stackedSignal;
         dualSim = c.dualSim;
-        demoDualSim = c.demoDualSim;
         showSim1 = c.showSim1;
         showSim2 = c.showSim2;
         dataSimOnly = c.dataSimOnly;
@@ -550,7 +541,7 @@ public final class TrioAppearance {
      * @param sims how many SIM signal levels are known this frame
      */
     public boolean dualSimRows(boolean wifiInk, boolean charging, int sims) {
-        return (dualSim || demoDualSim) && signalDots() && sims >= 2 && !wifiInk && !charging;
+        return dualSim && signalDots() && sims >= 2 && !wifiInk && !charging;
     }
 
     /**
