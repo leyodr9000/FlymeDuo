@@ -164,6 +164,9 @@ final class TrioState {
      * wrong draws two grey rows instead of falling back to the single row.
      */
     static volatile int[] sSlotLevels = { -1, -1 };
+    /** The demo's two card levels - one strong, one mid, so the rows read apart. */
+    private static final int DEMO_SIM1_LEVEL = 4;
+    private static final int DEMO_SIM2_LEVEL = 2;
 
     /** The current default-data SIM's slot, or {@code -1} when it is unknown. */
     static volatile int sDataSlot = -1;
@@ -364,9 +367,21 @@ final class TrioState {
         // readout's own refresh path, which runs on the layout pass rather than
         // on refresh(), so there is nothing to mirror them into here.
 
-        final int[] slots = sSlotLevels;
+        int[] slots = sSlotLevels;
+        // Demo mode: two pretend cards, so a device with one SIM can still see
+        // and tune the stacked readings. Display-only - the real telephony
+        // state, the data connection and every network behaviour stay untouched,
+        // and the next poll overwrites the fake levels once the switch goes off.
+        if (io.github.yixing233.hyperduo.TrioConfig.get().demoDualSim) {
+            slots = new int[] { DEMO_SIM1_LEVEL, DEMO_SIM2_LEVEL };
+        }
         slotLevels = new int[] { slots[0], slots[1] };
         sims = (slots[0] >= 0 ? 1 : 0) + (slots[1] >= 0 ? 1 : 0);
+        if (io.github.yixing233.hyperduo.TrioConfig.get().demoDualSim) {
+            // The aggregate row follows the fake data card too, so the ring and
+            // the out-of-ring reading cannot disagree while the demo is on.
+            mobileLevel = slots[0];
+        }
 
         // Single row, no answer from the icon chain: the row still means "the SIM
         // that carries data", and the sampler resolved exactly which one that is.

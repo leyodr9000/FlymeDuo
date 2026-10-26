@@ -103,6 +103,7 @@ import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.io.File
 
@@ -333,6 +334,17 @@ private fun DrawingEditorCard(
                 // question the switch above answers, not a component detail.
                 ContentControlRow(ContentControl.Exclude, settings, update)
                 GlyphScaleHomeRow(settings, update)
+                // The demo switch lives at the master's level on purpose: it
+                // fakes the two card levels for the WHOLE glyph, so it answers
+                // "can I even see the stacked readings" before any placement
+                // question matters. Display-only - no telephony state is touched.
+                SwitchPreference(
+                    checked = settings.demoDualSim,
+                    title = stringResource(R.string.demo_dual_sim_title),
+                    summary = stringResource(R.string.demo_dual_sim_summary),
+                    insideMargin = SettingsItemMargin,
+                    onCheckedChange = { value -> update { it.setDemoDualSim(value) } },
+                )
             }
         }
 
