@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">FlymeDuo</string>
+    <string name="home_title">HyperDuo (Flyme fork)</string>
+    <string name="xposed_description">Gộp Wi-Fi, tín hiệu di động và pin trên thanh trạng thái thành một biểu tượng ba trong một, giống iPhone Duo.</string>
+
+    <string name="group_stroke">Viền</string>
+    <string name="group_scale">Kích thước chung</string>
+    <string name="group_text">Chữ</string>
+    <string name="group_type">Loại mạng</string>
+    <string name="group_out_signal">Tín hiệu ngoài vòng</string>
+    <string name="group_track">Nền vòng</string>
+    <string name="group_font">Phông chữ</string>
+
+    <string name="tab_parts">Thành phần</string>
+    <string name="tab_home">Trang chủ</string>
+    <string name="drawing_master_title">Công tắc chính</string>
+    <string name="drawing_quick_edit_title">Chỉnh sửa nhanh</string>
+    <string name="drawing_order_title">Thứ tự thành phần</string>
+
+    <string name="drawing_priority_empty_summary">Vị trí này chưa có thành phần nào, hãy nhấn “Thêm thành phần” bên dưới</string>
+    <string name="drawing_signal_out_of_ring_notice">Tín hiệu di động đang đặt ở “Ngoài vòng”, các chấm tín hiệu sẽ không được vẽ trong vòng.</string>
+    <string name="drawing_priority_first">Vị trí %1$d · Ưu tiên hiển thị</string>
+    <string name="drawing_priority_fallback">Vị trí %1$d · Thay thế khi mục phía trên không vẽ được</string>
+    <string name="drawing_priority_move_up">Chuyển lên</string>
+    <string name="drawing_priority_move_down">Chuyển xuống</string>
+    <string name="drawing_priority_remove">Xoá</string>
+    <string name="drawing_priority_showing">Vị trí 1 · Đang hiển thị</string>
+    <string name="drawing_pick_in_zone">Đã ở trong vòng</string>
+    <string name="drawing_pick_elsewhere">Ở vị trí khác</string>
+    <string name="drawing_pick_showing_now">Đang hiển thị thành phần này.</string>
+    <string name="drawing_pick_promote_summary">Đã ở trong vòng, nhấn để chuyển lên vị trí đầu tiên.</string>
+    <string name="drawing_pick_move_summary">Hiện đang ở %1$s, nhấn để chuyển sang vị trí này, %1$s sẽ để trống.</string>
+    <string name="drawing_move_title">Chuyển sang vị trí này?</string>
+    <string name="drawing_move_summary">%1$s hiện đang ở %2$s. Sau khi chuyển sang đây, %2$s sẽ không còn thành phần đó.</string>
+    <string name="drawing_move_confirm">Chuyển sang đây</string>
+    <string name="drawing_priority_add">Thêm thành phần</string>
+    <string name="show_sim_1_title">Hiện chấm tín hiệu SIM 1</string>
+    <string name="show_sim_1_summary">Vẽ tín hiệu riêng của SIM 1 thành một hàng bốn chấm.</string>
+    <string name="show_sim_2_title">Hiện chấm tín hiệu SIM 2</string>
+    <string name="show_sim_2_summary">Vẽ tín hiệu riêng của SIM 2 thành một hàng bốn chấm.</string>
+    <string name="ring_position_wifi">Vị trí cung Wi-Fi</string>
+    <string name="ring_position_mobile">Vị trí tín hiệu di động</string>
+    <string name="signal_mode_in_ring">Trong vòng</string>
+    <string name="signal_mode_out_ring">Ngoài vòng</string>
+    <string name="stacked_signal_title">Tín hiệu xếp chồng</string>
+    <string name="stacked_signal_summary">Khi ở ngoài vòng, mô-đun tự vẽ một nhóm chỉ số tín hiệu cạnh pin, không trả lại cho biểu tượng hệ thống.</string>
+    <string name="out_signal_size_title">Kích thước tín hiệu xếp chồng</string>
+    <string name="out_signal_size_summary">Mặc định 15dp, có thể chỉnh 6–20dp.</string>
+    <string name="out_signal_margin_title">Khoảng cách tín hiệu xếp chồng</string>
+    <string name="out_signal_margin_summary">Mặc định 2dp, có thể chỉnh 0–16dp.</string>
+    <string name="ring_position_sim_1">Vị trí chấm tín hiệu SIM 1</string>
+    <string name="ring_position_sim_2">Vị trí chấm tín hiệu SIM 2</string>
+    <string name="ring_position_value">Vị trí số phần trăm pin</string>
+    <string name="ring_position_bolt">Vị trí biểu tượng tia sét sạc</string>
+    <string name="ring_position_type">Vị trí loại mạng</string>
+    <string name="ring_position_clock">Vị trí đồng hồ</string>
+    <string name="ring_position_native">Trả về hệ thống</string>
+    <string name="drawing_occupant_sim_1">Chấm tín hiệu SIM 1</string>
+    <string name="drawing_occupant_sim_2">Chấm tín hiệu SIM 2</string>
+    <string name="drawing_outside_title">Thành phần ngoài vòng</string>
+    <string name="out_order_move_in">Di chuyển về phía pin</string>
+    <string name="out_order_move_out">Di chuyển ra ngoài</string>
+    <string name="out_order_outwards">← Ra ngoài</string>
+    <string name="out_order_battery">Sát pin →</string>
+    <string name="drawing_part_appearance">Giao diện</string>
+    <string name="drawing_part_battery">Pin</string>
+    <string name="drawing_part_readouts">Nhóm chỉ số</string>
+    <string name="drawing_part_ring">Thành phần trong vòng</string>
+    <string name="drawing_parts_title">Giao diện thành phần</string>
+    <string name="drawing_preview_hidden">Đã ẩn bản xem trước</string>
+    <string name="drawing_readout_sample_summary">Ví dụ về nhóm chỉ số ngoài vòng, nội dung thực tế thay đổi theo trạng thái.</string>
+    <string name="drawing_theme_dark">Tối</string>
+    <string name="drawing_theme_light">Sáng</string>
+    <string name="drawing_theme_system">Theo hệ thống</string>
+    <string name="drawing_occupant_clock">Thời gian</string>
+    <string name="drawing_clock_fixed">Thời gian là nội dung cố định của viên nang, có thể chỉnh cỡ chữ và độ đậm.</string>
+    <string name="drawing_pick_title">%1$s: hiện là %2$s</string>
+    <string name="drawing_pick_none_summary">Xoá thành phần tuỳ chọn ở vị trí này; vòng tròn và thanh pin vẫn được giữ.</string>
+    <string name="drawing_feedback_charging">%1$s đã được đặt ở %2$s; khi sạc, tia sét được ưu tiên hiển thị. Chuyển sang bản xem trước “Bình thường” để xem.</string>
+    <string name="drawing_feedback_bolt">Đã đặt %1$s ở %2$s; chuyển sang bản xem trước “Đang sạc” hoặc “Sạc nhanh” để xem.</string>
+    <string name="drawing_feedback_wifi">%1$s đã được đặt ở %2$s; bản xem trước hiện tại không có Wi-Fi, chuyển sang bản xem trước “Bình thường” để xem.</string>
+    <string name="drawing_feedback_other">%1$s đã được đặt ở %2$s; bản xem trước hiện tại đang hiển thị %3$s. Hãy đổi trạng thái xem trước để xem.</string>
+    <string name="drawing_pick_impossible">%1$s không đủ chỗ cho thành phần này.</string>
+    <string name="drawing_pick_signal_in_centre">%1$s không thể đặt ở giữa: phần giữa dành cho chỉ số trong vòng, chấm tín hiệu chỉ đặt được ở hai khoảng trống phía trên và phía dưới.</string>
+    <string name="drawing_hint_top">Phía trên</string>
+    <string name="drawing_hint_centre">Ở giữa</string>
+    <string name="drawing_hint_bottom">Phía dưới</string>
+    <string name="drawing_state_title">Trạng thái xem trước</string>
+    <string name="drawing_scene_normal">Bình thường</string>
+    <string name="drawing_scene_charging">Đang sạc</string>
+    <string name="drawing_scene_quick">Sạc nhanh</string>
+    <string name="drawing_scene_low">Pin yếu</string>
+    <string name="drawing_scene_critical">Pin nguy cấp</string>
+    <string name="drawing_scene_no_wifi">Không có Wi-Fi</string>
+    <string name="drawing_occupant_none">Trống</string>
+    <string name="drawing_occupant_value">Số phần trăm pin</string>
+    <string name="drawing_occupant_bolt">Tia sét sạc</string>
+    <string name="drawing_occupant_wifi">Cung Wi-Fi</string>
+    <string name="drawing_occupant_mobile">移动信号点</string>
+        <string name="drawing_occupant_type">Loại mạng</string>
+    <string name="drawing_master_off">Công tắc chính đã tắt, bản xem trước vẫn vẽ theo kiểu bạn chọn nhưng thanh trạng thái sẽ không hiển thị.</string>
+    <string name="drawing_settings_title">Cài đặt “%1$s”</string>
+    <string name="drawing_settings_none">Mục này không có kích thước hay màu sắc để chỉnh.</string>
+    <string name="drawing_close">Đóng</string>
+
+    <string name="master_title">Bật biểu tượng ba trong một</string>
+
+    <string name="exclude_regions_title">Phạm vi áp dụng</string>
+    <string name="exclude_regions_summary">Các vị trí bị loại trừ sẽ giữ pin gốc của Flyme, cách hiển thị do bốn kiểu gốc quyết định</string>
+    <string name="exclude_regions_all">Tất cả vị trí</string>
+    <string name="exclude_regions_no_control_centre">Loại trừ Trung tâm điều khiển</string>
+    <string name="exclude_regions_no_notification">Loại trừ Trung tâm thông báo</string>
+    <string name="exclude_regions_no_both">Loại trừ Trung tâm điều khiển + Trung tâm thông báo</string>
+
+    <string name="trio_style_title">Kiểu ba trong một</string>
+    <string name="trio_style_ring">Vòng tròn</string>
+    <string name="trio_style_capsule">Viên nang</string>
+
+    <string name="show_wifi_title">Hiện cung Wi-Fi</string>
+    <string name="show_wifi_summary">Vẽ cung Wi-Fi ở lớp ngoài cùng, số cung thay đổi theo cường độ tín hiệu.</string>
+
+    <string name="show_mobile_title">Hiện chấm tín hiệu di động</string>
+    <string name="show_mobile_summary">Vẽ bốn chấm mức ở phía dưới để biểu thị cường độ tín hiệu di động.</string>
+
+
+    <string name="charging_shows_value_title">Hiện phần trăm pin trong vòng khi sạc</string>
+    <string name="charging_shows_value_summary">Khi sạc, hiển thị phần trăm pin ở giữa; rút sạc sẽ trở lại nội dung ban đầu. Chỉ áp dụng cho kiểu vòng tròn.</string>
+    <string name="show_value_title">Hiện số phần trăm pin</string>
+    <string name="show_value_summary">Hiển thị phần trăm pin trong vòng.</string>
+
+    <string name="show_bolt_title">Hiện tia sét khi sạc</string>
+    <string name="bolt_scale_placed_hint">Tia sét sạc trong phần thứ tự thành phần</string>
+    <string name="bolt_scale_title">Kích thước tia sét sạc</string>
+    <string name="bolt_scale_summary">Mặc định 100%, có thể chỉnh 60–160%.</string>
+    <string name="show_bolt_summary">Khi sạc, thay nội dung trong vòng bằng biểu tượng tia sét.</string>
+    <string name="dot_scale_title">Kích thước chấm tín hiệu trong vòng</string>
+    <string name="dot_scale_summary">Dùng chung cho hai hàng chấm phía trên và phía dưới. Mặc định 100% nghĩa là đường kính chấm bằng độ dày vòng; có thể chỉnh 50–160%, khi phóng to sẽ ngừng tăng ở khoảng trống phía trên và phía dưới.</string>
+
+    <string name="type_hide_on_wifi_title">Ẩn loại mạng khi kết nối Wi-Fi</string>
+    <string name="type_hide_on_wifi_summary">Ẩn khi đã kết nối Wi-Fi, tự hiện lại khi ngắt kết nối hoặc chuyển sang dữ liệu di động.</string>
+    <string name="show_mobile_type_title">Loại mạng</string>
+    <string name="show_mobile_type_summary">Chữ 3G/4G/5G, v.v., có thể đặt trong hoặc ngoài vòng.</string>
+    <string name="mobile_type_off">Tắt</string>
+    <string name="mobile_type_inside">Trong vòng</string>
+    <string name="mobile_type_outside">Ngoài vòng</string>
+
+
+
+    <string name="data_sim_only_title">Chỉ hiện SIM dữ liệu</string>
+
+
+
+    <string name="perf_power_title">Công suất sạc</string>
+
+    <string name="perf_temp_title">Nhiệt độ pin</string>
+
+    <string name="glyph_scale_title">Kích thước chung của biểu tượng</string>
+    <string name="glyph_scale_summary">Mặc định 100%, có thể chỉnh 60–100%. 100% là lấp đầy chiều cao thanh trạng thái; kích thước đồng nhất ở thanh trạng thái, Trung tâm điều khiển và Trung tâm thông báo.</string>
+    <string name="glyph_offset_x_title">Vị trí ngang của ba trong một</string>
+    <string name="glyph_offset_y_title">Vị trí dọc</string>
+    <string name="glyph_offset_summary">Dịch chuyển toàn bộ biểu tượng ba trong một sang trái/phải, không ảnh hưởng các biểu tượng khác: giá trị dương sang phải, giá trị âm sang trái, có thể chỉnh từ −24 đến 24 dp</string>
+    <string name="glyph_offset_y_summary">Tinh chỉnh căn dọc của biểu tượng ba trong một trong hàng: giá trị dương xuống dưới, giá trị âm lên trên, có thể chỉnh từ −24 đến 24 dp</string>
+    <string name="icon_offset_x_title">Vị trí ngang của các biểu tượng khác</string>
+    <string name="icon_offset_summary">Dịch chuyển toàn bộ vùng biểu tượng gốc (Wi-Fi, tín hiệu, chỉ báo tốc độ mạng, v.v.), độc lập với biểu tượng ba trong một: giá trị dương sang phải, giá trị âm sang trái, có thể chỉnh từ −24 đến 24 dp</string>
+    <string name="glyph_size_group_title">Kích thước và vị trí</string>
+    <string name="glyph_size_group_summary">Chung %1$d%% · Ba trong một %2$ddp · Biểu tượng %4$ddp · Dọc %3$ddp, nhấn để mở rộng</string>
+    <string name="demo_dual_sim_title">Minh hoạ tín hiệu hai SIM</string>
+    <string name="demo_dual_sim_summary">Xem trước chỉ số xếp chồng ngay cả khi không có SIM thứ hai: chỉ giả lập mức tín hiệu của hai SIM, không đụng đến mạng. Chế độ hai hàng trong vòng còn yêu cầu trong vòng không có cung Wi-Fi và không đang sạc.</string>
+
+    <string name="perf_scale_title">Kích thước chung của chỉ số</string>
+    <string name="perf_scale_summary">Mặc định 100%, có thể chỉnh 60–150%.</string>
+    <string name="perf_weight_title">Độ đậm của chỉ số</string>
+    <string name="perf_weight_summary">Mặc định 700, có thể chỉnh 100–900.</string>
+
+    <string name="perf_pair_title">Công suất sạc và nhiệt độ pin</string>
+
+
+    <string name="color_role_title">Màu trạng thái</string>
+
+    <string name="color_low_title">Màu pin yếu</string>
+    <string name="color_charging_title">Màu khi sạc</string>
+    <string name="color_critical_title">Màu pin nguy cấp</string>
+    <string name="color_field_summary">Nhấn để chọn màu</string>
+    <string name="color_on_dark">Nền tối</string>
+    <string name="color_on_light">Nền sáng</string>
+    <string name="color_dialog_summary">Đặt riêng màu dùng khi thanh trạng thái có nền tối và nền sáng.</string>
+    <string name="color_reset">Khôi phục mặc định</string>
+    <string name="color_reset_summary">Đưa ba màu trạng thái về cài đặt gốc.</string>
+    <string name="color_reset_dialog_summary">Cả ba màu trạng thái sẽ trở về cài đặt gốc, các màu tuỳ chỉnh hiện tại sẽ bị ghi đè.</string>
+    <string name="color_reset_confirm">Khôi phục</string>
+
+    <string name="low_threshold_title">Ngưỡng pin yếu</string>
+    <string name="low_threshold_summary">Mặc định 20%, có thể chỉnh 5–50%.</string>
+
+    <string name="stroke_title">Độ dày đường vòng</string>
+    <string name="stroke_summary">Mặc định 14dp, có thể chỉnh 4–16dp.</string>
+    <string name="stroke_title_rect">Độ dày thanh pin</string>
+    <string name="stroke_summary_rect">Mặc định 14dp, có thể chỉnh 4–16dp.</string>
+
+        <string name="wifi_scale_title">Kích thước cung Wi-Fi</string>
+    <string name="wifi_scale_summary">Mặc định 100%, có thể chỉnh 60–160%. Phóng to trong phạm vi không gian phù hợp của từng kiểu.</string>
+    <string name="arc_stroke_title">Độ dày đường cung</string>
+    <string name="arc_stroke_summary">Mặc định 12dp, có thể chỉnh 3–16dp.</string>
+    <string name="arc_stroke_summary_rect">Mặc định 12dp, có thể chỉnh 3–16dp.</string>
+
+    <string name="value_size_title">Cỡ chữ số</string>
+    <string name="value_size_summary">Mặc định 36, có thể chỉnh 16–44 (căn giữa trong vòng tối đa 56).</string>
+
+    <string name="value_weight_title">Độ đậm chữ số</string>
+    <string name="value_weight_summary">Mặc định 700, có thể chỉnh 100–900.</string>
+
+    <string name="clock_size_title">Cỡ chữ đồng hồ</string>
+    <string name="clock_size_summary">Mặc định 36, có thể chỉnh 16–44.</string>
+
+    <string name="clock_weight_title">Độ đậm chữ đồng hồ</string>
+    <string name="clock_weight_summary">Mặc định 700, có thể chỉnh 100–900.</string>
+
+    <string name="type_size_title">Cỡ chữ loại mạng</string>
+    <string name="type_size_summary">Mặc định 32, có thể chỉnh 16–56. Tự điều chỉnh theo độ rộng ô chứa: nhãn càng rộng thì chữ càng nhỏ, nhãn ngắn có thể hiển thị lớn hơn.</string>
+
+    <string name="out_type_size_title">Cỡ chữ loại mạng ngoài vòng</string>
+    <string name="out_type_size_summary">Mặc định 14dp, có thể chỉnh 8–44dp. Nhãn ngoài vòng có khung riêng, không bị giới hạn bởi độ rộng ô trong vòng.</string>
+
+    <string name="out_type_margin_left_title">Lề trái loại mạng ngoài vòng</string>
+    <string name="out_type_margin_left_summary">Mặc định 2dp, có thể chỉnh 0–16dp.</string>
+
+    <string name="out_type_margin_right_title">Lề phải loại mạng ngoài vòng</string>
+    <string name="out_type_margin_right_summary">Mặc định 2dp, có thể chỉnh 0–16dp.</string>
+
+    <string name="type_suffix_scale_title">Tỷ lệ chữ A trong 5GA</string>
+    <string name="type_suffix_scale_summary">Mặc định 65%, có thể chỉnh 50–100%.</string>
+
+    <string name="type_weight_title">Độ đậm chữ loại mạng</string>
+    <string name="type_weight_summary">Mặc định 700, có thể chỉnh 100–900.</string>
+
+    <string name="track_alpha_title">Độ đậm nền vòng</string>
+    <string name="track_alpha_summary">Mặc định 56, có thể chỉnh 0–255.</string>
+
+    <string name="nav_section">Giao diện</string>
+    <string name="nav_style_title">Kiểu thanh dưới</string>
+    <string name="nav_style_docked">Thanh dưới HyperOS</string>
+    <string name="nav_style_floating">Thanh dưới nổi HyperOS</string>
+    <string name="nav_style_liquid">Thanh dưới kính lỏng</string>
+    <string name="nav_labels_title">Nhãn thanh dưới</string>
+    <string name="nav_labels_both">Biểu tượng và chữ</string>
+    <string name="nav_labels_icon">Chỉ biểu tượng</string>
+    <string name="nav_labels_text">Chỉ chữ</string>
+    <string name="debug_title">Nhật ký gỡ lỗi</string>
+    <string name="debug_summary">Ghi quá trình chi tiết vào nhật ký LSPosed, bật khi cần tìm lỗi.</string>
+
+    <string name="about_activated">Đã kích hoạt</string>
+    <string name="about_inactive">Chưa kích hoạt</string>
+    <string name="about_inactive_hint">Vui lòng bật mô-đun trong LSPosed</string>
+    <string name="about_module_version">Phiên bản mô-đun: %1$s</string>
+    <string name="about_scope_count">Ứng dụng trong phạm vi</string>
+    <string name="about_enabled_count">Mục hiển thị đã bật</string>
+    <string name="about_title">Giới thiệu</string>
+    <string name="about_summary">FlymeDuo · Biểu tượng thanh trạng thái ba trong một giống iPhone Duo</string>
+
+    <string name="info_module_version">Phiên bản ứng dụng</string>
+    <string name="info_framework">Khung Xposed</string>
+    <string name="info_scope">Phạm vi</string>
+    <string name="info_system_version">Phiên bản hệ thống</string>
+    <string name="info_android_version">Phiên bản Android</string>
+    <string name="info_device_model">Mẫu thiết bị</string>
+    <string name="info_unknown">Không rõ</string>
+
+    <string name="update_title">Kiểm tra cập nhật</string>
+    <string name="update_summary_idle">Lấy phiên bản mới nhất từ GitHub Releases.</string>
+    <string name="update_checking">Đang kiểm tra…</string>
+    <string name="update_uptodate">Đã là phiên bản mới nhất %1$s</string>
+    <string name="update_available">Có phiên bản mới %1$s</string>
+    <string name="update_dialog_title">Có phiên bản mới %1$s</string>
+    <string name="update_dialog_summary">Phiên bản hiện tại %1$s · Gói cài đặt %2$s</string>
+    <string name="update_dialog_notes_title">Nội dung cập nhật</string>
+    <string name="update_dialog_no_notes">Phiên bản này không có ghi chú cập nhật.</string>
+    <string name="update_dialog_later">Để sau</string>
+    <string name="update_available_summary">Phiên bản hiện tại %1$s · %2$s</string>
+    <string name="update_download">Tải bản cập nhật</string>
+    <string name="update_downloading">Đang tải %1$d%%</string>
+    <string name="update_ready">Đã tải xong phiên bản mới.</string>
+    <string name="update_ready_summary">Hệ thống sẽ hiện hộp thoại xác nhận cài đặt, xác nhận xong sẽ có hiệu lực.</string>
+    <string name="update_install">Cài đặt</string>
+    <string name="update_retry">Thử lại</string>
+    <string name="update_failed">Kiểm tra cập nhật thất bại</string>
+    <string name="update_no_release">Tác giả chưa phát hành phiên bản chính thức nào</string>
+    <string name="update_permission_needed">Cần cho phép ứng dụng này cài đặt ứng dụng trước, đã mở phần cài đặt tương ứng cho bạn.</string>
+    <string name="update_install_failed">Không tìm thấy ứng dụng nào trên hệ thống có thể xử lý việc cài đặt.</string>
+    <string name="update_release_page">Mở trang phát hành</string>
+    <string name="update_repo">Xem kho mã nguồn</string>
+    <string name="update_repo_summary">Xem mã nguồn và mô tả trên GitHub.</string>
+
+    <string name="restart_title">Khởi động lại Giao diện hệ thống</string>
+    <string name="restart_summary">Khởi động lại Giao diện hệ thống sẽ tải lại mô-đun, dùng khi vừa cài mô-đun hoặc Giao diện hệ thống bị lỗi. Thao tác này cần quyền root, Giao diện hệ thống sẽ biến mất trong giây lát rồi tự khôi phục, không ảnh hưởng đến các ứng dụng đang chạy.</string>
+    <string name="restart_confirm">Khởi động lại</string>
+    <string name="restart_running">Đang khởi động lại…</string>
+    <string name="restart_done">Đã khởi động lại Giao diện hệ thống</string>
+    <string name="restart_failed">Khởi động lại thất bại, vui lòng kiểm tra đã cấp quyền root chưa</string>
+    <string name="cancel">Huỷ</string>
+
+    <!-- Tooltip on a row greyed out by another setting; %1$s is that setting's name. -->
+        <string name="gate_hint">Cần bật “%1$s” trước</string>
+    <!-- The capsule's left column used to be reserved for the clock. -->
+    <!-- issue #38: the launcher entry is an activity-alias and can be switched off. -->
+    <string name="about_hide_icon">Ẩn biểu tượng trên màn hình chính</string>
+    <string name="about_hide_icon_summary">Chỉ tắt lối vào ở màn hình chính, vẫn có thể mở cài đặt trong LSPosed.</string>
+    <!-- issue #45: show the temperature only while a charger is attached. -->
+    <string name="perf_temp_charging_only_title">Chỉ hiện nhiệt độ khi sạc</string>
+    <string name="perf_temp_charging_only_summary">Khi bật, nhiệt độ sẽ xuất hiện và biến mất cùng với công suất sạc.</string>
+    <string name="drawing_hint_left">Bên trái</string>
+    <string name="drawing_hint_right">Bên phải</string>
+
+
+    <!-- Capsule interior cell nudges, in design units. -->
+    <string name="capsule_container_title">Cấu trúc viên nang</string>
+    <string name="capsule_container_summary">Độ dài và vị trí của hai ô trái, phải.</string>
+    <string name="capsule_length_title">Độ dài viên nang</string>
+    <string name="capsule_length_summary">Mặc định 0, có thể chỉnh từ -30 đến 60. Phần được kéo dài là đoạn thẳng giữa hai đầu bo tròn, viên nang rộng ra theo, góc bo và chiều cao không đổi.</string>
+    <string name="capsule_nudge_left_dx_title">Vị trí ngang ô trái</string>
+    <string name="capsule_nudge_left_dx_summary">Giá trị dương dịch sang phải, giá trị âm dịch sang trái.</string>
+    <string name="capsule_nudge_left_dy_title">Vị trí dọc ô trái</string>
+    <string name="capsule_nudge_left_dy_summary">Giá trị dương dịch xuống, giá trị âm dịch lên.</string>
+    <string name="capsule_nudge_right_dx_title">Vị trí ngang ô phải</string>
+    <string name="capsule_nudge_right_dx_summary">Giá trị dương dịch sang phải, giá trị âm dịch sang trái.</string>
+    <string name="capsule_nudge_right_dy_title">Vị trí dọc ô phải</string>
+    <string name="capsule_nudge_right_dy_summary">Giá trị dương dịch xuống, giá trị âm dịch lên.</string>
+
+    <!-- Custom font. The chosen file's own name is the summary, so this row shows
+         what is in use rather than only that something is. -->
+    <string name="font_title">Phông chữ tuỳ chỉnh</string>
+    <string name="font_summary_system">Phông chữ mặc định của hệ thống. Nhấn để chọn tệp phông chữ (.ttf / .otf).</string>
+    <string name="font_installing">Đang cài đặt…</string>
+    <string name="font_clear_title">Khôi phục phông chữ hệ thống</string>
+    <string name="font_clear_summary">Gỡ tệp phông chữ đã cài, chữ ba trong một trở về phông chữ hệ thống.</string>
+    <!-- Shown greyed out when no custom font is in use. -->
+    <string name="font_clear_summary_idle">Hiện đang dùng phông chữ hệ thống, không cần khôi phục.</string>
+    <!-- %1$s is the font file's own name. -->
+    <string name="font_applied">Đã áp dụng phông chữ %1$s</string>
+    <string name="font_not_a_font">Tệp này không phải phông chữ (chỉ hỗ trợ .ttf / .otf), đã bỏ qua</string>
+    <string name="font_failed">Cài đặt phông chữ thất bại, vui lòng thử lại</string>
+</resources>
