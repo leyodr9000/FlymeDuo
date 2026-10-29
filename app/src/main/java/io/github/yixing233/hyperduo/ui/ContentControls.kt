@@ -83,6 +83,8 @@ internal enum class ContentControl(val owner: TrioSettingsPart) {
     Type(TrioSettingsPart.Type),
     /** Drops the label while the arcs are on; see Prefs.KEY_TYPE_HIDE_ON_WIFI. */
     TypeHideOnWifi(TrioSettingsPart.Type),
+    /** The twin of the row above, for the mobile-data switch. */
+    TypeHideOnDataOff(TrioSettingsPart.Type),
     // --- readouts and fixed pieces --------------------------------------------
     Power(TrioSettingsPart.Readouts),
     Temperature(TrioSettingsPart.Readouts),
@@ -224,6 +226,14 @@ internal fun ContentControlRow(
             R.string.type_hide_on_wifi_title,
             R.string.type_hide_on_wifi_summary, master) { value ->
                 update { it.setTypeHideOnWifi(value) }
+            }
+        // The same question for the data switch, and the one this module was missing: with
+        // no Wi-Fi and no data the label still claimed a network, so the reading could not
+        // tell the user whether their data was even on.
+        ContentControl.TypeHideOnDataOff -> ContentToggle(settings.typeHideOnDataOff,
+            R.string.type_hide_on_data_off_title,
+            R.string.type_hide_on_data_off_summary, master) { value ->
+                update { it.setTypeHideOnDataOff(value) }
             }
         ContentControl.Power -> ContentToggle(settings.perfPower, R.string.perf_power_title,
             null, master) { value -> update { it.setPerfPower(value) } }

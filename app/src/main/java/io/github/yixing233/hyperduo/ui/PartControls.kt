@@ -703,36 +703,48 @@ internal fun GlyphSizeGroup(
     modifier: Modifier = Modifier,
 ) {
     val a = TrioAppearance.of(settings)
-    var expanded by rememberSaveable { mutableStateOf(false) }
-    Column(modifier = modifier, verticalArrangement = Arrangement.spacedBy(8.dp)) {
-        ArrowPreference(
+    // A sheet, not an inline expansion. Expanding pushed four sliders - three of them
+    // numeric nudges - into the middle of the page, and on the home page that meant the
+    // master section grew past the fold and pushed the sections below it out of sight.
+    // The capsule shape rows solved the same problem the same way, so this is that surface:
+    // one summary row, and the sliders live one tap away.
+    var sheet by rememberSaveable { mutableStateOf(false) }
+    ArrowPreference(
+        title = stringResource(R.string.glyph_size_group_title),
+        summary = stringResource(
+            R.string.glyph_size_group_summary,
+            settings.glyphScale,
+            a.glyphOffsetXDp(),
+            a.glyphOffsetYDp(),
+            a.iconOffsetXDp(),
+        ),
+        insideMargin = SettingsItemMargin,
+        enabled = a.glyph,
+        onClick = { sheet = true },
+        modifier = modifier,
+    )
+    if (sheet) {
+        val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        OverlayBottomSheet(
+            show = true,
             title = stringResource(R.string.glyph_size_group_title),
-            summary = stringResource(
-                R.string.glyph_size_group_summary,
-                settings.glyphScale,
-                a.glyphOffsetXDp(),
-                a.glyphOffsetYDp(),
-                a.iconOffsetXDp(),
-            ),
-            insideMargin = SettingsItemMargin,
-            enabled = a.glyph,
-            onClick = { expanded = !expanded },
-        )
-        if (expanded) {
-            glyphSizeSpecs.forEach { spec ->
-                val hint = gateHintFor(spec, a)
-                if (hint == null) {
-                    SliderRow(spec, settings, update)
-                } else {
-                    TooltipBox(text = hint, enabled = true) {
+            onDismissRequest = { sheet = false },
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(bottom = bottomInset)) {
+                glyphSizeSpecs.forEach { spec ->
+                    val hint = gateHintFor(spec, a)
+                    if (hint == null) {
                         SliderRow(spec, settings, update)
+                    } else {
+                        TooltipBox(text = hint, enabled = true) {
+                            SliderRow(spec, settings, update)
+                        }
                     }
                 }
             }
         }
     }
 }
-
 /**
  * That group as the home page's master section draws it.
  */
