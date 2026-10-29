@@ -143,10 +143,22 @@
     <string name="icon_offset_summary">Moves the stock icon area as a whole (Wi-Fi, signal, network speed), independently of the glyph: positive right, negative left. Range −24 to 24 dp</string>
     <string name="glyph_size_group_title">Size &amp; position</string>
     <string name="glyph_size_group_summary">Overall %1$d%% · glyph %2$d · icons %4$d · vertical %3$d (dp), tap to adjust</string>
-    <string name="demo_dual_sim_title">Dual-SIM signal demo</string>
-    <string name="demo_dual_sim_summary">Preview the stacked readings without a second SIM: fakes the two card levels only, network untouched. The in-ring twin rows also need no Wi-Fi arcs in the ring and no charger.</string>
     <string name="demo_mobile_type_title">Simulate 5GA label</string>
     <string name="demo_mobile_type_summary">Draws the network type as 5GA so the look can be checked without 5G-Advanced coverage. Drawing only; no radio state is touched.</string>
+    <string name="dual_inside_ring_title">Stack both cards inside the ring</string>
+    <string name="dual_inside_ring_summary">Draws the two cards as concentric arcs along the inside of the ring instead of one row across each mouth. The mouths can then close, and the network type has somewhere to sit beside them.</string>
+    <string name="dual_stack_group_title">Stacked dual reading</string>
+    <string name="dual_stack_group_summary">%1$s · %2$s · vertical %3$d</string>
+    <string name="dual_stack_on">on</string>
+    <string name="dual_stack_off">off</string>
+    <string name="dual_stack_side_top">top</string>
+    <string name="dual_stack_side_bottom">bottom</string>
+    <string name="dual_stack_bottom_title">Hang the pair from the bottom</string>
+    <string name="dual_stack_bottom_summary">Off puts the pair at the top (12 o clock), on at the bottom (6 o clock), so it can be moved clear of whatever occupies the other side.</string>
+    <string name="dual_stack_dx_title">Pair horizontal</string>
+    <string name="dual_stack_dx_summary">Shifts the whole pair left or right; negative moves left. Only this pair moves.</string>
+    <string name="dual_stack_dy_title">Pair vertical</string>
+    <string name="dual_stack_dy_summary">Shifts the whole pair up or down; negative moves up - useful for clearing the ring mouth or the type label.</string>
 
     <string name="perf_scale_title">Overall reading size</string>
     <string name="perf_scale_summary">The default is 100% and the slider covers 60–150%.</string>

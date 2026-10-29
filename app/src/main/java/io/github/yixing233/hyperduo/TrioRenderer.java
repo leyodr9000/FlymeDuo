@@ -512,9 +512,34 @@ final class TrioRenderer {
                 // The user's size multiplies the reference bead; the opening's room still
                 // caps it, so a large setting stops growing rather than overrunning the
                 // arc's caps. See TrioGeometry.arcRowDotR's four-argument form.
-                drawArcDotRow(c, active, z,
-                        TrioGeometry.arcRowDotR(z, a.ringStroke, width, a.dotScaleFactor()),
-                        fg, a);
+                final float rowBead = TrioGeometry.arcRowDotR(z, a.ringStroke, width,
+                        a.dotScaleFactor());
+                if (!r.stackedDual) {
+                    drawArcDotRow(c, active, z, rowBead, fg, a);
+                } else {
+                    // Both rows are this module's now, so the position setting moves the
+                    // PAIR rather than one extra row bolted beside the original: the reading
+                    // the user places and the second card are one element with one address.
+                    //
+                    // They ride concentric arcs, not a straight offset. The bead is the same
+                    // reference in both, so the pair cannot disagree about size, and the
+                    // spacing is the pitch the row already uses.
+                    final int other = levels == null ? -1
+                            : (part == Prefs.PART_SIM_1 ? levels[1] : levels[0]);
+                    final int otherActive = other < 0 ? 0 : Math.min(4, other);
+                    final float spacing = rowBead * 3f;
+                    final float outward = a.dualStackAtBottom() ? -spacing : spacing;
+                    // Bead size follows the radius, with the resting position as 100%: a row
+                    // pushed outward reads larger and one pulled inward smaller, which is how a
+                    // slice of the same circle behaves - and it is the rule the nested Wi-Fi arcs
+                    // already follow, so the two readings share a vocabulary.
+                    final float rhoBase = TrioGeometry.B_R;
+                    final float rho1 = rhoBase + a.dualStackDy;
+                    final float rho2 = rho1 + outward;
+                    drawArcDotRow(c, active, z, rowBead * (rho1 / rhoBase), fg, a, a.dualStackDy);
+                    drawArcDotRow(c, otherActive, z, rowBead * (rho2 / rhoBase), fg, a,
+                            a.dualStackDy + outward);
+                }
             } else {
                 final String text = part == Prefs.PART_VALUE ? String.valueOf(level)
                         : part == Prefs.PART_TYPE ? type : TrioState.sClockText;
@@ -622,6 +647,21 @@ final class TrioRenderer {
      */
     private static void drawArcDotRow(Canvas c, int active, int zone, float radius,
                                       int fg, TrioAppearance a) {
+        drawArcDotRow(c, active, zone, radius, fg, a, 0f);
+    }
+
+    /**
+     * The same row, on a concentric arc {@code rhoOffset} further out.
+     *
+     * <p>Moving the row RADIALLY rather than translating it is what keeps a second row part of
+     * the same circle. The sagitta, the end insets and the bead clearance are all derived from
+     * the arc radius, so a row pushed with a plain translate would keep the curvature of the arc
+     * it left behind and sit visibly off the ring.
+     *
+     * <p>{@code rhoOffset} of zero is the row exactly where it has always been.
+     */
+    private static void drawArcDotRow(Canvas c, int active, int zone, float radius,
+                                      int fg, TrioAppearance a, float rhoOffset) {
         final int inactive = withAlpha(fg, a.trackAlpha);
         if (zone == 1) {
             // The middle third is not a notch: the ring runs past it on both sides, so
@@ -642,7 +682,7 @@ final class TrioRenderer {
         //
         // Placed in the RING's frame, then converted back into this zone's local space
         // (the caller has already translated to (B_CX, ZONE_CY[z])).
-        final float rho = TrioGeometry.B_R;
+        final float rho = TrioGeometry.B_R + rhoOffset;
         // The bare arc this row sits in: the 12 o'clock notch above, the ring's own
         // opening below. Both are GAP_WIDTH_DEG wide.
         final float openingRad = (float) Math.toRadians(TrioGeometry.GAP_WIDTH_DEG);
@@ -1656,11 +1696,7 @@ final class TrioRenderer {
     // -------------------------------------------------------------------- wifi
 
 
-    /**
-     * The arcs and the dot at their reference coordinates, with no transform of
-     * their own: each caller positions the group first. Both arrangements draw
-     * the identical group, which is what keeps the Wi-Fi icon the same in both.
-     */
+
     private static void drawWifiArcs(Canvas c, int level, int fg, TrioAppearance a) {
         STROKE.setStrokeWidth(a.arcStroke);
         STROKE.setColor(fg);

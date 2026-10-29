@@ -687,6 +687,99 @@ internal val iconOffsetXSlider: SliderSpec = SliderSpec(
 )
 
 /** The rows the merged size-and-position group folds away. */
+/** Where the stacked pair hangs, and how far it may be nudged. */
+
+/**
+ * The stacked pair as one row: where it hangs, and how far it may be lifted.
+ *
+ * <p>Grouped into a sheet rather than left as loose switches on the page because these three
+ * settings only mean anything together - the switch decides whether the pair exists at all,
+ * and the other two move that pair. Spread across the page they read as unrelated rows, and
+ * the position control in particular looked like it belonged to the glyph.
+ */
+@Composable
+internal fun DualStackGroup(
+    settings: TrioSettings,
+    update: ((SettingsRepository) -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val a = TrioAppearance.of(settings)
+    var sheet by rememberSaveable { mutableStateOf(false) }
+    ArrowPreference(
+        title = stringResource(R.string.dual_stack_group_title),
+        summary = stringResource(
+            R.string.dual_stack_group_summary,
+            stringResource(
+                if (settings.dualInsideRing) R.string.dual_stack_on else R.string.dual_stack_off
+            ),
+            stringResource(
+                if (settings.dualStackPos == Prefs.DUAL_STACK_BOTTOM) R.string.dual_stack_side_bottom
+                else R.string.dual_stack_side_top
+            ),
+            settings.dualStackDy,
+        ),
+        insideMargin = SettingsItemMargin,
+        enabled = a.glyph,
+        onClick = { sheet = true },
+        modifier = modifier,
+    )
+    if (sheet) {
+        val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        OverlayBottomSheet(
+            show = true,
+            title = stringResource(R.string.dual_stack_group_title),
+            onDismissRequest = { sheet = false },
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().padding(bottom = bottomInset)) {
+                SwitchPreferenceGroup(
+                    checked = settings.dualInsideRing,
+                    title = stringResource(R.string.dual_inside_ring_title),
+                    summary = stringResource(R.string.dual_inside_ring_summary),
+                    onCheckedChange = { value -> update { it.setDualInsideRing(value) } },
+                )
+                SwitchPreferenceGroup(
+                    checked = settings.dualStackPos == Prefs.DUAL_STACK_BOTTOM,
+                    title = stringResource(R.string.dual_stack_bottom_title),
+                    summary = stringResource(R.string.dual_stack_bottom_summary),
+                    enabled = settings.dualInsideRing,
+                    onCheckedChange = { value -> update { it.setDualStackAtBottom(value) } },
+                )
+                SliderRow(dualStackDySlider, settings, update)
+            }
+        }
+    }
+}
+
+/** One switch inside a sheet: same shape as the page rows, minus the page margins. */
+@Composable
+private fun SwitchPreferenceGroup(
+    checked: Boolean,
+    title: String,
+    summary: String?,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
+) {
+    top.yukonga.miuix.kmp.preference.SwitchPreference(
+        checked = checked,
+        title = title,
+        summary = summary,
+        insideMargin = SettingsItemMargin,
+        enabled = enabled,
+        onCheckedChange = onCheckedChange,
+    )
+}
+internal val dualStackDySlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_DUAL_STACK_NUDGE,
+    max = Prefs.MAX_DUAL_STACK_NUDGE,
+    read = { it.dualStackDy },
+    write = { r, v -> r.setDualStackDy(v) },
+    titleRes = { R.string.dual_stack_dy_title },
+    summaryRes = { R.string.dual_stack_dy_summary },
+    enabled = { it.glyph && it.dualInsideRing },
+)
+
 internal val glyphSizeSpecs: List<SliderSpec> =
     listOf(glyphScaleSlider, glyphOffsetXSlider, iconOffsetXSlider, glyphOffsetYSlider)
 

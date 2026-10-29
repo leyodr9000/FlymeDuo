@@ -168,10 +168,22 @@
     <string name="icon_offset_summary">整体平移原厂图标区（Wi-Fi、信号、网速指示器等），与三合一互相独立：正值向右、负值向左，可调 −24 到 24 dp</string>
     <string name="glyph_size_group_title">尺寸与位置</string>
     <string name="glyph_size_group_summary">整体 %1$d%% · 三合一 %2$ddp · 图标 %4$ddp · 垂直 %3$ddp，点按调整</string>
-    <string name="demo_dual_sim_title">双卡信号演示</string>
-    <string name="demo_dual_sim_summary">没有第二张实体卡也能预览堆叠读数：只伪造两张卡的信号电平，不碰网络。环内双行还要求环内没有 Wi-Fi 弧线、且未在充电。</string>
     <string name="demo_mobile_type_title">模拟 5GA 显示</string>
     <string name="demo_mobile_type_summary">把网络类型强制当成 5GA 来画，方便在没有 5G-A 覆盖时验证显示效果。只改绘制，不碰任何通信状态</string>
+    <string name="dual_inside_ring_title">双卡信号堆叠在环内</string>
+    <string name="dual_inside_ring_summary">两张卡的信号行改为沿圆环内壁的两条同心弧，不再占用环的上下开口。这样环口能合上，环里也有位置同时显示网络类型</string>
+    <string name="dual_stack_group_title">双卡信号堆叠</string>
+    <string name="dual_stack_group_summary">%1$s · %2$s · 垂直 %3$d</string>
+    <string name="dual_stack_on">已开启</string>
+    <string name="dual_stack_off">已关闭</string>
+    <string name="dual_stack_side_top">上部</string>
+    <string name="dual_stack_side_bottom">下部</string>
+    <string name="dual_stack_bottom_title">堆叠位置放在下部</string>
+    <string name="dual_stack_bottom_summary">关闭时堆叠在上方（12 点），打开时在下方（6 点）。两条弧会避开另一侧已经放了内容的位置</string>
+    <string name="dual_stack_dx_title">堆叠水平位置</string>
+    <string name="dual_stack_dx_summary">整组左右平移，负值向左；与环的描边、其他组件无关，只动这一组</string>
+    <string name="dual_stack_dy_title">堆叠垂直位置</string>
+    <string name="dual_stack_dy_summary">整组上下平移，负值向上；用来把两条弧从环口、类型标签旁边挪开</string>
 
     <string name="perf_scale_title">读数整体尺寸</string>
     <string name="perf_scale_summary">默认 100%，可调 60–150%。</string>

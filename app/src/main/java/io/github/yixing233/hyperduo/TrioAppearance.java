@@ -114,7 +114,13 @@ public final class TrioAppearance {
      * switch, one explicit toggle, and nothing outside the module's own drawing
      * changes.
      */
-    public final boolean demoDualSim;
+
+    /** Stack both cards inside the ring; see {@link Prefs#KEY_DUAL_INSIDE_RING}. */
+    public final boolean dualInsideRing;
+    /** Where the stacked pair sits; see {@link Prefs#KEY_DUAL_STACK_POS}. */
+    public final int dualStackPos;
+    /** Nudges of the stacked pair, in design units. */
+    public final int dualStackDy;
     /**
      * SIM 1's own row of four dots is wanted, as a component of its own.
      *
@@ -301,7 +307,10 @@ public final class TrioAppearance {
         signalOutOfRing = c.signalMode == Prefs.SIGNAL_OUT_RING;
         stackedSignal = c.stackedSignal;
         dualSim = c.dualSim;
-        demoDualSim = c.demoDualSim;
+
+        dualInsideRing = c.dualInsideRing;
+        dualStackPos = c.dualStackPos;
+        dualStackDy = c.dualStackDy;
         showSim1 = c.showSim1;
         showSim2 = c.showSim2;
         dataSimOnly = c.dataSimOnly;
@@ -473,6 +482,22 @@ public final class TrioAppearance {
         return wifi && (!ring || hasRingPart(Prefs.PART_WIFI));
     }
 
+    /**
+     * Whether the two cards are stacked inside the ring this frame.
+     *
+     * <p>Needs three things: the ring is the arrangement being drawn, the user asked for the
+     * stacked form, and there really are two cards. One card is a single row and belongs in a
+     * mouth like any other reading - stacking it would leave the ring looking half-filled.
+     */
+    /** Whether the stacked pair is drawn at the bottom rather than the top. */
+    public boolean dualStackAtBottom() {
+        return dualStackPos == Prefs.DUAL_STACK_BOTTOM;
+    }
+
+    public boolean stacksDualRows(int sims) {
+        return ring && dualInsideRing && sims >= 2;
+    }
+
     public boolean ownsValue() {
         return value && (!ring || hasRingPart(Prefs.PART_VALUE));
     }
@@ -556,7 +581,7 @@ public final class TrioAppearance {
      * @param sims how many SIM signal levels are known this frame
      */
     public boolean dualSimRows(boolean wifiInk, boolean charging, int sims) {
-        return (dualSim || demoDualSim) && signalDots() && sims >= 2 && !wifiInk && !charging;
+        return dualSim && signalDots() && sims >= 2 && !wifiInk && !charging;
     }
 
     /**
@@ -829,6 +854,8 @@ public final class TrioAppearance {
         public final boolean typeInGap;
         /** Something occupies the notch, so the ring has to open for it. */
         public final boolean gapUsed;
+        /** The two cards are drawn inside the ring this frame; see stacksDualRows. */
+        public final boolean stackedDual;
         /**
          * The level dots are drawn as two rows, one per SIM, instead of one row
          * for the current data SIM.
@@ -946,6 +973,18 @@ public final class TrioAppearance {
                 parts[z] = firstDrawableInk(a, a.ringZones[z], z,
                         level, charging, wifiLevel, mobileType, yieldType);
             }
+            // Stacked dual reading: both cards move inside the ring, so neither mouth has to
+            // stay open for them. Cleared here rather than at the drawing site because the
+            // notch decision is made from these parts - a mouth left open with nothing
+            // threaded on it reads as a broken outline, and keeping the pieces in would also
+            // keep the type label squeezed out of the glyph, which is the conflict the
+            // stacked form exists to solve.
+            // The stacking does NOT take the pieces out of the bands. The mouth is part of the
+            // shape the user arranged, and closing it was not the request: only the drawing
+            // moves. Keeping the parts means the mouth opens exactly as before, and the
+            // renderer skips re-drawing the rows in it (they are painted as the nested pair).
+            stackedDual = a.stacksDualRows(sims);
+
             // A charger puts the number in the middle, whatever the layout arranged there.
             //
             // An override of what this FRAME shows, not an edit to what is stored: the

@@ -334,17 +334,6 @@ private fun DrawingEditorCard(
                 // question the switch above answers, not a component detail.
                 ContentControlRow(ContentControl.Exclude, settings, update)
                 GlyphScaleHomeRow(settings, update)
-                // The demo switch lives at the master's level on purpose: it
-                // fakes the two card levels for the WHOLE glyph, so it answers
-                // "can I even see the stacked readings" before any placement
-                // question matters. Display-only - no telephony state is touched.
-                SwitchPreference(
-                    checked = settings.demoDualSim,
-                    title = stringResource(R.string.demo_dual_sim_title),
-                    summary = stringResource(R.string.demo_dual_sim_summary),
-                    insideMargin = SettingsItemMargin,
-                    onCheckedChange = { value -> update { it.setDemoDualSim(value) } },
-                )
                 // The same lever for the type label. 5G-Advanced coverage is rare enough
                 // that a report about it cannot be reproduced on demand, so the label is
                 // substitutable: if the simulated one draws correctly, the fault is in what
@@ -356,6 +345,9 @@ private fun DrawingEditorCard(
                     insideMargin = SettingsItemMargin,
                     onCheckedChange = { value -> update { it.setDemoMobileType(value) } },
                 )
+                // The pair and everything that positions it, as one row that opens a sheet:
+                // these settings only mean anything together.
+                DualStackGroup(settings, update)
             }
         }
 

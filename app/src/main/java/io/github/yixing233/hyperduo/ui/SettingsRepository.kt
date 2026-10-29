@@ -367,10 +367,19 @@ class SettingsRepository(context: Context) {
     /** The stock icon area's own horizontal shift, in dp. */
     fun setIconOffsetX(value: Int) = writeInt(Prefs.KEY_ICON_OFFSET_X, value)
 
-    /** Demo two pretend cards - display-only; see [Prefs.KEY_DEMO_DUAL_SIM]. */
-    fun setDemoDualSim(value: Boolean) = writeBoolean(Prefs.KEY_DEMO_DUAL_SIM, value)
     /** Pretend the radio reports 5GA; display only. */
     fun setDemoMobileType(value: Boolean) = writeBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, value)
+
+    /** Stack both cards inside the ring instead of across its two mouths. */
+    fun setDualInsideRing(value: Boolean) = writeBoolean(Prefs.KEY_DUAL_INSIDE_RING, value)
+
+    /** Which side the stacked pair hangs from: false top, true bottom. */
+    fun setDualStackAtBottom(value: Boolean) = writeInt(
+        Prefs.KEY_DUAL_STACK_POS,
+        if (value) Prefs.DUAL_STACK_BOTTOM else Prefs.DUAL_STACK_TOP,
+    )
+
+    fun setDualStackDy(value: Int) = writeInt(Prefs.KEY_DUAL_STACK_DY, value)
 
     /** Interior cell nudges; see [Prefs.KEY_CAPSULE_LEFT_DX]. */
     fun setCapsuleLeftDx(value: Int) = writeInt(Prefs.KEY_CAPSULE_LEFT_DX, value)
@@ -442,8 +451,11 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_GLYPH_OFFSET_X, snapshot.glyphOffsetX)
             prefs.putInt(Prefs.KEY_GLYPH_OFFSET_Y, snapshot.glyphOffsetY)
             prefs.putInt(Prefs.KEY_ICON_OFFSET_X, snapshot.iconOffsetX)
-            prefs.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, snapshot.demoDualSim)
+
             prefs.putBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, snapshot.demoMobileType)
+            prefs.putBoolean(Prefs.KEY_DUAL_INSIDE_RING, snapshot.dualInsideRing)
+            prefs.putInt(Prefs.KEY_DUAL_STACK_POS, snapshot.dualStackPos)
+            prefs.putInt(Prefs.KEY_DUAL_STACK_DY, snapshot.dualStackDy)
             // A key missing from this list is re-pushed as its default after every
             // framework reconnect, so a chosen font would silently revert on the
             // next bind. This is the list DEVELOPMENT.md calls out for exactly that

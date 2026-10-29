@@ -164,9 +164,6 @@ final class TrioState {
      * wrong draws two grey rows instead of falling back to the single row.
      */
     static volatile int[] sSlotLevels = { -1, -1 };
-    /** The demo's two card levels - one strong, one mid, so the rows read apart. */
-    private static final int DEMO_SIM1_LEVEL = 4;
-    private static final int DEMO_SIM2_LEVEL = 2;
     /** The label the 5GA demo substitutes; see {@link Prefs#KEY_DEMO_MOBILE_TYPE}. */
     private static final String DEMO_MOBILE_TYPE = "5GA";
 
@@ -398,20 +395,8 @@ final class TrioState {
         // on refresh(), so there is nothing to mirror them into here.
 
         int[] slots = sSlotLevels;
-        // Demo mode: two pretend cards, so a device with one SIM can still see
-        // and tune the stacked readings. Display-only - the real telephony
-        // state, the data connection and every network behaviour stay untouched,
-        // and the next poll overwrites the fake levels once the switch goes off.
-        if (io.github.yixing233.hyperduo.TrioConfig.get().demoDualSim) {
-            slots = new int[] { DEMO_SIM1_LEVEL, DEMO_SIM2_LEVEL };
-        }
         slotLevels = new int[] { slots[0], slots[1] };
         sims = (slots[0] >= 0 ? 1 : 0) + (slots[1] >= 0 ? 1 : 0);
-        if (io.github.yixing233.hyperduo.TrioConfig.get().demoDualSim) {
-            // The aggregate row follows the fake data card too, so the ring and
-            // the out-of-ring reading cannot disagree while the demo is on.
-            mobileLevel = slots[0];
-        }
 
         // Single row, no answer from the icon chain: the row still means "the SIM
         // that carries data", and the sampler resolved exactly which one that is.
@@ -483,14 +468,51 @@ final class TrioState {
             return;
         }
         sDataDueAt = now + DATA_INTERVAL_MS;
+        final boolean on = readDataEnabled();
+        if (on != sDataEnabled) {
+            sDataEnabled = on;
+            // Logged on change only. Measured on Flyme: the plain mobile_data key never moves
+            // when the user flips the switch, the per-card keys and the registry do - so this
+            // line is what tells a future report which source actually answered.
+            io.github.yixing233.hyperduo.TrioHooks.log(
+                    io.github.yixing233.hyperduo.TrioHooks.LOG_INFO,
+                    "mobile data enabled=" + on);
+        }
+    }
+
+    /**
+     * Whether the user's mobile-data switch is on.
+     *
+     * <p><b>Per-card keys first, the plain one only as a fallback.</b> Measured on this Flyme
+     * build by watching every candidate while the switch was flipped by hand: the global
+     * {@code mobile_data} key stayed put the whole time, while {@code mobile_data1} /
+     * {@code mobile_data2} and the telephony registry's data-enabled flag followed the switch.
+     * AOSP writes the plain key, MIUI-style firmwares write the per-card ones, so reading both
+     * - per-card when present - is what makes the answer portable.
+     *
+     * <p>"Any card enabled" rather than "the data card enabled": the switch the user is asking
+     * about is the one in the pull-down, which these keys record, and on a dual-SIM phone
+     * turning data off turns it off for both.
+     */
+    private static boolean readDataEnabled() {
         try {
-            // The literal key, not Settings.Global.MOBILE_DATA: that constant is @hide in the
-            // SDK this module compiles against, and the stored name is stable anyway.
-            final int on = android.provider.Settings.Global.getInt(
-                    sContext.getContentResolver(), "mobile_data", 1);
-            sDataEnabled = on != 0;
+            final android.content.ContentResolver cr = sContext.getContentResolver();
+            boolean anyOn = false;
+            boolean sawPerCard = false;
+            for (int i = 1; i <= SIM_SLOTS; i++) {
+                final int v = android.provider.Settings.Global.getInt(
+                        cr, "mobile_data" + i, -1);
+                if (v >= 0) {
+                    sawPerCard = true;
+                    anyOn |= v != 0;
+                }
+            }
+            if (sawPerCard) {
+                return anyOn;
+            }
+            return android.provider.Settings.Global.getInt(cr, "mobile_data", 1) != 0;
         } catch (java.lang.Throwable ignored) {
-            // keep the last known value
+            return sDataEnabled;
         }
     }
 
