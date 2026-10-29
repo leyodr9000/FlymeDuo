@@ -430,6 +430,9 @@ final class TrioState {
             // The one reading with no event behind it: the clock is correct until
             // the minute rolls over, so it has to wake itself up.
             ClockTicker.start(sContext);
+            // The data switch has no view of its own: it is a setting, and the shade that
+            // flips it does not redraw the glyph. Watch it, do not wait to be asked.
+            DataPresence.start(sContext);
         } catch (Throwable ignored) {
             // leave it null; the reading stays on the single-row fallback
         }
@@ -462,21 +465,34 @@ final class TrioState {
      * <p>Failure is silent and keeps the last value: a SecurityException here must not take
      * the drawing down, and an unknown state must not blank the label.
      */
+    /**
+     * Records the data switch and reports whether it moved.
+     *
+     * <p>Called from {@link DataPresence}, which watches the settings keys so the reading
+     * stays current while nothing is being drawn - the shade case, where the old value used
+     * to survive until the next unrelated repaint.
+     */
+    static boolean setDataEnabled(boolean enabled) {
+        if (sDataEnabled == enabled) {
+            return false;
+        }
+        sDataEnabled = enabled;
+        return true;
+    }
+
     private static void sampleDataIfDue() {
         final long now = SystemClock.elapsedRealtime();
         if (now < sDataDueAt || sContext == null) {
             return;
         }
         sDataDueAt = now + DATA_INTERVAL_MS;
-        final boolean on = readDataEnabled();
-        if (on != sDataEnabled) {
-            sDataEnabled = on;
-            // Logged on change only. Measured on Flyme: the plain mobile_data key never moves
-            // when the user flips the switch, the per-card keys and the registry do - so this
-            // line is what tells a future report which source actually answered.
+        // DataPresence owns this value: it watches the settings keys so the answer stays
+        // current while nothing is being drawn. This draw-path read is only a safety net in
+        // case both the observer and its backstop missed, which keeps the two in step.
+        if (setDataEnabled(readDataEnabled())) {
             io.github.yixing233.hyperduo.TrioHooks.log(
                     io.github.yixing233.hyperduo.TrioHooks.LOG_INFO,
-                    "mobile data enabled=" + on);
+                    "mobile data enabled=" + sDataEnabled + " (draw)");
         }
     }
 
