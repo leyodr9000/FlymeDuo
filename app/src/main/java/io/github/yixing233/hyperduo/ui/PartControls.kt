@@ -704,6 +704,10 @@ internal fun DualStackGroup(
     modifier: Modifier = Modifier,
 ) {
     val a = TrioAppearance.of(settings)
+    // Ring only. The pair is drawn on the ring's own arc, and the other two arrangements
+    // have no arc to draw it on - the capsule draws its readings in cells and the rectangle
+    // in columns, so a row here would be a setting that changes nothing.
+    if (!a.ring) return
     var sheet by rememberSaveable { mutableStateOf(false) }
     ArrowPreference(
         title = stringResource(R.string.dual_stack_group_title),
@@ -744,7 +748,20 @@ internal fun DualStackGroup(
                     enabled = settings.dualInsideRing,
                     onCheckedChange = { value -> update { it.setDualStackAtBottom(value) } },
                 )
-                SliderRow(dualStackDySlider, settings, update)
+                SwitchPreferenceGroup(
+                    checked = settings.dualStackMatrix,
+                    title = stringResource(R.string.dual_stack_matrix_title),
+                    summary = stringResource(R.string.dual_stack_matrix_summary),
+                    enabled = settings.dualInsideRing,
+                    onCheckedChange = { value -> update { it.setDualStackMatrix(value) } },
+                )
+                if (settings.dualStackMatrix) {
+                    SliderRow(dualMatrixSizeSlider, settings, update)
+                    SliderRow(dualMatrixGapSlider, settings, update)
+                    SliderRow(dualMatrixDySlider, settings, update)
+                } else {
+                    SliderRow(dualStackDySlider, settings, update)
+                }
             }
         }
     }
@@ -777,7 +794,44 @@ internal val dualStackDySlider: SliderSpec = SliderSpec(
     write = { r, v -> r.setDualStackDy(v) },
     titleRes = { R.string.dual_stack_dy_title },
     summaryRes = { R.string.dual_stack_dy_summary },
-    enabled = { it.glyph && it.dualInsideRing },
+    // Only meaningful for the arc pair; the matrix carries its own vertical nudge.
+    enabled = { it.glyph && it.dualInsideRing && !it.dualStackMatrix },
+)
+
+internal val dualMatrixSizeSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_DUAL_MATRIX_SIZE,
+    max = Prefs.MAX_DUAL_MATRIX_SIZE,
+    read = { it.dualMatrixSize },
+    write = { r, v -> r.setDualMatrixSize(v) },
+    titleRes = { R.string.dual_matrix_size_title },
+    summaryRes = { R.string.dual_matrix_size_summary },
+    enabled = { it.glyph && it.dualInsideRing && it.dualStackMatrix },
+)
+
+internal val dualMatrixGapSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_DUAL_MATRIX_GAP,
+    max = Prefs.MAX_DUAL_MATRIX_GAP,
+    read = { it.dualMatrixGap },
+    write = { r, v -> r.setDualMatrixGap(v) },
+    titleRes = { R.string.dual_matrix_gap_title },
+    summaryRes = { R.string.dual_matrix_gap_summary },
+    enabled = { it.glyph && it.dualInsideRing && it.dualStackMatrix },
+)
+
+internal val dualMatrixDySlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_DUAL_STACK_NUDGE,
+    max = Prefs.MAX_DUAL_STACK_NUDGE,
+    read = { it.dualMatrixDy },
+    write = { r, v -> r.setDualMatrixDy(v) },
+    titleRes = { R.string.dual_matrix_dy_title },
+    summaryRes = { R.string.dual_matrix_dy_summary },
+    enabled = { it.glyph && it.dualInsideRing && it.dualStackMatrix },
 )
 
 internal val glyphSizeSpecs: List<SliderSpec> =

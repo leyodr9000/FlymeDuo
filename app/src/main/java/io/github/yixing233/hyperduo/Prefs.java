@@ -1459,6 +1459,30 @@ public final class Prefs {
     /** Same span as the glyph nudge: a few design units either way is what the ring can use. */
     public static final int MIN_DUAL_STACK_NUDGE = -20;
     public static final int MAX_DUAL_STACK_NUDGE = 20;
+    /**
+     * How the two cards are stacked: concentric arcs that follow the ring, or a flat 2x4
+     * matrix inside it.
+     *
+     * <p>Both are answers to the same problem - the ring has one opening and two cards - but
+     * they read very differently. The arcs keep the pair part of the outline; the matrix is
+     * what a phone that never had a ring does, and its dots are much smaller than a bead, so
+     * the glyph looks lighter.
+     */
+    public static final String KEY_DUAL_STACK_MATRIX = "dual_stack_matrix";
+    public static final boolean DEF_DUAL_STACK_MATRIX = false;
+    /** Dot radius of the matrix, as a percentage of the ring stroke. */
+    public static final String KEY_DUAL_MATRIX_SIZE = "dual_matrix_size_pct";
+    /** Centre-to-centre pitch of the matrix, as a percentage of the dot diameter. */
+    public static final String KEY_DUAL_MATRIX_GAP = "dual_matrix_gap_pct";
+    /** Vertical nudge of the matrix, in design units - its own, not the arc pair's. */
+    public static final String KEY_DUAL_MATRIX_DY = "dual_matrix_dy";
+    public static final int DEF_DUAL_MATRIX_SIZE = 42;
+    public static final int DEF_DUAL_MATRIX_GAP = 300;
+    public static final int DEF_DUAL_MATRIX_DY = 0;
+    public static final int MIN_DUAL_MATRIX_SIZE = 14;
+    public static final int MAX_DUAL_MATRIX_SIZE = 80;
+    public static final int MIN_DUAL_MATRIX_GAP = 160;
+    public static final int MAX_DUAL_MATRIX_GAP = 420;
     public static final int MIN_DUAL_STACK_POS = DUAL_STACK_TOP;
     public static final int MAX_DUAL_STACK_POS = DUAL_STACK_BOTTOM;
 

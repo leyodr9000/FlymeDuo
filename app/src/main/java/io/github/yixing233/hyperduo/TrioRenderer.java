@@ -527,18 +527,27 @@ final class TrioRenderer {
                     final int other = levels == null ? -1
                             : (part == Prefs.PART_SIM_1 ? levels[1] : levels[0]);
                     final int otherActive = other < 0 ? 0 : Math.min(4, other);
-                    final float spacing = rowBead * 3f;
-                    final float outward = a.dualStackAtBottom() ? -spacing : spacing;
-                    // Bead size follows the radius, with the resting position as 100%: a row
-                    // pushed outward reads larger and one pulled inward smaller, which is how a
-                    // slice of the same circle behaves - and it is the rule the nested Wi-Fi arcs
-                    // already follow, so the two readings share a vocabulary.
-                    final float rhoBase = TrioGeometry.B_R;
-                    final float rho1 = rhoBase + a.dualStackDy;
-                    final float rho2 = rho1 + outward;
-                    drawArcDotRow(c, active, z, rowBead * (rho1 / rhoBase), fg, a, a.dualStackDy);
-                    drawArcDotRow(c, otherActive, z, rowBead * (rho2 / rhoBase), fg, a,
-                            a.dualStackDy + outward);
+                    if (a.dualStackMatrix()) {
+                        // The reference form: two flat rows of four, centred under the ring's
+                        // middle. Its dots are a fifth of the ring's thickness, not a bead the
+                        // size of it - the pair is meant to be lighter than the outline, not
+                        // cut out of it.
+                        drawDualMatrix(c, z, active, otherActive, fg, a);
+                    } else {
+                        // Bead size follows the radius, with the resting position as 100%: a
+                        // row pushed outward reads larger and one pulled inward smaller, which
+                        // is how a slice of the same circle behaves - and it is the rule the
+                        // nested Wi-Fi arcs already follow.
+                        final float spacing = rowBead * 3f;
+                        final float outward = a.dualStackAtBottom() ? -spacing : spacing;
+                        final float rhoBase = TrioGeometry.B_R;
+                        final float rho1 = rhoBase + a.dualStackDy;
+                        final float rho2 = rho1 + outward;
+                        drawArcDotRow(c, active, z, rowBead * (rho1 / rhoBase), fg, a,
+                                a.dualStackDy);
+                        drawArcDotRow(c, otherActive, z, rowBead * (rho2 / rhoBase), fg, a,
+                                a.dualStackDy + outward);
+                    }
                 }
             } else {
                 final String text = part == Prefs.PART_VALUE ? String.valueOf(level)
@@ -1696,6 +1705,41 @@ final class TrioRenderer {
     // -------------------------------------------------------------------- wifi
 
 
+
+    /**
+     * The two cards as a flat 2x4 matrix, the way a phone without a ring would show them.
+     *
+     * <p>Four dots per row, rows separated by the same pitch as the columns, the whole block
+     * centred on the ring's axis. Drawn in the zone's local frame, so the block is placed by
+     * offsetting from the ring centre rather than from whichever third the reading landed in -
+     * the matrix belongs to the ring, not to a third of it.
+     *
+     * <p>Dot radius is a fifth of the stroke: the reference keeps the dots clearly smaller than
+     * the outline, so the ring still reads as the dominant shape.
+     */
+    private static void drawDualMatrix(Canvas c, int zone, int sim1, int sim2, int fg,
+                                       TrioAppearance a) {
+        // Its own size, and its own only: a percentage of the stroke, so it still tracks the
+        // outline the user chose, but never the arc pair's radius or its vertical nudge.
+        final float dot = Math.max(1.2f, a.ringStroke * (a.dualMatrixSize / 100f));
+        final float step = dot * (a.dualMatrixGap / 100f);
+        // Local y of the ring's centre for this zone (the caller translated to the zone).
+        final float ringCy = TrioGeometry.B_CY - TrioGeometry.ZONE_CY[zone];
+        // The block sits a little below (or above) the centre, clear of the middle reading.
+        final float sign = a.dualStackAtBottom() ? -1f : 1f;
+        final float base = ringCy + sign * (dot * 4.5f) + a.dualMatrixDy;
+        final int inactive = withAlpha(fg, a.trackAlpha);
+        FILL.setStyle(Paint.Style.FILL);
+        for (int row = 0; row < 2; row++) {
+            final int level = row == 0 ? sim1 : sim2;
+            final int active = Math.min(4, Math.max(0, level));
+            final float y = base + sign * row * step;
+            for (int k = 0; k < 4; k++) {
+                FILL.setColor(k < active ? fg : inactive);
+                c.drawCircle((k - 1.5f) * step, y, dot, FILL);
+            }
+        }
+    }
 
     private static void drawWifiArcs(Canvas c, int level, int fg, TrioAppearance a) {
         STROKE.setStrokeWidth(a.arcStroke);

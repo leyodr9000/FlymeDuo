@@ -121,6 +121,12 @@ public final class TrioAppearance {
     public final int dualStackPos;
     /** Nudges of the stacked pair, in design units. */
     public final int dualStackDy;
+    /** Draw the pair as a flat 2x4 matrix instead of concentric arcs. */
+    public final boolean dualStackMatrix;
+    /** Matrix-only geometry: dot size, pitch and vertical nudge, as percentages/units. */
+    public final int dualMatrixSize;
+    public final int dualMatrixGap;
+    public final int dualMatrixDy;
     /**
      * SIM 1's own row of four dots is wanted, as a component of its own.
      *
@@ -311,6 +317,10 @@ public final class TrioAppearance {
         dualInsideRing = c.dualInsideRing;
         dualStackPos = c.dualStackPos;
         dualStackDy = c.dualStackDy;
+        dualStackMatrix = c.dualStackMatrix;
+        dualMatrixSize = c.dualMatrixSize;
+        dualMatrixGap = c.dualMatrixGap;
+        dualMatrixDy = c.dualMatrixDy;
         showSim1 = c.showSim1;
         showSim2 = c.showSim2;
         dataSimOnly = c.dataSimOnly;
@@ -490,6 +500,11 @@ public final class TrioAppearance {
      * mouth like any other reading - stacking it would leave the ring looking half-filled.
      */
     /** Whether the stacked pair is drawn at the bottom rather than the top. */
+    /** Whether the pair is a flat matrix rather than a pair of arcs. */
+    public boolean dualStackMatrix() {
+        return dualStackMatrix;
+    }
+
     public boolean dualStackAtBottom() {
         return dualStackPos == Prefs.DUAL_STACK_BOTTOM;
     }

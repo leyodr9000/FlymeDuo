@@ -182,6 +182,14 @@
     <string name="dual_stack_bottom_summary">关闭时堆叠在上方（12 点），打开时在下方（6 点）。两条弧会避开另一侧已经放了内容的位置</string>
     <string name="dual_stack_dx_title">堆叠水平位置</string>
     <string name="dual_stack_dx_summary">整组左右平移，负值向左；与环的描边、其他组件无关，只动这一组</string>
+    <string name="dual_matrix_size_title">矩阵点大小</string>
+    <string name="dual_matrix_size_summary">点半径占环描边的百分比；矩阵不随垂直位置缩放，大小只由这一项决定</string>
+    <string name="dual_matrix_gap_title">矩阵点间距</string>
+    <string name="dual_matrix_gap_summary">点心的间距，以点直径的百分比计；行列同距，数值越大越疏</string>
+    <string name="dual_matrix_dy_title">矩阵垂直位置</string>
+    <string name="dual_matrix_dy_summary">矩阵专属的上下微调，与辐射样式的垂直位置互不影响</string>
+    <string name="dual_stack_matrix_title">矩阵式（2×4 点阵）</string>
+    <string name="dual_stack_matrix_summary">关闭时两行沿环弧排布，与环同曲率；打开时改为两行四点的平直矩阵，点更小、整体居中，更接近原生双卡的观感</string>
     <string name="dual_stack_dy_title">堆叠垂直位置</string>
     <string name="dual_stack_dy_summary">整组上下平移，负值向上；用来把两条弧从环口、类型标签旁边挪开</string>
 

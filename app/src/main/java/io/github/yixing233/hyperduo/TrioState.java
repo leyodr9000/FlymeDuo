@@ -497,17 +497,34 @@ final class TrioState {
     private static boolean readDataEnabled() {
         try {
             final android.content.ContentResolver cr = sContext.getContentResolver();
-            boolean anyOn = false;
-            boolean sawPerCard = false;
-            for (int i = 1; i <= SIM_SLOTS; i++) {
+            final int[] slots = sSlotLevels;
+            // The card that carries data answers first. With two cards the per-card keys can
+            // disagree, and the reading on screen is about the card the glyph describes.
+            if (sDataSlot >= 0 && sDataSlot < SIM_SLOTS && slots != null && slots[sDataSlot] >= 0) {
                 final int v = android.provider.Settings.Global.getInt(
-                        cr, "mobile_data" + i, -1);
+                        cr, "mobile_data" + (sDataSlot + 1), -1);
                 if (v >= 0) {
-                    sawPerCard = true;
+                    return v != 0;
+                }
+            }
+            // Otherwise ask only the slots that hold a card. An empty slot keeps whatever value
+            // it was left with - measured here: with one card in, mobile_data2 still read 1
+            // while the live card was switched off, so OR-ing every key pinned the label on
+            // forever. That single-card case is what made "hide when data is off" look broken.
+            boolean saw = false;
+            boolean anyOn = false;
+            for (int i = 0; i < SIM_SLOTS; i++) {
+                if (slots != null && slots[i] < 0) {
+                    continue;
+                }
+                final int v = android.provider.Settings.Global.getInt(
+                        cr, "mobile_data" + (i + 1), -1);
+                if (v >= 0) {
+                    saw = true;
                     anyOn |= v != 0;
                 }
             }
-            if (sawPerCard) {
+            if (saw) {
                 return anyOn;
             }
             return android.provider.Settings.Global.getInt(cr, "mobile_data", 1) != 0;
