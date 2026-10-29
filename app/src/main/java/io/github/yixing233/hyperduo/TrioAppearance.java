@@ -185,6 +185,8 @@ public final class TrioAppearance {
      * {@code TrioRenderer.drawInto}.
      */
     public final int glyphScale;
+    /** The capsule's own size correction; see {@link Prefs#KEY_CAPSULE_SCALE}. */
+    public final int capsuleScale;
 
     /** Horizontal nudge of the whole glyph, in dp; negative moves left. */
     public final int glyphOffsetX;
@@ -321,6 +323,7 @@ public final class TrioAppearance {
         perfScale = c.perfScale;
         perfWeight = c.perfWeight;
         glyphScale = c.glyphScale;
+        capsuleScale = c.capsuleScale;
         glyphOffsetX = c.glyphOffsetX;
         glyphOffsetY = c.glyphOffsetY;
         iconOffsetX = c.iconOffsetX;
@@ -703,6 +706,23 @@ public final class TrioAppearance {
      */
     public float glyphFit() {
         return Prefs.clamp(glyphScale, Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE) / 100f;
+    }
+
+    /**
+     * The capsule's size correction, clamped, as a multiplier on the shared fit.
+     *
+     * <p>Stated here rather than at the call site for the same reason as {@link #glyphFit()}:
+     * the drawing and the settings preview must agree about what the slider means, and the
+     * broadcast path can hand this class extras that never went through a clamp.
+     *
+     * <p>Applies to the capsule only. The shared {@code glyph_scale} is still the base - one
+     * number for every arrangement - and this is the one shape-specific correction, because
+     * the capsule's ink box includes the strip its openings draw in and its body therefore
+     * lands well below the row height the ring fills.
+     */
+    public float capsuleFit() {
+        return Prefs.clamp(capsuleScale, Prefs.MIN_CAPSULE_SCALE, Prefs.MAX_CAPSULE_SCALE)
+                / 100f;
     }
 
     /**
@@ -1178,7 +1198,7 @@ public final class TrioAppearance {
         }
         for (int i = 0; i < order.length; i++) {
             final int id = order[i];
-            if (!Prefs.zoneAccepts(band, id)) {
+            if (a.refusesInBand(band, id)) {
                 continue;
             }
             if (!hasInk(a, id, level, charging, wifiLevel, mobileType)) {
@@ -1194,13 +1214,31 @@ public final class TrioAppearance {
         return Prefs.PART_NONE;
     }
 
+    /**
+     * Whether this arrangement refuses {@code id} in {@code band}.
+     *
+     * <p>{@link Prefs#zoneAccepts(int, int)} states the rule for the <b>ring's</b> middle
+     * band: a row of beads threaded across the closed battery arc reads as a smudge, so the
+     * ring's centre belongs to readings. The capsule's interior is a body cell, not a
+     * notched opening, and its rows carry their own baseline - {@code TrioZones.accepts}
+     * has said so for a long time, which is why the editing page offers a signal row there.
+     *
+     * <p>Asking the ring's rule of every arrangement is what made that offer a lie: the
+     * editor accepted the placement, then this resolve loop skipped the very piece that had
+     * just been chosen, and the cell came up empty. The rule is now asked of the arrangement
+     * that is actually being drawn.
+     */
+    private boolean refusesInBand(int band, int id) {
+        return !(capsule || rect) && !Prefs.zoneAccepts(band, id);
+    }
+
     /** Whether any entry from {@code from} on can occupy {@code band} this frame. */
     private static boolean hasDrawableBehind(TrioAppearance a, int[] order, int from, int band,
                                              int level, boolean charging, int wifiLevel,
                                              String mobileType) {
         for (int i = from; i < order.length; i++) {
             final int id = order[i];
-            if (Prefs.zoneAccepts(band, id)
+            if (!a.refusesInBand(band, id)
                     && hasInk(a, id, level, charging, wifiLevel, mobileType)) {
                 return true;
             }

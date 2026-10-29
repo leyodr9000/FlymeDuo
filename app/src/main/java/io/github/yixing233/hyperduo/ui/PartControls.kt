@@ -255,6 +255,21 @@ internal fun geometrySliders(): List<SliderSpec> {
             summaryRes = { R.string.capsule_length_summary },
             enabled = { it.glyph && it.capsule },
         ),
+        // The capsule's own size correction. The shared size is one number for both shapes;
+        // this is the one that says the capsule's ink box does not match the row the way the
+        // ring's square does, so at the same percentage its body lands visibly smaller.
+        // Kept with the capsule's other geometry, so it lives in the capsule's own section.
+        SliderSpec(
+            group = GeometryGroup.Scale,
+            part = null,
+            min = Prefs.MIN_CAPSULE_SCALE,
+            max = Prefs.MAX_CAPSULE_SCALE,
+            read = { it.capsuleScale },
+            write = { r, v -> r.setCapsuleScale(v) },
+            titleRes = { R.string.capsule_scale_title },
+            summaryRes = { R.string.capsule_scale_summary },
+            enabled = { it.glyph && it.capsule },
+        ),
         // The glyph's overall size lives as a named spec so the home page's master
         // section and the battery editor render one and the same row object.
         glyphScaleSlider,

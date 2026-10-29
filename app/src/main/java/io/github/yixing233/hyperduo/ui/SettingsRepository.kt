@@ -356,6 +356,8 @@ class SettingsRepository(context: Context) {
     fun setGlyphScale(value: Int) = writeInt(Prefs.KEY_GLYPH_SCALE, value)
 
     /** Whole-body nudges, in dp; negative moves left / up. */
+    /** The capsule's own size correction, in percent of the shared glyph fit. */
+    fun setCapsuleScale(value: Int) = writeInt(Prefs.KEY_CAPSULE_SCALE, value)
     fun setGlyphOffsetX(value: Int) = writeInt(Prefs.KEY_GLYPH_OFFSET_X, value)
     fun setGlyphOffsetY(value: Int) = writeInt(Prefs.KEY_GLYPH_OFFSET_Y, value)
 
@@ -431,6 +433,7 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_PERF_SCALE, snapshot.perfScale)
             prefs.putInt(Prefs.KEY_PERF_WEIGHT, snapshot.perfWeight)
             prefs.putInt(Prefs.KEY_GLYPH_SCALE, snapshot.glyphScale)
+            prefs.putInt(Prefs.KEY_CAPSULE_SCALE, snapshot.capsuleScale)
             prefs.putInt(Prefs.KEY_GLYPH_OFFSET_X, snapshot.glyphOffsetX)
             prefs.putInt(Prefs.KEY_GLYPH_OFFSET_Y, snapshot.glyphOffsetY)
             prefs.putInt(Prefs.KEY_ICON_OFFSET_X, snapshot.iconOffsetX)

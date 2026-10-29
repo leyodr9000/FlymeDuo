@@ -4052,7 +4052,9 @@ final class TrioHooks {
         }
         final float inkH = a.rect ? TrioGeometry.RECT_INK_H
                 : (a.capsule ? TrioGeometry.CAP_INK_H : TrioGeometry.INK_H);
-        final float icon = inkH * fit * a.glyphFit();
+        // The capsule's correction rides along: the label is sized against the glyph's own
+        // apparent height, so it has to follow whatever the drawing was scaled by.
+        final float icon = inkH * fit * a.glyphFit() * (a.capsule ? a.capsuleFit() : 1f);
         final float lineHeight = perfLineHeight(base, a.perfTypeWeight());
         if (lineHeight <= 0f) {
             return base * factor;

@@ -317,6 +317,8 @@
     <string name="capsule_container_title">胶囊结构</string>
     <string name="capsule_container_summary">长度与左右两格的位置。</string>
     <string name="capsule_length_title">胶囊长度</string>
+    <string name="capsule_scale_title">胶囊大小补偿</string>
+    <string name="capsule_scale_summary">圆环的墨迹盒子是方的，胶囊的盒子含上下开口条带，所以同一个百分比下胶囊本体看起来更小。这项把胶囊按比例放大，100 为不补偿，可调 100 到 180</string>
     <string name="capsule_length_summary">默认 0，可调 -30 到 60。加长的是两端圆角之间的直线段，胶囊随之变宽，圆角与高度不变。</string>
     <string name="capsule_nudge_left_dx_title">左格水平位置</string>
     <string name="capsule_nudge_left_dx_summary">正值右移，负值左移。</string>

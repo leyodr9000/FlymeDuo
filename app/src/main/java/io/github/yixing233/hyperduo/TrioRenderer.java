@@ -779,11 +779,11 @@ final class TrioRenderer {
         // The interior's two cells divide its width by what they actually draw, so a size the
         // user asks for is not capped by width reserved for a string that is not on screen.
         drawCapsuleCell(canvas, stroke, TrioZones.Zone.TOP, cap, level, quickCharging,
-                wifiLevel, mobileType, fg, a);
+                wifiLevel, mobileLevel, slotLevels, mobileType, fg, a);
         drawCapsuleCell(canvas, stroke, TrioZones.Zone.CENTRE, cap, level, quickCharging,
-                wifiLevel, mobileType, fg, a);
+                wifiLevel, mobileLevel, slotLevels, mobileType, fg, a);
         drawCapsuleCell(canvas, stroke, TrioZones.Zone.BOTTOM, cap, level, quickCharging,
-                wifiLevel, mobileType, fg, a);
+                wifiLevel, mobileLevel, slotLevels, mobileType, fg, a);
 
         // Drawn AFTER the three cells on purpose: the left column and the interior can
         // both hold a reading now, and painting the column last is what keeps a wide
@@ -853,8 +853,69 @@ final class TrioRenderer {
                 drawCapsuleBolt(c, stroke, quickCharging ? TrioGeometry.QUICK_CHARGE : fg,
                         a, cx, cy);
                 break;
+            case Prefs.PART_MOBILE:
+            case Prefs.PART_SIM_1:
+            case Prefs.PART_SIM_2:
+                // A row in this cell, built here rather than by drawCapsuleDots: that one
+                // paints the two OPENINGS, whose y come from the outline's cut lines. An
+                // interior cell has no cut line, so its row hangs off the cell's own edge at
+                // the cell's own centre - the same edge the text in this column starts from.
+                drawCapsuleCellDots(c, rowValue(part, mobileLevel, slotLevels), stroke, fg, a,
+                        TrioGeometry.capLeftAlignedX(stroke) + a.capsuleLeftDx, cy, false);
+                break;
             default:
                 break;
+        }
+    }
+
+    /**
+     * The reading a signal row in a specific cell should show.
+     *
+     * <p>{@link Prefs#PART_MOBILE} is the aggregate meter the module has always drawn - the
+     * data SIM's level - while {@link Prefs#PART_SIM_1} / {@link Prefs#PART_SIM_2} are the
+     * per-card rows. A missing card reads {@code -1}, which the caller paints as an all-track
+     * row rather than as "zero bars", because an absent SIM is not a dead signal.
+     */
+    private static int rowValue(int part, int mobileLevel, int[] slotLevels) {
+        if (part == Prefs.PART_SIM_1) {
+            return (slotLevels != null && slotLevels.length > 0) ? slotLevels[0] : -1;
+        }
+        if (part == Prefs.PART_SIM_2) {
+            return (slotLevels != null && slotLevels.length > 1) ? slotLevels[1] : -1;
+        }
+        return mobileLevel;
+    }
+
+    /**
+     * A row of level beads, hung off {@code edge} inside one capsule cell.
+     *
+     * <p>The openings get their rows from {@link #drawCapsuleDots}, which is tied to the
+     * outline's own cut lines and is the only place the stroke is interrupted. A body cell has
+     * no cut line, so its row is built here: the same four beads at the same pitch, anchored
+     * to the cell's reading edge and grown inwards, {@code fromRight} mirroring that for the
+     * right-hand cell. Without this the capsule could be <em>configured</em> to hold a signal
+     * row - the model has allowed that cell for a long time, which is why the editing page
+     * offers it - but nothing was ever painted, so the setting looked dead.
+     *
+     * <p>{@code value < 0} is "no reading" and draws as an all-track row.
+     */
+    private static void drawCapsuleCellDots(Canvas c, int value, float stroke, int fg,
+                                            TrioAppearance a, float edge, float cy,
+                                            boolean fromRight) {
+        final int inactive = withAlpha(fg, a.trackAlpha);
+        final int active = value <= 0 ? 0 : Math.min(TrioGeometry.RECT_DOT_ROWS, value);
+        // The row may not overrun its cell: the pitch closes up before the beads do, because
+        // four smaller beads at the outline's own pitch stop reading as a row of readings.
+        final float room = TrioGeometry.capReadingTrackWidth(stroke);
+        final float maxPitch = (room - TrioGeometry.CAP_DOT_R * 2f)
+                / Math.max(1, TrioGeometry.RECT_DOT_ROWS - 1);
+        final float pitch = Math.min(TrioGeometry.CAP_DOT_PITCH, Math.max(0f, maxPitch));
+        final float span = pitch * (TrioGeometry.RECT_DOT_ROWS - 1);
+        final float first = fromRight ? edge - span : edge;
+        FILL.setStyle(Paint.Style.FILL);
+        for (int i = 0; i < TrioGeometry.RECT_DOT_ROWS; i++) {
+            FILL.setColor(i < active ? fg : inactive);
+            c.drawCircle(first + i * pitch, cy, TrioGeometry.CAP_DOT_R, FILL);
         }
     }
     /**
@@ -869,7 +930,8 @@ final class TrioRenderer {
      */
     private static void drawCapsuleCell(Canvas c, float stroke, TrioZones.Zone band,
                                         TrioAppearance.Capsule cap, int level,
-                                        boolean quickCharging, int wifiLevel, String type,
+                                        boolean quickCharging, int wifiLevel, int mobileLevel,
+                                        int[] slotLevels, String type,
                                         int fg, TrioAppearance a) {
         // A cell that draws nothing. The LEFT cell is deliberately not routed here:
         // it has its own centre and its own dispatcher, because it is the one cell
@@ -931,6 +993,20 @@ final class TrioRenderer {
             case Prefs.PART_CLOCK:
                 drawCapsuleTime(c, stroke, fg, a, cx, cy, openingRoom(band, stroke),
                         opening ? SlotAlign.CENTRE : SlotAlign.RIGHT);
+                break;
+            case Prefs.PART_MOBILE:
+            case Prefs.PART_SIM_1:
+            case Prefs.PART_SIM_2:
+                // An OPENING already has its row: drawCapsuleDots paints both, tied to the
+                // outline's cut lines, and painting again here would double the ink and fight
+                // the gap. Only the body cell - which no other pass touches - draws its own.
+                if (opening) {
+                    break;
+                }
+                // Right-aligned against the cell's own edge, like the readings beside it: each
+                // body cell hangs off its own side and grows inwards.
+                drawCapsuleCellDots(c, rowValue(part, mobileLevel, slotLevels), stroke, fg, a,
+                        TrioGeometry.capReadingEdge(stroke, false) + a.capsuleRightDx, cy, true);
                 break;
             default:
                 break;
@@ -2072,7 +2148,11 @@ final class TrioRenderer {
         // and the translate keeps it centred. Doing it anywhere else - a second
         // canvas.scale around the layout calls, say - would scale the stroke
         // widths differently from the radii and the glyph would come apart.
-        final float scale = inkScale(w, h, appearance.style) * appearance.glyphFit();
+        // The shared size, times the capsule's own correction. The two are separate keys on
+        // purpose: one number says how big the glyph is, and the shape whose ink box does not
+        // match the row says once how much it has to be drawn up to sit level with the other.
+        final float scale = inkScale(w, h, appearance.style) * appearance.glyphFit()
+                * (appearance.capsule ? appearance.capsuleFit() : 1f);
         if (scale <= 0f) {
             return false;
         }

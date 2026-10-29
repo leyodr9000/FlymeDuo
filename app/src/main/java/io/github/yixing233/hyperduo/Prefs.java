@@ -83,6 +83,23 @@ public final class Prefs {
      * <p>A brand-new key with a brand-new name.
      */
     public static final String KEY_GLYPH_SCALE = "glyph_scale_pct";
+
+    /**
+     * Size correction for the capsule, in percent of the shared fit.
+     *
+     * <p>{@link #KEY_GLYPH_SCALE} is one number for every arrangement on purpose: a user who
+     * sized the glyph wants that size whichever shape is drawn. But the two shapes do not
+     * have the same ink box. The ring is a square whose ink <em>is</em> the glyph, so at 100%
+     * it fills the host. The capsule's box is a short stadium plus the strip either opening
+     * draws in, and the fit is taken against that taller box, so its body lands at roughly
+     * 70% of the row height - which puts the ring's smallest size and the capsule's largest
+     * at the same visual height and reads as the two styles being out of step.
+     *
+     * <p>This factor is the correction, applied to the capsule's fit only. Shared base plus a
+     * per-shape multiplier: the base stays one setting, and the shape that needs to be drawn
+     * bigger says so once.
+     */
+    public static final String KEY_CAPSULE_SCALE = "capsule_scale_pct";
     /** Horizontal nudge of the whole glyph, in dp; negative moves left. */
     public static final String KEY_GLYPH_OFFSET_X = "glyph_offset_x_dp";
     /** Horizontal shift of the status bar's own icon area, in dp; independent of the glyph. */
@@ -1382,6 +1399,8 @@ public final class Prefs {
      * settable, so an install that never touches the slider draws what it drew.
      */
     public static final int DEF_GLYPH_SCALE = 100;
+    /** The capsule's own correction; 100 means "whatever the shared fit says". */
+    public static final int DEF_CAPSULE_SCALE = 100;
     /** Centered by default; see {@link #KEY_GLYPH_OFFSET_X} / {@link #KEY_GLYPH_OFFSET_Y}. */
     public static final int DEF_GLYPH_OFFSET = 0;
     /** Same span as the glyph nudge; see {@link #KEY_ICON_OFFSET_X}. */
@@ -1793,6 +1812,17 @@ public final class Prefs {
      */
     public static final int MIN_GLYPH_SCALE = 60;
     public static final int MAX_GLYPH_SCALE = 100;
+    /**
+     * The capsule correction's span, in percent.
+     *
+     * <p>Only upwards. The capsule's box is the reason it needs a correction at all - its
+     * body sits at about 70% of the row height - so the useful direction is making it bigger;
+     * the shared {@code glyph_scale} is still what shrinks it. 180 is a little past the
+     * point where the body fills the row, so the slider can overshoot and be dialled back by
+     * eye instead of stopping exactly at the arithmetic answer.
+     */
+    public static final int MIN_CAPSULE_SCALE = 100;
+    public static final int MAX_CAPSULE_SCALE = 180;
     /** The nudge span, in dp: a few each way is what the row can visibly use. */
     public static final int MIN_GLYPH_OFFSET = -24;
     public static final int MAX_GLYPH_OFFSET = 24;

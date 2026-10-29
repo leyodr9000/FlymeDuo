@@ -291,6 +291,8 @@ public final class TrioSettings {
      * implies. Shrink-only; see {@link Prefs#KEY_GLYPH_SCALE}.
      */
     public int glyphScale;
+    /** The capsule's own size correction; see {@link Prefs#KEY_CAPSULE_SCALE}. */
+    public int capsuleScale;
     /**
      * Horizontal / vertical nudge of the whole glyph, in density pixels units of
      * dp, sign as screen axes: negative X moves left, negative Y moves up. See
@@ -342,6 +344,7 @@ public final class TrioSettings {
         s.perfScale = Prefs.DEF_PERF_SCALE;
         s.perfWeight = Prefs.DEF_PERF_WEIGHT;
         s.glyphScale = Prefs.DEF_GLYPH_SCALE;
+        s.capsuleScale = Prefs.DEF_CAPSULE_SCALE;
         s.glyphOffsetX = Prefs.DEF_GLYPH_OFFSET;
         s.glyphOffsetY = Prefs.DEF_GLYPH_OFFSET;
         s.iconOffsetX = Prefs.DEF_ICON_OFFSET;
@@ -484,6 +487,9 @@ public final class TrioSettings {
         s.glyphScale = Prefs.clamp(
                 p.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
+        s.capsuleScale = Prefs.clamp(
+                p.getInt(Prefs.KEY_CAPSULE_SCALE, Prefs.DEF_CAPSULE_SCALE),
+                Prefs.MIN_CAPSULE_SCALE, Prefs.MAX_CAPSULE_SCALE);
         s.glyphOffsetX = Prefs.clamp(
                 p.getInt(Prefs.KEY_GLYPH_OFFSET_X, Prefs.DEF_GLYPH_OFFSET),
                 Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
@@ -884,6 +890,7 @@ public final class TrioSettings {
         s.perfScale = perfScale;
         s.perfWeight = perfWeight;
         s.glyphScale = glyphScale;
+        s.capsuleScale = capsuleScale;
         s.glyphOffsetX = glyphOffsetX;
         s.glyphOffsetY = glyphOffsetY;
         s.iconOffsetX = iconOffsetX;
@@ -979,6 +986,7 @@ public final class TrioSettings {
             case Prefs.KEY_PERF_SCALE: perfScale = src.perfScale; return true;
         case Prefs.KEY_PERF_WEIGHT: perfWeight = src.perfWeight; return true;
             case Prefs.KEY_GLYPH_SCALE: glyphScale = src.glyphScale; return true;
+            case Prefs.KEY_CAPSULE_SCALE: capsuleScale = src.capsuleScale; return true;
             case Prefs.KEY_GLYPH_OFFSET_X: glyphOffsetX = src.glyphOffsetX; return true;
             case Prefs.KEY_ICON_OFFSET_X: iconOffsetX = src.iconOffsetX; return true;
             case Prefs.KEY_GLYPH_OFFSET_Y: glyphOffsetY = src.glyphOffsetY; return true;
@@ -1089,6 +1097,9 @@ public final class TrioSettings {
         s.glyphScale = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
+        s.capsuleScale = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_CAPSULE_SCALE, Prefs.DEF_CAPSULE_SCALE),
+                Prefs.MIN_CAPSULE_SCALE, Prefs.MAX_CAPSULE_SCALE);
         s.glyphOffsetX = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_GLYPH_OFFSET_X, Prefs.DEF_GLYPH_OFFSET),
                 Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
@@ -1248,6 +1259,7 @@ public final class TrioSettings {
         b.putInt(Prefs.KEY_PERF_SCALE, perfScale);
         b.putInt(Prefs.KEY_PERF_WEIGHT, perfWeight);
         b.putInt(Prefs.KEY_GLYPH_SCALE, glyphScale);
+        b.putInt(Prefs.KEY_CAPSULE_SCALE, capsuleScale);
         b.putInt(Prefs.KEY_GLYPH_OFFSET_X, glyphOffsetX);
         b.putInt(Prefs.KEY_ICON_OFFSET_X, iconOffsetX);
         b.putInt(Prefs.KEY_GLYPH_OFFSET_Y, glyphOffsetY);
@@ -1370,6 +1382,7 @@ public final class TrioSettings {
                 // the old number on the next recomposition.
                 && perfWeight == s.perfWeight
                 && glyphScale == s.glyphScale
+                && capsuleScale == s.capsuleScale
                 && glyphOffsetX == s.glyphOffsetX
                 && glyphOffsetY == s.glyphOffsetY
                 && iconOffsetX == s.iconOffsetX
@@ -1435,6 +1448,7 @@ public final class TrioSettings {
         h = h * 31 + perfScale;
         h = h * 31 + perfWeight;
         h = h * 31 + glyphScale;
+        h = h * 31 + capsuleScale;
         h = h * 31 + glyphOffsetX;
         h = h * 31 + glyphOffsetY;
         h = h * 31 + iconOffsetX;

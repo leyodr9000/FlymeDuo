@@ -311,6 +311,8 @@
     <string name="capsule_container_title">Capsule shape</string>
     <string name="capsule_container_summary">Length, and where each cell sits.</string>
     <string name="capsule_length_title">Capsule length</string>
+    <string name="capsule_scale_title">Capsule size correction</string>
+    <string name="capsule_scale_summary">The ring ink box is square, while the capsule box includes the strip its openings draw in, so at the same percentage the capsule body looks smaller. This scales the capsule up: 100 means no correction, up to 180.</string>
     <string name="capsule_length_summary">Default 0, range -30 to 60. Lengthens the straight run between the two caps, so the capsule widens; the caps and the height stay as they are.</string>
     <string name="capsule_nudge_left_dx_title">Left cell horizontal</string>
     <string name="capsule_nudge_left_dx_summary">Positive moves right, negative left.</string>
