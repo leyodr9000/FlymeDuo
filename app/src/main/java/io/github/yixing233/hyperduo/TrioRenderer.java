@@ -2137,6 +2137,21 @@ final class TrioRenderer {
      * @return false when there is nothing to draw into, with {@code out} left
      *         alone so a caller cannot accidentally use a stale transform
      */
+    /**
+     * Whether a capsule zone holds anything at all this frame.
+     *
+     * <p>Ask from the listed candidates rather than from the resolved occupant: the fit has to
+     * know whether a strip is needed <em>before</em> the drawing decides what fills it, and a
+     * band whose head has no ink today will be refilled tomorrow without the layout changing.
+     * A non-empty list is therefore the right question - it means "this opening is in use".
+     */
+    private static boolean holdsAny(TrioAppearance a, TrioZones.Zone zone) {
+        if (a == null || a.ringZones == null) {
+            return false;
+        }
+        final int[] order = a.ringZones[zone.ordinal()];
+        return order != null && order.length > 0;
+    }
     static boolean designTransform(int w, int h, TrioAppearance appearance, float[] out) {
         if (w <= 0 || h <= 0 || appearance == null || out == null || out.length < 3) {
             return false;
@@ -2148,19 +2163,39 @@ final class TrioRenderer {
         // and the translate keeps it centred. Doing it anywhere else - a second
         // canvas.scale around the layout calls, say - would scale the stroke
         // widths differently from the radii and the glyph would come apart.
+        // The capsule's fitting box follows the bands it actually draws.
+        //
+        // The two strips above and below the outline exist to hold a reading placed in an
+        // opening. When both openings are empty there is no such ink, and fitting against the
+        // full banded box anyway is what made the capsule sit at about 70% of the row height
+        // while the ring - whose box IS its ink - filled the row. The capsule could not be
+        // made level with the ring at any setting, and a size correction only papered over it.
+        // Ask which strips are really in use and the answer falls out: with empty openings the
+        // body fills the row exactly, and each band that IS used takes back its own slice, so
+        // an opening reading never gets clipped.
+        final boolean capTopBand = appearance.capsule
+                && holdsAny(appearance, TrioZones.Zone.TOP);
+        final boolean capBottomBand = appearance.capsule
+                && holdsAny(appearance, TrioZones.Zone.BOTTOM);
+        final float capBoxTop = TrioGeometry.CAP_INK_Y
+                - (capTopBand ? TrioGeometry.CAP_BAND_H : 0f);
+        final float capBoxH = TrioGeometry.CAP_INK_H
+                + (capTopBand ? TrioGeometry.CAP_BAND_H : 0f)
+                + (capBottomBand ? TrioGeometry.CAP_BAND_H : 0f);
         // The shared size, times the capsule's own correction. The two are separate keys on
-        // purpose: one number says how big the glyph is, and the shape whose ink box does not
-        // match the row says once how much it has to be drawn up to sit level with the other.
-        final float scale = inkScale(w, h, appearance.style) * appearance.glyphFit()
-                * (appearance.capsule ? appearance.capsuleFit() : 1f);
+        // purpose: one number says how big the glyph is, and the shape whose box can still
+        // differ from the row says once how much it has to be drawn up to sit level.
+        final float scale = appearance.capsule
+                ? inkScale(w, h, TrioGeometry.capInkW(), capBoxH)
+                        * appearance.glyphFit() * appearance.capsuleFit()
+                : inkScale(w, h, appearance.style) * appearance.glyphFit();
         if (scale <= 0f) {
             return false;
         }
         out[0] = scale;
         if (appearance.capsule) {
-            final float boxH = TrioGeometry.CAP_INK_BOTTOM - TrioGeometry.CAP_INK_TOP;
             out[1] = (w - TrioGeometry.capInkW() * scale) / 2f - TrioGeometry.CAP_INK_X * scale;
-            out[2] = (h - boxH * scale) / 2f - TrioGeometry.CAP_INK_TOP * scale;
+            out[2] = (h - capBoxH * scale) / 2f - capBoxTop * scale;
         } else if (rect) {
             out[1] = (w - TrioGeometry.RECT_INK_W * scale) / 2f
                     - TrioGeometry.RECT_INK_X * scale;
