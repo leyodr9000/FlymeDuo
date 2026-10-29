@@ -136,7 +136,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.45";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.50";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -740,6 +740,17 @@ final class FlymeHooks {
                     int resId = io.github.yixing233.hyperduo.Refl.getInt(io.github.yixing233.hyperduo.FlymeHooks.sResourceIconResField, drawable, 0);
                     java.lang.String type = io.github.yixing233.hyperduo.FlymeHooks.mobileTypeForResource(((android.view.View) target).getResources(), resId);
                     if (io.github.yixing233.hyperduo.TrioState.setMobileType(type)) {
+                        // Logged on change only: this is the one line that answers the
+                        // recurring report that a 5GA phone shows 5G. It prints BOTH halves -
+                        // the resource Flyme handed us and the label we made of it - so the
+                        // next report can say whether the fault is in the mapping or in what
+                        // the platform sampled in the first place.
+                        java.lang.String resName = "";
+                        try {
+                            resName = ((android.view.View) target).getResources().getResourceEntryName(resId);
+                        } catch (java.lang.Throwable ignored) { }
+                        io.github.yixing233.hyperduo.FlymeHooks.log(io.github.yixing233.hyperduo.FlymeHooks.sModule,
+                                "mobile type: \"" + type + "\" (res " + resName + ", id " + resId + ")");
                         io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
                     }
                     // Flyme's own label is left alone: the ring's out-of-ring type
@@ -797,7 +808,7 @@ final class FlymeHooks {
         if (name.startsWith("ic_5g_plus")) {
             return "5G+";
         }
-        if (name.startsWith("ic_5g_a")) {
+        if (name.startsWith("ic_5g_a") || name.startsWith("ic_5ga") || name.contains("5g_a")) {
             return "5GA";
         }
         if (name.startsWith("ic_5g_e")) {

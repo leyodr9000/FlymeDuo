@@ -140,6 +140,8 @@
 
     <string name="type_hide_on_wifi_title">连 Wi-Fi 时隐藏网络类型</string>
     <string name="type_hide_on_wifi_summary">Wi-Fi 已连接时隐藏，断开或切到流量后自动恢复。</string>
+    <string name="type_hide_on_data_off_title">关闭流量时隐藏类型</string>
+    <string name="type_hide_on_data_off_summary">打开后，关闭移动数据时不再显示 5G/4G 字样：环内缺口会自动合上，环外标签同步隐藏。这样一眼就能看出流量到底开没开</string>
     <string name="show_mobile_type_title">网络类型</string>
     <string name="show_mobile_type_summary">3G/4G/5G 等文字，可放在环内或环外。</string>
     <string name="mobile_type_off">关闭</string>
@@ -165,9 +167,11 @@
     <string name="icon_offset_x_title">其他图标水平</string>
     <string name="icon_offset_summary">整体平移原厂图标区（Wi-Fi、信号、网速指示器等），与三合一互相独立：正值向右、负值向左，可调 −24 到 24 dp</string>
     <string name="glyph_size_group_title">尺寸与位置</string>
-    <string name="glyph_size_group_summary">整体 %1$d%% · 三合一 %2$ddp · 图标 %4$ddp · 垂直 %3$ddp，点按展开</string>
+    <string name="glyph_size_group_summary">整体 %1$d%% · 三合一 %2$ddp · 图标 %4$ddp · 垂直 %3$ddp，点按调整</string>
     <string name="demo_dual_sim_title">双卡信号演示</string>
     <string name="demo_dual_sim_summary">没有第二张实体卡也能预览堆叠读数：只伪造两张卡的信号电平，不碰网络。环内双行还要求环内没有 Wi-Fi 弧线、且未在充电。</string>
+    <string name="demo_mobile_type_title">模拟 5GA 显示</string>
+    <string name="demo_mobile_type_summary">把网络类型强制当成 5GA 来画，方便在没有 5G-A 覆盖时验证显示效果。只改绘制，不碰任何通信状态</string>
 
     <string name="perf_scale_title">读数整体尺寸</string>
     <string name="perf_scale_summary">默认 100%，可调 60–150%。</string>
@@ -317,8 +321,8 @@
     <string name="capsule_container_title">胶囊结构</string>
     <string name="capsule_container_summary">长度与左右两格的位置。</string>
     <string name="capsule_length_title">胶囊长度</string>
-    <string name="capsule_scale_title">胶囊大小补偿</string>
-    <string name="capsule_scale_summary">圆环的墨迹盒子是方的，胶囊的盒子含上下开口条带，所以同一个百分比下胶囊本体看起来更小。这项把胶囊按比例放大，100 为不补偿，可调 100 到 180</string>
+    <string name="capsule_scale_title">胶囊大小微调</string>
+    <string name="capsule_scale_summary">75 是起点（等于旧版 100 的样子），往上继续放大，可调 75 到 140。圆环的墨迹是整块方，胶囊是扁长条，所以同样的百分比视觉高度本来就不同，这一项用来把两者拉平</string>
     <string name="capsule_length_summary">默认 0，可调 -30 到 60。加长的是两端圆角之间的直线段，胶囊随之变宽，圆角与高度不变。</string>
     <string name="capsule_nudge_left_dx_title">左格水平位置</string>
     <string name="capsule_nudge_left_dx_summary">正值右移，负值左移。</string>

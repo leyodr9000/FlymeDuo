@@ -270,6 +270,9 @@ class SettingsRepository(context: Context) {
     /** Drop the network type while Wi-Fi is up; see [Prefs.KEY_TYPE_HIDE_ON_WIFI]. */
     fun setTypeHideOnWifi(value: Boolean) =
         writeBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI, value)
+    /** Drop the network type while mobile data is off. */
+    fun setTypeHideOnDataOff(value: Boolean) =
+        writeBoolean(Prefs.KEY_TYPE_HIDE_ON_DATA_OFF, value)
     /** While charging the ring centre shows the percentage; see [Prefs.KEY_CHARGING_SHOWS_VALUE]. */
     fun setChargingShowsValue(value: Boolean) =
         writeBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE, value)
@@ -366,6 +369,8 @@ class SettingsRepository(context: Context) {
 
     /** Demo two pretend cards - display-only; see [Prefs.KEY_DEMO_DUAL_SIM]. */
     fun setDemoDualSim(value: Boolean) = writeBoolean(Prefs.KEY_DEMO_DUAL_SIM, value)
+    /** Pretend the radio reports 5GA; display only. */
+    fun setDemoMobileType(value: Boolean) = writeBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, value)
 
     /** Interior cell nudges; see [Prefs.KEY_CAPSULE_LEFT_DX]. */
     fun setCapsuleLeftDx(value: Int) = writeInt(Prefs.KEY_CAPSULE_LEFT_DX, value)
@@ -438,6 +443,7 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_GLYPH_OFFSET_Y, snapshot.glyphOffsetY)
             prefs.putInt(Prefs.KEY_ICON_OFFSET_X, snapshot.iconOffsetX)
             prefs.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, snapshot.demoDualSim)
+            prefs.putBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, snapshot.demoMobileType)
             // A key missing from this list is re-pushed as its default after every
             // framework reconnect, so a chosen font would silently revert on the
             // next bind. This is the list DEVELOPMENT.md calls out for exactly that
@@ -481,6 +487,7 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_BOLT_SCALE, snapshot.boltScale)
             prefs.putInt(Prefs.KEY_WIFI_SCALE, snapshot.wifiScale)
             prefs.putBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI, snapshot.typeHideOnWifi)
+            prefs.putBoolean(Prefs.KEY_TYPE_HIDE_ON_DATA_OFF, snapshot.typeHideOnDataOff)
             prefs.putBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE, snapshot.chargingShowsValue)
             prefs.putInt(Prefs.KEY_DOT_SCALE, snapshot.dotScale)
             prefs.putString(Prefs.KEY_OUT_ORDER, Prefs.encodeOutOrder(snapshot.outOrder))

@@ -115,6 +115,8 @@
 
     <string name="type_hide_on_wifi_title">Hide the network type on Wi-Fi</string>
     <string name="type_hide_on_wifi_summary">Drops the label while Wi-Fi is connected; it comes back when the connection does.</string>
+    <string name="type_hide_on_data_off_title">Hide type when data is off</string>
+    <string name="type_hide_on_data_off_summary">With this on, switching mobile data off drops the 5G/4G label: the ring notch closes by itself and the out-of-ring label hides with it, so the glyph stops claiming a network nobody is using.</string>
     <string name="show_mobile_type_title">Network type</string>
     <string name="show_mobile_type_summary">The 3G/4G/5G label, inside the ring or outside it.</string>
     <string name="mobile_type_off">Off</string>
@@ -140,9 +142,11 @@
     <string name="icon_offset_x_title">Icon area horizontal</string>
     <string name="icon_offset_summary">Moves the stock icon area as a whole (Wi-Fi, signal, network speed), independently of the glyph: positive right, negative left. Range −24 to 24 dp</string>
     <string name="glyph_size_group_title">Size &amp; position</string>
-    <string name="glyph_size_group_summary">Overall %1$d%% · glyph %2$d · icons %4$d · vertical %3$d (dp), tap to expand</string>
+    <string name="glyph_size_group_summary">Overall %1$d%% · glyph %2$d · icons %4$d · vertical %3$d (dp), tap to adjust</string>
     <string name="demo_dual_sim_title">Dual-SIM signal demo</string>
     <string name="demo_dual_sim_summary">Preview the stacked readings without a second SIM: fakes the two card levels only, network untouched. The in-ring twin rows also need no Wi-Fi arcs in the ring and no charger.</string>
+    <string name="demo_mobile_type_title">Simulate 5GA label</string>
+    <string name="demo_mobile_type_summary">Draws the network type as 5GA so the look can be checked without 5G-Advanced coverage. Drawing only; no radio state is touched.</string>
 
     <string name="perf_scale_title">Overall reading size</string>
     <string name="perf_scale_summary">The default is 100% and the slider covers 60–150%.</string>
@@ -311,8 +315,8 @@
     <string name="capsule_container_title">Capsule shape</string>
     <string name="capsule_container_summary">Length, and where each cell sits.</string>
     <string name="capsule_length_title">Capsule length</string>
-    <string name="capsule_scale_title">Capsule size correction</string>
-    <string name="capsule_scale_summary">The ring ink box is square, while the capsule box includes the strip its openings draw in, so at the same percentage the capsule body looks smaller. This scales the capsule up: 100 means no correction, up to 180.</string>
+    <string name="capsule_scale_title">Capsule size fine-tune</string>
+    <string name="capsule_scale_summary">75 is the floor and renders what the old 100 did; raise it from there (75 to 140). The ring ink is a full square while the capsule is a short stadium, so equal percentages are not equal heights - this row levels them.</string>
     <string name="capsule_length_summary">Default 0, range -30 to 60. Lengthens the straight run between the two caps, so the capsule widens; the caps and the height stay as they are.</string>
     <string name="capsule_nudge_left_dx_title">Left cell horizontal</string>
     <string name="capsule_nudge_left_dx_summary">Positive moves right, negative left.</string>

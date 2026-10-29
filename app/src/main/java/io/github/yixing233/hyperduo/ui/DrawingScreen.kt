@@ -345,6 +345,17 @@ private fun DrawingEditorCard(
                     insideMargin = SettingsItemMargin,
                     onCheckedChange = { value -> update { it.setDemoDualSim(value) } },
                 )
+                // The same lever for the type label. 5G-Advanced coverage is rare enough
+                // that a report about it cannot be reproduced on demand, so the label is
+                // substitutable: if the simulated one draws correctly, the fault is in what
+                // the platform sampled rather than in how the glyph renders it.
+                SwitchPreference(
+                    checked = settings.demoMobileType,
+                    title = stringResource(R.string.demo_mobile_type_title),
+                    summary = stringResource(R.string.demo_mobile_type_summary),
+                    insideMargin = SettingsItemMargin,
+                    onCheckedChange = { value -> update { it.setDemoMobileType(value) } },
+                )
             }
         }
 

@@ -108,6 +108,16 @@ public final class Prefs {
     public static final String KEY_GLYPH_OFFSET_Y = "glyph_offset_y_dp";
     /** Demo two pretend cards, so a single-SIM device can preview the stacked readings. */
     public static final String KEY_DEMO_DUAL_SIM = "demo_dual_signal";
+    /**
+     * Pretend the radio reports 5G-Advanced, so an install with no 5GA coverage can see how
+     * the label is drawn.
+     *
+     * <p>Display only, like the dual-SIM demo: the string is substituted where the drawing
+     * reads it and nothing reaches telephony. It also serves as the reproduction lever for
+     * reports about "5GA shows as 5G" - if the simulated label is right, the fault is in what
+     * the platform sampled rather than in how it is drawn.
+     */
+    public static final String KEY_DEMO_MOBILE_TYPE = "demo_mobile_type";
     public static final String KEY_SHOW_WIFI = "show_wifi";
     public static final String KEY_SHOW_MOBILE = "show_mobile";
     public static final String KEY_SHOW_VALUE = "show_value";
@@ -1153,6 +1163,20 @@ public final class Prefs {
      * and an install that never touches this key must keep drawing what it drew.
      */
     public static final String KEY_TYPE_HIDE_ON_WIFI = "type_hide_on_wifi";
+    /**
+     * Drop the network type while mobile data is switched OFF.
+     *
+     * <p>Without this the label answers a question nobody asked: a phone with no Wi-Fi and
+     * no data still drew 5G, so the one thing the reading could not tell the user was whether
+     * their data was even on. The reference behaves the other way - the type appears only when
+     * cellular data is actually in use - and that is what this reproduces.
+     *
+     * <p>Applied by emptying the sampled type rather than by gating each drawing site: an
+     * empty type is exactly "no ink", so the ring notch closes by itself, the capsule cell
+     * falls through to its next candidate, and the out-of-ring label hides with no second
+     * rule to keep in step.
+     */
+    public static final String KEY_TYPE_HIDE_ON_DATA_OFF = "type_hide_on_data_off";
 
     /**
      * While charging, the ring's centre shows the percentage whatever the layout put there,
@@ -1170,6 +1194,8 @@ public final class Prefs {
     public static final String KEY_CHARGING_SHOWS_VALUE = "charging_shows_value";
     public static final boolean DEF_CHARGING_SHOWS_VALUE = false;
     public static final boolean DEF_TYPE_HIDE_ON_WIFI = false;
+    /** On by default: the point is that the label stops claiming a network nobody is using. */
+    public static final boolean DEF_TYPE_HIDE_ON_DATA_OFF = true;
     /**
      * Size of the ring's level-dot rows, as a percentage of the bead the stroke implies.
      *
@@ -1407,6 +1433,8 @@ public final class Prefs {
     public static final int DEF_ICON_OFFSET = 0;
     /** Off by default: the demo draws signal levels that no radio is reporting. */
     public static final boolean DEF_DEMO_DUAL_SIM = false;
+    /** Off by default: the demo draws a label no radio is reporting. */
+    public static final boolean DEF_DEMO_MOBILE_TYPE = false;
 
     /**
      * Horizontal and vertical nudge for each of the capsule's two INTERIOR cells.
@@ -1813,16 +1841,33 @@ public final class Prefs {
     public static final int MIN_GLYPH_SCALE = 60;
     public static final int MAX_GLYPH_SCALE = 100;
     /**
-     * The capsule correction's span, in percent.
+     * The capsule's optional fine-tune, in percent of the shared fit.
      *
-     * <p>Only upwards. The capsule's box is the reason it needs a correction at all - its
-     * body sits at about 70% of the row height - so the useful direction is making it bigger;
-     * the shared {@code glyph_scale} is still what shrinks it. 180 is a little past the
-     * point where the body fills the row, so the slider can overshoot and be dialled back by
-     * eye instead of stopping exactly at the arithmetic answer.
+     * <p><b>Default 100: one ruler for both shapes.</b> The shared {@code glyph_scale} is what
+     * the user thinks of as the size of the icon, so 100 there has to mean the same thing in
+     * both arrangements - and it now does, because the capsule's fitting box follows the
+     * opening bands it actually draws instead of always reserving both. An install that never
+     * touched this slider therefore sees the capsule grow to match the ring on its own.
+     *
+     * <p>The knob exists for the one case the box cannot answer on its own: with a reading
+     * placed in an opening, that strip is real ink, the box includes it, and the body comes
+     * out proportionally smaller. 100..140 is the room to take that back by eye - it is not a
+     * second notion of size, and it never shrinks the capsule below the shared setting.
      */
-    public static final int MIN_CAPSULE_SCALE = 100;
-    public static final int MAX_CAPSULE_SCALE = 180;
+    /**
+     * What counts as 100% for the capsule slider: <b>75, not 100</b>.
+     *
+     * <p>The number had to be rebased rather than tuned. Even with the fitting box no longer
+     * reserving empty opening bands, the capsule's body still reads smaller than the ring at
+     * the same percentage - the ring's ink IS a full square, while the capsule's is a short
+     * stadium and its caps are drawn to the same stroke. Rather than leave every value in the
+     * slider meaning something different from what the eye expects, 75 now renders what 100
+     * used to, and the range above it is real headroom instead of a correction nobody could
+     * calibrate by eye.
+     */
+    public static final int CAPSULE_SCALE_UNIT = 75;
+    public static final int MIN_CAPSULE_SCALE = 75;
+    public static final int MAX_CAPSULE_SCALE = 140;
     /** The nudge span, in dp: a few each way is what the row can visibly use. */
     public static final int MIN_GLYPH_OFFSET = -24;
     public static final int MAX_GLYPH_OFFSET = 24;

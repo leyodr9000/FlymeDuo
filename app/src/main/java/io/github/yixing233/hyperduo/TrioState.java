@@ -167,6 +167,20 @@ final class TrioState {
     /** The demo's two card levels - one strong, one mid, so the rows read apart. */
     private static final int DEMO_SIM1_LEVEL = 4;
     private static final int DEMO_SIM2_LEVEL = 2;
+    /** The label the 5GA demo substitutes; see {@link Prefs#KEY_DEMO_MOBILE_TYPE}. */
+    private static final String DEMO_MOBILE_TYPE = "5GA";
+
+    /** How often the mobile-data toggle may be re-read; the same budget as the SIM poll. */
+    private static final long DATA_INTERVAL_MS = 2000L;
+    private static volatile long sDataDueAt;
+    /**
+     * Whether mobile data is switched on.
+     *
+     * <p>Starts true so nothing hides before the first sample: an unknown state must not
+     * blank the label, and a module that silently drops a reading is worse than one that
+     * shows a stale one for the two seconds it takes to ask.
+     */
+    private static volatile boolean sDataEnabled = true;
 
     /** The current default-data SIM's slot, or {@code -1} when it is unknown. */
     static volatile int sDataSlot = -1;
@@ -363,6 +377,22 @@ final class TrioState {
         wifiPresent = sWifiPresent;
         islandHideBattery = sIslandHideBattery;
         mobileType = sMobileType;
+        // Ask the data toggle first, so the demo below can still override it: the demo exists
+        // to inspect the drawing, and burying it behind a switch about the radio would make it
+        // untestable on a phone whose data happens to be off.
+        sampleDataIfDue();
+        if (!sDataEnabled && io.github.yixing233.hyperduo.TrioConfig.get().typeHideOnDataOff) {
+            // An empty type is exactly "no ink": the ring's notch closes on its own, the
+            // capsule cell falls through to its next candidate, and the out-of-ring label
+            // hides with it. One rule, three surfaces - nothing else has to know.
+            mobileType = "";
+        }
+        // Demo: pretend the radio reports 5G-Advanced, so an install with no 5GA coverage can
+        // see how the label is drawn. Display only - nothing reaches telephony, and the
+        // sampled value returns the moment the switch goes off.
+        if (io.github.yixing233.hyperduo.TrioConfig.get().demoMobileType) {
+            mobileType = DEMO_MOBILE_TYPE;
+        }
         // The three battery values are read straight from their statics by the
         // readout's own refresh path, which runs on the layout pass rather than
         // on refresh(), so there is nothing to mirror them into here.
@@ -433,6 +463,35 @@ final class TrioState {
         }
         sSimsDueAt = now + SIMS_INTERVAL_MS;
         sampleSims(sContext);
+    }
+
+    /**
+     * Re-reads the mobile-data toggle at most once per {@link #DATA_INTERVAL_MS}.
+     *
+     * <p>{@code mobile_data} is the user-facing master switch, which is the exact question
+     * the label was failing to answer: not "is a network attached" but "did I turn data on".
+     * Reading the switch rather than the connection keeps the glyph from flickering while the
+     * radio is still attaching, and needs no privileged telephony call - the setting is
+     * readable by the uid SystemUI already runs as.
+     *
+     * <p>Failure is silent and keeps the last value: a SecurityException here must not take
+     * the drawing down, and an unknown state must not blank the label.
+     */
+    private static void sampleDataIfDue() {
+        final long now = SystemClock.elapsedRealtime();
+        if (now < sDataDueAt || sContext == null) {
+            return;
+        }
+        sDataDueAt = now + DATA_INTERVAL_MS;
+        try {
+            // The literal key, not Settings.Global.MOBILE_DATA: that constant is @hide in the
+            // SDK this module compiles against, and the stored name is stable anyway.
+            final int on = android.provider.Settings.Global.getInt(
+                    sContext.getContentResolver(), "mobile_data", 1);
+            sDataEnabled = on != 0;
+        } catch (java.lang.Throwable ignored) {
+            // keep the last known value
+        }
     }
 
     /**

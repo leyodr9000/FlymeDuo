@@ -709,20 +709,21 @@ public final class TrioAppearance {
     }
 
     /**
-     * The capsule's size correction, clamped, as a multiplier on the shared fit.
+     * The capsule's size multiplier, clamped.
      *
-     * <p>Stated here rather than at the call site for the same reason as {@link #glyphFit()}:
-     * the drawing and the settings preview must agree about what the slider means, and the
-     * broadcast path can hand this class extras that never went through a clamp.
+     * <p>Divided by {@link Prefs#CAPSULE_SCALE_UNIT}, not by 100: the number on the slider was
+     * rebased so that its lower end renders what the old 100 did. Written here rather than at
+     * the call site so the drawing and the preview cannot disagree, and because the broadcast
+     * path can hand this class extras that never went through a clamp.
      *
-     * <p>Applies to the capsule only. The shared {@code glyph_scale} is still the base - one
-     * number for every arrangement - and this is the one shape-specific correction, because
-     * the capsule's ink box includes the strip its openings draw in and its body therefore
-     * lands well below the row height the ring fills.
+     * <p>The shared {@code glyph_scale} is still the base - one number for what icon size
+     * means - and this is the one shape-specific multiplier, because the ring's ink is a full
+     * square while the capsule's is a short stadium, so equal percentages are not equal
+     * heights on screen.
      */
     public float capsuleFit() {
         return Prefs.clamp(capsuleScale, Prefs.MIN_CAPSULE_SCALE, Prefs.MAX_CAPSULE_SCALE)
-                / 100f;
+                / (float) Prefs.CAPSULE_SCALE_UNIT;
     }
 
     /**
