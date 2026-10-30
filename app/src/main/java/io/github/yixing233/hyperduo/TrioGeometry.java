@@ -171,6 +171,16 @@ final class TrioGeometry {
     static final float GAP_WIDTH_STACK_DEG = GAP_WIDTH_DEG + STACK_MOUTH_EXTRA_DEG;
 
     /**
+     * The sweep with the BOTTOM opening widened by the same amount.
+     *
+     * <p>The bottom opening is not a gap constant like the top one - it is simply
+     * {@code 360 - sweep} - so the only way to give the matrix room down there is to
+     * shorten the arc. {@code arcStart} re-centres the missing part on 6 o'clock from the
+     * sweep, so nothing else has to move.
+     */
+    static final float B_SWEEP_STACK = B_SWEEP - STACK_MOUTH_EXTRA_DEG;
+
+    /**
      * Gap used when nothing is drawn in the 12 o'clock slot.
      *
      * <p>A zero-width gap at position 0 makes the ring draw as one unbroken arc:

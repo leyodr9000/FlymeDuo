@@ -137,6 +137,11 @@ internal class SliderSpec(
      * Defaults to [max], so every other row keeps its constant span.
      */
     val maxFor: (TrioAppearance) -> Int = { max },
+    /**
+     * The value this row shipped with, shown in its note so a user who has dragged it
+     * around can put it back. Null on rows whose default is not a number worth stating.
+     */
+    val def: Int? = null,
     val read: (TrioSettings) -> Int,
     val write: (SettingsRepository, Int) -> Unit,
     val titleRes: (TrioAppearance) -> Int,
@@ -264,7 +269,8 @@ internal fun geometrySliders(): List<SliderSpec> {
             part = null,
             min = Prefs.MIN_CAPSULE_SCALE,
             max = Prefs.MAX_CAPSULE_SCALE,
-            read = { it.capsuleScale },
+            def = Prefs.DEF_CAPSULE_SCALE,
+    read = { it.capsuleScale },
             write = { r, v -> r.setCapsuleScale(v) },
             titleRes = { R.string.capsule_scale_title },
             summaryRes = { R.string.capsule_scale_summary },
@@ -643,6 +649,7 @@ internal val glyphOffsetXSlider: SliderSpec = SliderSpec(
     part = null,
     min = Prefs.MIN_GLYPH_OFFSET,
     max = Prefs.MAX_GLYPH_OFFSET,
+    def = Prefs.DEF_GLYPH_OFFSET,
     read = { it.glyphOffsetX },
     write = { r, v -> r.setGlyphOffsetX(v) },
     titleRes = { R.string.glyph_offset_x_title },
@@ -658,6 +665,7 @@ internal val glyphOffsetYSlider: SliderSpec = SliderSpec(
     part = null,
     min = Prefs.MIN_GLYPH_OFFSET,
     max = Prefs.MAX_GLYPH_OFFSET,
+    def = Prefs.DEF_GLYPH_OFFSET,
     read = { it.glyphOffsetY },
     write = { r, v -> r.setGlyphOffsetY(v) },
     titleRes = { R.string.glyph_offset_y_title },
@@ -677,6 +685,7 @@ internal val iconOffsetXSlider: SliderSpec = SliderSpec(
     part = null,
     min = Prefs.MIN_GLYPH_OFFSET,
     max = Prefs.MAX_GLYPH_OFFSET,
+    def = Prefs.DEF_ICON_OFFSET,
     read = { it.iconOffsetX },
     write = { r, v -> r.setIconOffsetX(v) },
     titleRes = { R.string.icon_offset_x_title },
@@ -801,6 +810,7 @@ internal val dualStackDySlider: SliderSpec = SliderSpec(
     part = null,
     min = Prefs.MIN_DUAL_STACK_NUDGE,
     max = Prefs.MAX_DUAL_STACK_NUDGE,
+    def = Prefs.DEF_DUAL_STACK_NUDGE,
     read = { it.dualStackDy },
     write = { r, v -> r.setDualStackDy(v) },
     titleRes = { R.string.dual_stack_dy_title },
@@ -814,6 +824,7 @@ internal val dualMatrixSizeSlider: SliderSpec = SliderSpec(
     part = null,
     min = Prefs.MIN_DUAL_MATRIX_SIZE,
     max = Prefs.MAX_DUAL_MATRIX_SIZE,
+    def = Prefs.DEF_DUAL_MATRIX_SIZE,
     read = { it.dualMatrixSize },
     write = { r, v -> r.setDualMatrixSize(v) },
     titleRes = { R.string.dual_matrix_size_title },
@@ -826,6 +837,7 @@ internal val dualMatrixGapSlider: SliderSpec = SliderSpec(
     part = null,
     min = Prefs.MIN_DUAL_MATRIX_GAP,
     max = Prefs.MAX_DUAL_MATRIX_GAP,
+    def = Prefs.DEF_DUAL_MATRIX_GAP,
     read = { it.dualMatrixGap },
     write = { r, v -> r.setDualMatrixGap(v) },
     titleRes = { R.string.dual_matrix_gap_title },
@@ -838,6 +850,7 @@ internal val dualMatrixDySlider: SliderSpec = SliderSpec(
     part = null,
     min = Prefs.MIN_DUAL_STACK_NUDGE,
     max = Prefs.MAX_DUAL_STACK_NUDGE,
+    def = Prefs.DEF_DUAL_MATRIX_DY,
     read = { it.dualMatrixDy },
     write = { r, v -> r.setDualMatrixDy(v) },
     titleRes = { R.string.dual_matrix_dy_title },
@@ -1139,6 +1152,13 @@ internal fun PartSettingsSheet(
     }
 }
 
+/** The "（默认 N）" tail of a row's note, or an empty string when the row has no default. */
+@Composable
+private fun defaultNote(spec: SliderSpec): String {
+    val d = spec.def ?: return ""
+    return " " + stringResource(R.string.slider_default_note, "${d}${spec.suffix ?: ""}")
+}
+
 /** One size row, rendered from its spec. Shared by the page and this dialog. */
 @Composable
 private fun SliderRow(
@@ -1153,7 +1173,9 @@ private fun SliderRow(
         max = spec.maxFor(a),
         step = spec.step,
         title = stringResource(spec.titleRes(a)),
-        summary = stringResource(spec.summaryRes(a)),
+        // The default is appended rather than baked into every summary string: one note in
+        // one place cannot drift from the constant the row actually ships with.
+        summary = stringResource(spec.summaryRes(a)) + defaultNote(spec),
         enabled = spec.enabled(a),
         valueTextSuffix = spec.suffix,
         onValueChange = { v -> update { r -> spec.write(r, v) } },

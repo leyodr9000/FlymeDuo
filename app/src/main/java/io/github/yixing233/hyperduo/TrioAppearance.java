@@ -876,6 +876,8 @@ public final class TrioAppearance {
         public final boolean stackedDual;
         /** The pair is drawn as a matrix this frame, so the mouth widens for it. */
         public final boolean stackedMatrix;
+        /** The matrix hangs from the bottom, so the LOWER opening is the one to widen. */
+        public final boolean stackedMatrixBottom;
         /**
          * The level dots are drawn as two rows, one per SIM, instead of one row
          * for the current data SIM.
@@ -926,6 +928,12 @@ public final class TrioAppearance {
 
         /** The arc's angular sweep this frame; the full circle minus the bottom opening. */
         public float sweep() {
+            // A matrix hanging from the bottom opens the lower mouth by shortening the arc:
+            // unlike the top gap this one is simply 360 - sweep, so this is the only way to
+            // widen it. arcStart re-centres the missing part on 6 o'clock from the sweep.
+            if (stackedMatrixBottom) {
+                return TrioGeometry.B_SWEEP_STACK;
+            }
             return bottomOpen() ? TrioGeometry.B_SWEEP : 360f;
         }
 
@@ -1012,6 +1020,11 @@ public final class TrioAppearance {
             // Only when the pair hangs from the top: at the bottom the ring already has its
             // natural opening to give the matrix, and widening the 12 o'clock mouth instead
             // would open the wrong end.
+            // Whichever side the matrix hangs from is the side that opens for it. The top
+            // mouth is a gap constant; the bottom one is 360 - sweep, so it opens by
+            // shortening the arc instead. Automatic, because a setting for it would only
+            // ever have one correct value.
+            stackedMatrixBottom = stackedDual && a.dualStackMatrix() && a.dualStackAtBottom();
             stackedMatrix = stackedDual && a.dualStackMatrix() && !a.dualStackAtBottom();
 
             // A charger puts the number in the middle, whatever the layout arranged there.

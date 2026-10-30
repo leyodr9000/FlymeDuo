@@ -1732,7 +1732,10 @@ final class TrioRenderer {
         // Local y of the ring's centre for this zone (the caller translated to the zone).
         final float ringCy = TrioGeometry.B_CY - TrioGeometry.ZONE_CY[zone];
         // The block sits a little below (or above) the centre, clear of the middle reading.
-        final float sign = a.dualStackAtBottom() ? -1f : 1f;
+        // Local y grows DOWNWARD, so a positive sign is the lower half. This was inverted
+        // at first, and the matrix then jumped to the top exactly when the setting said
+        // bottom - landing on the type label and the Wi-Fi arcs.
+        final float sign = a.dualStackAtBottom() ? 1f : -1f;
         final float base = ringCy + sign * (dot * 4.5f) + a.dualMatrixDy;
         final int inactive = withAlpha(fg, a.trackAlpha);
         FILL.setStyle(Paint.Style.FILL);

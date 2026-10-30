@@ -153,10 +153,11 @@
     <string name="dual_stack_off">off</string>
     <string name="dual_stack_side_top">top</string>
     <string name="dual_stack_side_bottom">bottom</string>
-    <string name="dual_stack_bottom_title">Hang the pair from the bottom</string>
-    <string name="dual_stack_bottom_summary">Off puts the pair at the top (12 o clock), on at the bottom (6 o clock), so it can be moved clear of whatever occupies the other side.</string>
+    <string name="dual_stack_bottom_title">Hang at the bottom</string>
+    <string name="dual_stack_bottom_summary">On puts the pair at 6 o clock, off at 12. The ring opens automatically on whichever side the matrix hangs, so there is no separate switch for it.</string>
     <string name="dual_stack_dx_title">Pair horizontal</string>
     <string name="dual_stack_dx_summary">Shifts the whole pair left or right; negative moves left. Only this pair moves.</string>
+    <string name="slider_default_note">(default %1$s)</string>
     <string name="dual_matrix_size_title">Matrix dot size</string>
     <string name="dual_matrix_size_summary">Dot radius as a percentage of the ring stroke. The matrix never scales with its vertical position; this is the only size control it has.</string>
     <string name="dual_matrix_gap_title">Matrix pitch</string>
