@@ -192,6 +192,8 @@ public final class TrioSettings {
      * by the same amount, so the reading can never end up on top of the icons.
      */
     public int outSignalMargin;
+    /** Margin between the out-of-ring signal and the battery, in dp. */
+    public int outSignalMarginRight;
     /**
      * Scale of a trailing "A" in the network type, as a percentage of the main
      * size. 100 means no shrink; the reference "5GA" is 65.
@@ -395,6 +397,7 @@ public final class TrioSettings {
         s.outTypeMarginLeft = Prefs.DEF_OUT_TYPE_MARGIN_LEFT;
         s.outTypeMarginRight = Prefs.DEF_OUT_TYPE_MARGIN_RIGHT;
         s.outSignalMargin = Prefs.DEF_OUT_SIGNAL_MARGIN;
+        s.outSignalMarginRight = Prefs.DEF_OUT_SIGNAL_MARGIN_RIGHT;
         s.typeSuffixScale = Prefs.DEF_TYPE_SUFFIX_SCALE;
         s.boltScale = Prefs.DEF_BOLT_SCALE;
         s.wifiScale = Prefs.DEF_WIFI_SCALE;
@@ -598,6 +601,9 @@ public final class TrioSettings {
                 Prefs.MIN_OUT_TYPE_MARGIN, Prefs.MAX_OUT_TYPE_MARGIN);
         s.outSignalMargin = Prefs.clamp(
                 p.getInt(Prefs.KEY_OUT_SIGNAL_MARGIN, Prefs.DEF_OUT_SIGNAL_MARGIN),
+                Prefs.MIN_OUT_SIGNAL_MARGIN, Prefs.MAX_OUT_SIGNAL_MARGIN);
+        s.outSignalMarginRight = Prefs.clamp(
+                p.getInt(Prefs.KEY_OUT_SIGNAL_MARGIN_RIGHT, Prefs.DEF_OUT_SIGNAL_MARGIN_RIGHT),
                 Prefs.MIN_OUT_SIGNAL_MARGIN, Prefs.MAX_OUT_SIGNAL_MARGIN);
         s.typeSuffixScale = Prefs.clamp(
                 p.getInt(Prefs.KEY_TYPE_SUFFIX_SCALE, Prefs.DEF_TYPE_SUFFIX_SCALE),
@@ -982,6 +988,7 @@ public final class TrioSettings {
         s.outTypeMarginLeft = outTypeMarginLeft;
         s.outTypeMarginRight = outTypeMarginRight;
         s.outSignalMargin = outSignalMargin;
+        s.outSignalMarginRight = outSignalMarginRight;
         s.typeSuffixScale = typeSuffixScale;
         s.boltScale = boltScale;
         s.wifiScale = wifiScale;
@@ -1089,6 +1096,8 @@ public final class TrioSettings {
             case Prefs.KEY_OUT_TYPE_MARGIN_LEFT: outTypeMarginLeft = src.outTypeMarginLeft; return true;
             case Prefs.KEY_OUT_TYPE_MARGIN_RIGHT: outTypeMarginRight = src.outTypeMarginRight; return true;
             case Prefs.KEY_OUT_SIGNAL_MARGIN: outSignalMargin = src.outSignalMargin; return true;
+            case Prefs.KEY_OUT_SIGNAL_MARGIN_RIGHT:
+                outSignalMarginRight = src.outSignalMarginRight; return true;
             case Prefs.KEY_TYPE_SUFFIX_SCALE: typeSuffixScale = src.typeSuffixScale; return true;
             case Prefs.KEY_BOLT_SCALE: boltScale = src.boltScale; return true;
             case Prefs.KEY_WIFI_SCALE: wifiScale = src.wifiScale; return true;
@@ -1261,6 +1270,9 @@ public final class TrioSettings {
         s.outSignalMargin = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_OUT_SIGNAL_MARGIN, Prefs.DEF_OUT_SIGNAL_MARGIN),
                 Prefs.MIN_OUT_SIGNAL_MARGIN, Prefs.MAX_OUT_SIGNAL_MARGIN);
+        s.outSignalMarginRight = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_OUT_SIGNAL_MARGIN_RIGHT, Prefs.DEF_OUT_SIGNAL_MARGIN_RIGHT),
+                Prefs.MIN_OUT_SIGNAL_MARGIN, Prefs.MAX_OUT_SIGNAL_MARGIN);
         s.typeSuffixScale = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_TYPE_SUFFIX_SCALE, Prefs.DEF_TYPE_SUFFIX_SCALE),
                 Prefs.MIN_TYPE_SUFFIX_SCALE, Prefs.MAX_TYPE_SUFFIX_SCALE);
@@ -1406,6 +1418,7 @@ public final class TrioSettings {
         b.putInt(Prefs.KEY_OUT_TYPE_MARGIN_LEFT, outTypeMarginLeft);
         b.putInt(Prefs.KEY_OUT_TYPE_MARGIN_RIGHT, outTypeMarginRight);
         b.putInt(Prefs.KEY_OUT_SIGNAL_MARGIN, outSignalMargin);
+        b.putInt(Prefs.KEY_OUT_SIGNAL_MARGIN_RIGHT, outSignalMarginRight);
         b.putInt(Prefs.KEY_TYPE_SUFFIX_SCALE, typeSuffixScale);
         b.putInt(Prefs.KEY_BOLT_SCALE, boltScale);
         b.putInt(Prefs.KEY_WIFI_SCALE, wifiScale);
@@ -1545,6 +1558,7 @@ public final class TrioSettings {
                 && outTypeMarginLeft == s.outTypeMarginLeft
                 && outTypeMarginRight == s.outTypeMarginRight
                 && outSignalMargin == s.outSignalMargin
+                && outSignalMarginRight == s.outSignalMarginRight
                 && typeSuffixScale == s.typeSuffixScale
                 && boltScale == s.boltScale
                 && wifiScale == s.wifiScale

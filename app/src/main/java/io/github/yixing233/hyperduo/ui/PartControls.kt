@@ -599,6 +599,25 @@ internal fun geometrySliders(): List<SliderSpec> {
             suffix = "dp",
         ),
         SliderSpec(
+            group = GeometryGroup.OutSignal,
+            part = mobile,
+            min = Prefs.MIN_OUT_SIGNAL_MARGIN,
+            max = Prefs.MAX_OUT_SIGNAL_MARGIN,
+            def = Prefs.DEF_OUT_SIGNAL_MARGIN_RIGHT,
+            read = { it.outSignalMarginRight },
+            write = { r, v -> r.setOutSignalMarginRight(v) },
+            titleRes = { R.string.out_signal_margin_right_title },
+            summaryRes = { R.string.out_signal_margin_right_summary },
+            enabled = { it.glyph && it.stackedOut() },
+            hints = { a ->
+                listOf(
+                    a.glyph to R.string.master_title,
+                    a.signalOutOfRing to R.string.ring_position_mobile,
+                )
+            },
+            suffix = "dp",
+        ),
+        SliderSpec(
             group = GeometryGroup.Track,
             part = null,
             min = Prefs.MIN_TRACK_ALPHA,

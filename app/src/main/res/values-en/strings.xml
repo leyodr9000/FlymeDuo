@@ -318,6 +318,8 @@
     <string name="out_signal_size_title">Stacked signal size</string>
     <string name="out_signal_size_summary">The default is 15dp and the slider covers 6–20dp.</string>
     <string name="out_signal_margin_title">Stacked signal spacing</string>
+    <string name="out_signal_margin_right_title">Signal to glyph gap</string>
+    <string name="out_signal_margin_right_summary">Gap between the out-of-ring reading and the glyph. The left margin cannot reach this side.</string>
     <string name="out_signal_margin_summary">The default is 2dp and the slider covers 0–16dp.</string>
     <string name="ring_position_sim_1">SIM 1 dots position</string>
     <string name="ring_position_sim_2">SIM 2 dots position</string>

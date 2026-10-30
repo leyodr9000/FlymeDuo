@@ -138,7 +138,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.69";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.70";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -1068,6 +1068,12 @@ final class FlymeHooks {
                 } catch (java.lang.Throwable t) {
                     log(sModule, "out signal failed: " + t);
                 }
+                try {
+                    // Last, so both pieces exist whichever sync created them.
+                    applyOutOrder(host);
+                } catch (java.lang.Throwable t) {
+                    log(sModule, "out order failed: " + t);
+                }
             }
         });
     }
@@ -1186,6 +1192,9 @@ final class FlymeHooks {
         }
         final int width = io.github.yixing233.hyperduo.TrioRenderer.outSignalWidth(height);
         final int margin = java.lang.Math.round(a.outSignalMargin * density);
+        // The gap the user sees against the glyph, which the left margin cannot reach:
+        // the two views are siblings and the battery belongs to Flyme.
+        final int marginRight = java.lang.Math.round(a.outSignalMarginRight * density);
         view.bars = reading[0];
         view.dots = reading[1];
         if (view.getVisibility() != android.view.View.VISIBLE) {
@@ -1193,13 +1202,100 @@ final class FlymeHooks {
         }
         android.widget.LinearLayout.LayoutParams lp =
                 (android.widget.LinearLayout.LayoutParams) view.getLayoutParams();
-        if (lp.width != width || lp.height != height || lp.leftMargin != margin) {
+        if (lp.width != width || lp.height != height || lp.leftMargin != margin
+                || lp.rightMargin != marginRight) {
             lp.width = width;
             lp.height = height;
             lp.leftMargin = margin;
+            lp.rightMargin = marginRight;
             view.setLayoutParams(lp);
         }
+        // The order the user arranged, applied after both views exist.
+        applyOutOrder(host);
         view.invalidate();
+    }
+
+    /**
+     * Puts the out-of-ring pieces in the order the user arranged.
+     *
+     * <p>This is the half that was missing: the order has been editable since the strip was
+     * built, and the adapter inserted both views immediately before the battery every time,
+     * so the setting moved arrows in the editor and nothing on the bar. A setting that changes
+     * nothing is worse than no setting.
+     *
+     * <p>Order is applied by index rather than by re-creating views: the pieces are already
+     * attached and measured, and re-attaching one would lose the levels it is showing. Both
+     * are always inserted at the battery host and inserted farthest-first, so the nearest
+     * piece ends up adjacent to the glyph - which is what "nearest the battery" means.
+     *
+     * <p>Only for the pieces that exist: the perf readouts have no Flyme implementation, so
+     * a stored order naming them simply contributes nothing.
+     */
+    static void applyOutOrder(android.view.View host) {
+        try {
+            final android.view.ViewGroup parent = (host == null) ? null
+                    : (host.getParent() instanceof android.view.ViewGroup
+                            ? (android.view.ViewGroup) host.getParent() : null);
+            if (parent == null) {
+                return;
+            }
+            final android.widget.TextView label;
+            synchronized (TYPE_LABELS) {
+                label = TYPE_LABELS.get(host);
+            }
+            final FlymeOutSignalView signal;
+            synchronized (OUT_SIGNAL_VIEWS) {
+                signal = OUT_SIGNAL_VIEWS.get(host);
+            }
+            if (label == null && signal == null) {
+                return;
+            }
+            // Nearest the battery first, as the user arranged it.
+            final int[] order = io.github.yixing233.hyperduo.TrioConfig.get().outOrder;
+            final java.util.List<android.view.View> nearestFirst = new java.util.ArrayList<>(2);
+            for (int i = 0; i < order.length; i++) {
+                if (order[i] == io.github.yixing233.hyperduo.Prefs.OUT_SLOT_SIGNAL && signal != null) {
+                    nearestFirst.add(signal);
+                } else if (order[i] == io.github.yixing233.hyperduo.Prefs.OUT_SLOT_TYPE && label != null) {
+                    nearestFirst.add(label);
+                }
+            }
+            if (nearestFirst.isEmpty()) {
+                return;
+            }
+            final int hostIndex = parent.indexOfChild(host);
+            if (hostIndex < 0) {
+                return;
+            }
+            // Already right? Then do nothing: removing and re-adding on every sync would
+            // make the row lay out on each battery draw, for no visible change.
+            boolean ordered = true;
+            for (int i = 0; i < nearestFirst.size(); i++) {
+                final int at = hostIndex - nearestFirst.size() + i;
+                if (at < 0 || parent.getChildAt(at) != nearestFirst.get(i)) {
+                    ordered = false;
+                    break;
+                }
+            }
+            if (ordered) {
+                return;
+            }
+            for (int i = 0; i < nearestFirst.size(); i++) {
+                parent.removeView(nearestFirst.get(i));
+            }
+            // Farthest first at the host index: each later insert pushes the previous one
+            // further from the battery, leaving the nearest piece against the glyph.
+            int at = parent.indexOfChild(host);
+            for (int i = nearestFirst.size() - 1; i >= 0; i--) {
+                final android.view.View piece = nearestFirst.get(i);
+                final android.view.ViewGroup.LayoutParams lp = piece.getLayoutParams();
+                parent.addView(piece, at, lp != null ? lp : new android.widget.LinearLayout.LayoutParams(
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                        android.view.ViewGroup.LayoutParams.WRAP_CONTENT));
+            }
+        } catch (java.lang.Throwable ignored) {
+            // Ordering is cosmetic; it must never take the reading down.
+        }
     }
 
     /** Detaches the reading view from its row and forgets it; safe anywhere. */

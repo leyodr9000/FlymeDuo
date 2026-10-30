@@ -1701,6 +1701,15 @@ public final class Prefs {
      */
     public static final int DEF_OUT_SIGNAL_MARGIN = 2;
     /**
+     * The gap between the out-of-ring signal and the battery, in dp.
+     *
+     * <p>Its own key because the left margin cannot reach this side: the two views are
+     * siblings in a LinearLayout and the battery is not something this module can push.
+     * Only the signal carries it - it is the piece that sits against the glyph.
+     */
+    public static final String KEY_OUT_SIGNAL_MARGIN_RIGHT = "out_signal_margin_right_dp";
+    public static final int DEF_OUT_SIGNAL_MARGIN_RIGHT = 2;
+    /**
      * 65% for the trailing "A": the reference's {@code 56/86} ratio, measured
      * from {@code docs/ref-5ga.png}. 100 turns the shrink off.
      */

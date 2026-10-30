@@ -49,6 +49,8 @@
     <string name="out_signal_size_title">堆叠信号大小</string>
     <string name="out_signal_size_summary">默认 15dp，可调 6–20dp。</string>
     <string name="out_signal_margin_title">堆叠信号间距</string>
+    <string name="out_signal_margin_right_title">信号与电池间距</string>
+    <string name="out_signal_margin_right_summary">环外信号读数与三合一图标之间的间隙。左侧外边距管不到这一侧</string>
     <string name="out_signal_margin_summary">默认 2dp，可调 0–16dp。</string>
     <string name="ring_position_sim_1">卡一信号点的位置</string>
     <string name="ring_position_sim_2">卡二信号点的位置</string>

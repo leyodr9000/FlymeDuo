@@ -247,6 +247,8 @@ public final class TrioAppearance {
      * reading can never be moved on top of its neighbours.
      */
     public final int outSignalMargin;
+    /** Margin between the out-of-ring signal and the battery, in dp. */
+    public final int outSignalMarginRight;
     /** Scale of a trailing "A" in the network type, as a percentage. */
     public final int typeSuffixScale;
     /**
@@ -378,6 +380,7 @@ public final class TrioAppearance {
         outTypeMarginLeft = c.outTypeMarginLeft;
         outTypeMarginRight = c.outTypeMarginRight;
         outSignalMargin = c.outSignalMargin;
+        outSignalMarginRight = c.outSignalMarginRight;
         typeSuffixScale = c.typeSuffixScale;
         boltScale = c.boltScale;
         wifiScale = c.wifiScale;
