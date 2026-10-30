@@ -318,6 +318,8 @@ public final class TrioSettings {
     public int iconOffsetX;
     /** Pretend the radio reports 5GA; see {@link Prefs#KEY_DEMO_MOBILE_TYPE}. */
     public boolean demoMobileType;
+    /** Pretend a second card is present; see {@link Prefs#KEY_DEMO_DUAL_SIM}. */
+    public boolean demoDualSim;
     /** Interior cell nudges, in design units; see Prefs.KEY_CAPSULE_LEFT_DX. */
     public int capsuleLeftDx;
     public int capsuleLeftDy;
@@ -360,6 +362,7 @@ public final class TrioSettings {
         s.iconOffsetX = Prefs.DEF_ICON_OFFSET;
 
         s.demoMobileType = Prefs.DEF_DEMO_MOBILE_TYPE;
+        s.demoDualSim = Prefs.DEF_DEMO_DUAL_SIM;
         s.capsuleLeftDx = Prefs.DEF_CAPSULE_NUDGE;
         s.capsuleLeftDy = Prefs.DEF_CAPSULE_NUDGE;
         s.capsuleRightDx = Prefs.DEF_CAPSULE_NUDGE;
@@ -520,6 +523,8 @@ public final class TrioSettings {
                 Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
 
         s.demoMobileType = p.getBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, Prefs.DEF_DEMO_MOBILE_TYPE);
+        s.demoDualSim = p.getBoolean(Prefs.KEY_DEMO_DUAL_SIM,
+                Prefs.DEF_DEMO_DUAL_SIM);
         s.capsuleLeftDx = Prefs.clamp(p.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
                 Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X,
                 Prefs.MAX_CAPSULE_NUDGE_X);
@@ -937,6 +942,7 @@ public final class TrioSettings {
         s.iconOffsetX = iconOffsetX;
 
         s.demoMobileType = demoMobileType;
+        s.demoDualSim = demoDualSim;
         s.capsuleLeftDx = capsuleLeftDx;
         s.capsuleLeftDy = capsuleLeftDy;
         s.capsuleRightDx = capsuleRightDx;
@@ -1042,6 +1048,7 @@ public final class TrioSettings {
             case Prefs.KEY_GLYPH_OFFSET_Y: glyphOffsetY = src.glyphOffsetY; return true;
 
             case Prefs.KEY_DEMO_MOBILE_TYPE: demoMobileType = src.demoMobileType; return true;
+            case Prefs.KEY_DEMO_DUAL_SIM: demoDualSim = src.demoDualSim; return true;
             case Prefs.KEY_CAPSULE_LEFT_DX: capsuleLeftDx = src.capsuleLeftDx; return true;
             case Prefs.KEY_CAPSULE_LEFT_DY: capsuleLeftDy = src.capsuleLeftDy; return true;
             case Prefs.KEY_CAPSULE_RIGHT_DX: capsuleRightDx = src.capsuleRightDx; return true;
@@ -1171,6 +1178,8 @@ public final class TrioSettings {
                 Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
 
         s.demoMobileType = bundle.getBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, Prefs.DEF_DEMO_MOBILE_TYPE);
+        s.demoDualSim = bundle.getBoolean(Prefs.KEY_DEMO_DUAL_SIM,
+                Prefs.DEF_DEMO_DUAL_SIM);
         s.capsuleLeftDx = Prefs.clamp(bundle.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
                 Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X,
                 Prefs.MAX_CAPSULE_NUDGE_X);
@@ -1347,6 +1356,7 @@ public final class TrioSettings {
         b.putInt(Prefs.KEY_GLYPH_OFFSET_Y, glyphOffsetY);
 
         b.putBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, demoMobileType);
+        b.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, demoDualSim);
         b.putInt(Prefs.KEY_CAPSULE_LEFT_DX, capsuleLeftDx);
         b.putInt(Prefs.KEY_CAPSULE_LEFT_DY, capsuleLeftDy);
         b.putInt(Prefs.KEY_CAPSULE_RIGHT_DX, capsuleRightDx);
@@ -1479,6 +1489,7 @@ public final class TrioSettings {
                 && iconOffsetX == s.iconOffsetX
 
                 && demoMobileType == s.demoMobileType
+                && demoDualSim == s.demoDualSim
                 // The four capsule nudges, and the reason this defect was noticed at all:
                 // they were added to defaults(), from(), copy(), applyKeyFrom() and both
                 // bundle directions - the whole pipeline except this list - so the only
@@ -1563,6 +1574,7 @@ public final class TrioSettings {
         h = h * 31 + iconOffsetX;
 
         h = h * 31 + (demoMobileType ? 1 : 0);
+        h = h * 31 + (demoDualSim ? 1 : 0);
         h = h * 31 + (perfTempChargingOnly ? 1 : 0);
         h = h * 31 + capsuleLeftDx;
         h = h * 31 + capsuleLeftDy;

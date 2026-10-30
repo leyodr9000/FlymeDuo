@@ -524,8 +524,14 @@ final class TrioRenderer {
                     // They ride concentric arcs, not a straight offset. The bead is the same
                     // reference in both, so the pair cannot disagree about size, and the
                     // spacing is the pitch the row already uses.
+                    // The second row is the OTHER card, whichever part drew the first. For
+                    // PART_MOBILE that is the second slot: reading levels[0] there, as an
+                    // earlier pass did, drew the same card twice.
                     final int other = levels == null ? -1
-                            : (part == Prefs.PART_SIM_1 ? levels[1] : levels[0]);
+                            : (part == Prefs.PART_SIM_1
+                                    ? (levels.length > 1 ? levels[1] : -1)
+                            : part == Prefs.PART_SIM_2 ? levels[0]
+                            : (levels.length > 1 ? levels[1] : -1));
                     final int otherActive = other < 0 ? 0 : Math.min(4, other);
                     if (a.dualStackMatrix()) {
                         // The reference form: two flat rows of four, centred under the ring's

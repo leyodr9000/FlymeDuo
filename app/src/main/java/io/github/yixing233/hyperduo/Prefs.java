@@ -1450,6 +1450,14 @@ public final class Prefs {
 
     /** Off by default: the demo draws a label no radio is reporting. */
     public static final boolean DEF_DEMO_MOBILE_TYPE = false;
+    /**
+     * Pretend a second card is present, so a one-SIM install can see the stacked reading.
+     *
+     * <p>Display only: the second level exists inside the drawing and never reaches
+     * telephony. Named after the demo switches it sits beside.
+     */
+    public static final String KEY_DEMO_DUAL_SIM = "demo_dual_sim";
+    public static final boolean DEF_DEMO_DUAL_SIM = false;
     /** On by default: the stacked form is the one that leaves the label a place to live. */
     public static final boolean DEF_DUAL_INSIDE_RING = true;
     public static final int DUAL_STACK_TOP = 0;

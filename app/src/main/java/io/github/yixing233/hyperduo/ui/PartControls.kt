@@ -755,6 +755,12 @@ internal fun DualStackGroup(
                     enabled = settings.dualInsideRing,
                     onCheckedChange = { value -> update { it.setDualStackMatrix(value) } },
                 )
+                SwitchPreferenceGroup(
+                    checked = settings.demoDualSim,
+                    title = stringResource(R.string.demo_dual_sim_title),
+                    summary = stringResource(R.string.demo_dual_sim_summary),
+                    onCheckedChange = { value -> update { it.setDemoDualSim(value) } },
+                )
                 if (settings.dualStackMatrix) {
                     SliderRow(dualMatrixSizeSlider, settings, update)
                     SliderRow(dualMatrixGapSlider, settings, update)

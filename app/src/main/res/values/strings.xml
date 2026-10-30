@@ -188,6 +188,8 @@
     <string name="dual_matrix_gap_summary">点心的间距，以点直径的百分比计；行列同距，数值越大越疏</string>
     <string name="dual_matrix_dy_title">矩阵垂直位置</string>
     <string name="dual_matrix_dy_summary">矩阵专属的上下微调，与辐射样式的垂直位置互不影响</string>
+    <string name="demo_dual_sim_title">模拟双卡</string>
+    <string name="demo_dual_sim_summary">单卡时也伪造第二张卡，用来预览双卡堆叠的排布（矩阵／辐射都能用）。只改绘制，不碰通信状态；插入真实双卡后自动让位</string>
     <string name="dual_stack_matrix_title">矩阵式（2×4 点阵）</string>
     <string name="dual_stack_matrix_summary">关闭时两行沿环弧排布，与环同曲率；打开时改为两行四点的平直矩阵，点更小、整体居中，更接近原生双卡的观感</string>
     <string name="dual_stack_dy_title">堆叠垂直位置</string>

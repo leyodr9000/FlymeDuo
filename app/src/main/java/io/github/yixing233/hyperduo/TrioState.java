@@ -169,6 +169,9 @@ final class TrioState {
 
     /** How often the mobile-data toggle may be re-read; the same budget as the SIM poll. */
     private static final long DATA_INTERVAL_MS = 2000L;
+    /** The demo's two card levels - one strong, one mid, so the rows read apart. */
+    private static final int DEMO_SIM1_LEVEL = 4;
+    private static final int DEMO_SIM2_LEVEL = 2;
     private static volatile long sDataDueAt;
     /**
      * Whether mobile data is switched on.
@@ -395,6 +398,21 @@ final class TrioState {
         // on refresh(), so there is nothing to mirror them into here.
 
         int[] slots = sSlotLevels;
+        // Demo: pretend a second card answered, so a one-SIM install can check the stacked
+        // reading. Display only - the level never reaches telephony, and the real levels
+        // return the moment the switch goes off. A card that really is present wins: the
+        // demo is a stand-in for a missing one, never a replacement for a real one.
+        if (io.github.yixing233.hyperduo.TrioConfig.get().demoDualSim) {
+            final int[] faked = new int[slots.length];
+            System.arraycopy(slots, 0, faked, 0, slots.length);
+            if (faked[0] < 0) {
+                faked[0] = DEMO_SIM1_LEVEL;
+            }
+            if (faked.length > 1 && faked[1] < 0) {
+                faked[1] = DEMO_SIM2_LEVEL;
+            }
+            slots = faked;
+        }
         slotLevels = new int[] { slots[0], slots[1] };
         sims = (slots[0] >= 0 ? 1 : 0) + (slots[1] >= 0 ? 1 : 0);
 

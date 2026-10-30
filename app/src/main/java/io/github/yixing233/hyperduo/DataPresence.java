@@ -162,6 +162,12 @@ final class DataPresence {
         TrioHooks.log(TrioHooks.LOG_INFO,
                 "mobile data enabled=" + next + (reason == null ? "" : " (" + reason + ")"));
         // This is the whole point of the class: the shade is not being redrawn, so ask for one.
+        //
+        // BOTH registries, and that is not belt-and-braces for its own sake: they are two
+        // different lists. TrioHooks.HOSTS is the upstream MIUI path and is empty on Flyme,
+        // while FlymeHooks.STATES is the one the adapter actually fills - so asking only the
+        // first, as this class did at first, repainted nothing on the ROM it was written for.
+        FlymeHooks.invalidateHosts();
         TrioHooks.invalidateHosts();
     }
 }

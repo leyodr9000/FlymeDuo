@@ -370,6 +370,9 @@ class SettingsRepository(context: Context) {
     /** Pretend the radio reports 5GA; display only. */
     fun setDemoMobileType(value: Boolean) = writeBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, value)
 
+    /** Pretend a second card so the stacked reading can be previewed on a one-SIM phone. */
+    fun setDemoDualSim(value: Boolean) = writeBoolean(Prefs.KEY_DEMO_DUAL_SIM, value)
+
     /** Stack both cards inside the ring instead of across its two mouths. */
     fun setDualInsideRing(value: Boolean) = writeBoolean(Prefs.KEY_DUAL_INSIDE_RING, value)
 
@@ -460,6 +463,7 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_ICON_OFFSET_X, snapshot.iconOffsetX)
 
             prefs.putBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, snapshot.demoMobileType)
+            prefs.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, snapshot.demoDualSim)
             prefs.putBoolean(Prefs.KEY_DUAL_INSIDE_RING, snapshot.dualInsideRing)
             prefs.putInt(Prefs.KEY_DUAL_STACK_POS, snapshot.dualStackPos)
             prefs.putInt(Prefs.KEY_DUAL_STACK_DY, snapshot.dualStackDy)

@@ -163,6 +163,8 @@
     <string name="dual_matrix_gap_summary">Centre-to-centre spacing as a percentage of the dot diameter, the same both ways; larger means airier.</string>
     <string name="dual_matrix_dy_title">Matrix vertical</string>
     <string name="dual_matrix_dy_summary">The matrix has its own vertical nudge, independent of the arc pair vertical position.</string>
+    <string name="demo_dual_sim_title">Simulate a second card</string>
+    <string name="demo_dual_sim_summary">Fakes a second card on a one-SIM phone so the stacked layout can be previewed, in either matrix or arc form. Drawing only; a real second card takes precedence.</string>
     <string name="dual_stack_matrix_title">Matrix (2x4 dots)</string>
     <string name="dual_stack_matrix_summary">Off curves both rows along the ring; on draws them as a flat 2x4 matrix with smaller dots, centred, closer to how a stock dual-SIM reading looks.</string>
     <string name="dual_stack_dy_title">Pair vertical</string>

@@ -117,6 +117,8 @@ public final class TrioAppearance {
 
     /** Stack both cards inside the ring; see {@link Prefs#KEY_DUAL_INSIDE_RING}. */
     public final boolean dualInsideRing;
+    /** Pretend a second card is present, so a one-SIM install can see the stacked pair. */
+    public final boolean demoDualSim;
     /** Where the stacked pair sits; see {@link Prefs#KEY_DUAL_STACK_POS}. */
     public final int dualStackPos;
     /** Nudges of the stacked pair, in design units. */
@@ -315,6 +317,7 @@ public final class TrioAppearance {
         dualSim = c.dualSim;
 
         dualInsideRing = c.dualInsideRing;
+        demoDualSim = c.demoDualSim;
         dualStackPos = c.dualStackPos;
         dualStackDy = c.dualStackDy;
         dualStackMatrix = c.dualStackMatrix;
