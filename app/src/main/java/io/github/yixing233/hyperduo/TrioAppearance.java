@@ -121,6 +121,10 @@ public final class TrioAppearance {
     public final boolean demoDualSim;
     /** Draw 5GA when the radio is 5G-Advanced. */
     public final boolean typeFollowNrAdvanced;
+    /** Flyme's own charging bolt beside the glyph; see {@link Prefs#KEY_SYS_CHARGE_ICON}. */
+    public final boolean sysChargeIcon;
+    /** Power saver colours the ring; see {@link Prefs#KEY_POWER_SAVE_COLOR}. */
+    public final boolean powerSaveColor;
     /** Where the stacked pair sits; see {@link Prefs#KEY_DUAL_STACK_POS}. */
     public final int dualStackPos;
     /** Nudges of the stacked pair, in design units. */
@@ -325,6 +329,8 @@ public final class TrioAppearance {
         dualInsideRing = c.dualInsideRing;
         demoDualSim = c.demoDualSim;
         typeFollowNrAdvanced = c.typeFollowNrAdvanced;
+        sysChargeIcon = c.sysChargeIcon;
+        powerSaveColor = c.powerSaveColor;
         dualStackPos = c.dualStackPos;
         dualStackDy = c.dualStackDy;
         dualStackMatrix = c.dualStackMatrix;

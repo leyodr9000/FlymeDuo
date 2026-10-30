@@ -1468,6 +1468,21 @@ public final class Prefs {
      */
     public static final String KEY_TYPE_FOLLOW_NR_ADVANCED = "type_follow_nr_advanced";
     public static final boolean DEF_TYPE_FOLLOW_NR_ADVANCED = true;
+    /**
+     * Show Flyme's own charging bolt beside the glyph while charging (Flyme only).
+     *
+     * <p>The module draws into Flyme's battery view and replaces its whole onDraw, so the
+     * stock bolt went with it. This mounts the stock drawable as a sibling; excluded regions
+     * keep the stock battery and therefore their own bolt either way.
+     */
+    public static final String KEY_SYS_CHARGE_ICON = "sys_charge_icon";
+    public static final boolean DEF_SYS_CHARGE_ICON = false;
+    /**
+     * Colour the battery ring with the low-battery colour (yellow by default) while the
+     * system power saver is on, independent of the per-role colour switch.
+     */
+    public static final String KEY_POWER_SAVE_COLOR = "power_save_color";
+    public static final boolean DEF_POWER_SAVE_COLOR = true;
     /** On by default: the stacked form is the one that leaves the label a place to live. */
     public static final boolean DEF_DUAL_INSIDE_RING = true;
     public static final int DUAL_STACK_TOP = 0;

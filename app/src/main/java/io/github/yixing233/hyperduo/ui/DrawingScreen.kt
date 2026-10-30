@@ -334,9 +334,43 @@ private fun DrawingEditorCard(
                 // question the switch above answers, not a component detail.
                 ContentControlRow(ContentControl.Exclude, settings, update)
                 GlyphScaleHomeRow(settings, update)
-                // The 5GA switches live in the network-type sheet, the dual-SIM group in the
-                // signal sheet, and the dual-SIM simulator in About > debug: the master card
-                // only answers "is it on, where, how big".
+            }
+        }
+
+        // The everyday switches stay on the home page, where users already look for them;
+        // only grouped out of the master card so that one answers "on / where / how big".
+        DrawingSection(R.string.drawing_display_title, PaddingValues(0.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                SwitchPreference(
+                    checked = settings.demoMobileType,
+                    title = stringResource(R.string.demo_mobile_type_title),
+                    summary = stringResource(R.string.demo_mobile_type_summary),
+                    insideMargin = SettingsItemMargin,
+                    onCheckedChange = { value -> update { it.setDemoMobileType(value) } },
+                )
+                SwitchPreference(
+                    checked = settings.typeFollowNrAdvanced,
+                    title = stringResource(R.string.type_follow_nr_advanced_title),
+                    summary = stringResource(R.string.type_follow_nr_advanced_summary),
+                    insideMargin = SettingsItemMargin,
+                    onCheckedChange = { value -> update { it.setTypeFollowNrAdvanced(value) } },
+                )
+                SwitchPreference(
+                    checked = settings.sysChargeIcon,
+                    title = stringResource(R.string.sys_charge_icon_title),
+                    summary = stringResource(R.string.sys_charge_icon_summary),
+                    insideMargin = SettingsItemMargin,
+                    onCheckedChange = { value -> update { it.setSysChargeIcon(value) } },
+                )
+                SwitchPreference(
+                    checked = settings.powerSaveColor,
+                    title = stringResource(R.string.power_save_color_title),
+                    summary = stringResource(R.string.power_save_color_summary),
+                    insideMargin = SettingsItemMargin,
+                    onCheckedChange = { value -> update { it.setPowerSaveColor(value) } },
+                )
+                // The pair and everything that positions it, as one row that opens a sheet.
+                DualStackGroup(settings, update)
             }
         }
 

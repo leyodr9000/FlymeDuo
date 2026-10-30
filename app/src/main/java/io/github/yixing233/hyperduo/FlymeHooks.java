@@ -138,7 +138,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.71";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.72";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -154,6 +154,7 @@ final class FlymeHooks {
         // it back when it does not. No view is inserted, so nothing here changes
         // the row's geometry - that was the whole left-shift defect.
         syncStockIcons();
+        syncStockTypeViews();
         final boolean enabled = io.github.yixing233.hyperduo.TrioConfig.get().enabled;
         java.util.List<android.view.View> hosts = new java.util.ArrayList<>();
         synchronized (STATES) {
@@ -344,6 +345,18 @@ final class FlymeHooks {
                 return result;
             }
         });
+        // Power saver flips mLowPowerMode; repaint so the ring takes (or drops) its colour now.
+        int powerSave = hook(module, io.github.yixing233.hyperduo.Refl.method(viewClass, "onPowerSaveChanged", java.lang.Boolean.TYPE), "hyperduo-flyme-power-save", new io.github.libxposed.api.XposedInterface.Hooker() {
+            public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
+                java.lang.Object result = chain.proceed();
+                try {
+                    io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
+                } catch (java.lang.Throwable ignored) {
+                    // a missed repaint is caught by the next battery event
+                }
+                return result;
+            }
+        });
         int dark = hook(module, io.github.yixing233.hyperduo.Refl.method(viewClass, "onDarkChanged", java.util.ArrayList.class, java.lang.Float.TYPE, java.lang.Integer.TYPE), "hyperduo-flyme-dark", new io.github.libxposed.api.XposedInterface.Hooker() { // from class: io.github.yixing233.hyperduo.FlymeHooks.6
             public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
                 java.lang.Object result = chain.proceed();
@@ -374,6 +387,7 @@ final class FlymeHooks {
                 if (self instanceof android.view.View) {
                     io.github.yixing233.hyperduo.FlymeHooks.removeTypeLabel((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.forgetOutSignal((android.view.View) self);
+                    io.github.yixing233.hyperduo.FlymeHooks.forgetChargeIcon((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.restoreBatteryPercent((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.STATES.remove((android.view.View) self);
                     io.github.yixing233.hyperduo.FlymeHooks.REGION_CACHE.remove((android.view.View) self);
@@ -395,7 +409,7 @@ final class FlymeHooks {
                 return result;
             }
         });
-        return draw + measure + apply + levelChanged + dark + detached + attached;
+        return draw + measure + apply + levelChanged + powerSave + dark + detached + attached;
     }
 
     private static int hookStatusBarCapture(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
@@ -526,6 +540,77 @@ final class FlymeHooks {
         }
     }
 
+    private static final java.util.Map<java.lang.String, java.lang.Integer> RES_5GA_CACHE =
+            new java.util.concurrent.ConcurrentHashMap<>();
+
+    /**
+     * Replaces a stock "ic_5g_*" type drawable with its "ic_5g_a_*" sibling, if the ROM has one.
+     * The sibling is looked up by name (ic_5g_mobiledata -> ic_5g_a_mobiledata) and cached.
+     */
+    static void apply5gaResource(android.widget.ImageView view, int resId) {
+        try {
+            final android.content.res.Resources res = view.getResources();
+            final java.lang.String name = res.getResourceEntryName(resId);
+            java.lang.Integer target = RES_5GA_CACHE.get(name);
+            if (target == null) {
+                int id = 0;
+                if (name.startsWith("ic_5g_") && !name.startsWith("ic_5g_a")) {
+                    id = res.getIdentifier("ic_5g_a_" + name.substring("ic_5g_".length()),
+                            "drawable", res.getResourcePackageName(resId));
+                    if (id == 0) {
+                        id = res.getIdentifier("ic_5g_a_mobiledata", "drawable",
+                                res.getResourcePackageName(resId));
+                    }
+                }
+                target = java.lang.Integer.valueOf(id);
+                RES_5GA_CACHE.put(name, target);
+            }
+            if (target.intValue() != 0) {
+                // setImageDrawable, not setImageResource: the latter is hooked as the "clear"
+                // signal and would re-enter the type bookkeeping.
+                view.setImageDrawable(res.getDrawable(target.intValue(), view.getContext().getTheme()));
+            }
+        } catch (java.lang.Throwable ignored) {
+            // The stock 5G stays; the ring still shows 5GA.
+        }
+    }
+
+    /** Every stock network-type ImageView we have seen bound, for {@link #syncStockTypeViews}. */
+    private static final java.util.Set<android.view.View> STOCK_TYPE_VIEWS =
+            java.util.Collections.newSetFromMap(
+                    new java.util.WeakHashMap<android.view.View, java.lang.Boolean>());
+
+    static void noteStockTypeView(android.view.View v) {
+        synchronized (STOCK_TYPE_VIEWS) {
+            STOCK_TYPE_VIEWS.add(v);
+        }
+    }
+
+    /** Re-applies {@link #stockTypeHidden} to every known stock type view. Main thread only. */
+    static void syncStockTypeViews() {
+        final java.util.List<android.view.View> views = new java.util.ArrayList<>();
+        synchronized (STOCK_TYPE_VIEWS) {
+            views.addAll(STOCK_TYPE_VIEWS);
+        }
+        final boolean enabled = io.github.yixing233.hyperduo.TrioConfig.get().enabled;
+        final boolean hideRule = stockTypeHidden(io.github.yixing233.hyperduo.TrioConfig.appearance());
+        for (int i = 0; i < views.size(); i++) {
+            final android.view.View v = views.get(i);
+            final boolean hide = enabled && hideRule && !excludedRegion(v);
+            // Only touch a view that currently shows an icon: an empty one is Flyme's own
+            // "no type" state and must stay as Flyme left it.
+            if (v instanceof android.widget.ImageView
+                    && ((android.widget.ImageView) v).getDrawable() == null) {
+                continue;
+            }
+            final int want = hide ? android.view.View.GONE : android.view.View.VISIBLE;
+            if (v.getVisibility() != want) {
+                v.setVisibility(want);
+            }
+        }
+        syncStockIcons();
+    }
+
     /** Applies the current on/off state to the stock icons and asks for a re-layout. */
     static void syncStockIcons() {
         final boolean hide = io.github.yixing233.hyperduo.TrioConfig.get().enabled;
@@ -613,7 +698,7 @@ final class FlymeHooks {
                 // did clear, and the stock one stayed. An earlier pass left this view alone
                 // because hiding it then took the type away entirely, but that was before
                 // the module could draw the type at all; now it has somewhere to come from.
-                if (a.typeAnywhere()) {
+                if (stockTypeHidden(a)) {
                     wanted.add("mobile_type");
                     wanted.add("mobile_type_icon");
                 }
@@ -830,14 +915,25 @@ final class FlymeHooks {
                     // off": the module was clearing its own reading while this view kept the
                     // old one on screen, so the change looked like it was being ignored.
                     final android.view.View typeView = (android.view.View) target;
-                    final boolean moduleDrawsType =
+                    io.github.yixing233.hyperduo.FlymeHooks.noteStockTypeView(typeView);
+                    final boolean hideStock =
                             io.github.yixing233.hyperduo.TrioConfig.get().enabled
-                            && io.github.yixing233.hyperduo.TrioConfig.appearance().typeAnywhere()
-                            && !io.github.yixing233.hyperduo.FlymeHooks.excludedRegion(typeView);
-                    final int wantVisibility = moduleDrawsType
+                            && !io.github.yixing233.hyperduo.FlymeHooks.excludedRegion(typeView)
+                            && io.github.yixing233.hyperduo.FlymeHooks.stockTypeHidden(
+                                    io.github.yixing233.hyperduo.TrioConfig.appearance());
+                    final int wantVisibility = hideStock
                             ? android.view.View.GONE : android.view.View.VISIBLE;
                     if (typeView.getVisibility() != wantVisibility) {
                         typeView.setVisibility(wantVisibility);
+                    }
+                    // Manual 5GA on the stock icon too, so the kept signal icon matches the
+                    // ring: swap a plain 5G resource for Flyme's own ic_5g_a resource.
+                    if (!hideStock && "5G".equals(type)
+                            && io.github.yixing233.hyperduo.TrioConfig.get().enabled
+                            && io.github.yixing233.hyperduo.TrioConfig.get().demoMobileType
+                            && !io.github.yixing233.hyperduo.FlymeHooks.excludedRegion(typeView)) {
+                        io.github.yixing233.hyperduo.FlymeHooks.apply5gaResource(
+                                (android.widget.ImageView) typeView, resId);
                     }
                 }
                 return result;
@@ -905,6 +1001,30 @@ final class FlymeHooks {
     }
 
 
+
+    /**
+     * Whether Flyme's own network-type icon (the "5G" inside the stock signal icon) is hidden.
+     *
+     * <p>It used to be hidden whenever the module drew the type anywhere, which left a stock
+     * signal icon that had been handed back to the system showing only its activity arrows -
+     * the "5G" was gone from the very icon the user chose to keep. Now:
+     * <ul>
+     *   <li>out-of-ring type: the module's label replaces it beside the signal, so hide it;</li>
+     *   <li>stock signal folded: it is gone with its slot anyway;</li>
+     *   <li>stock signal shown: keep its 5G, except while mobile data is off and the user asked
+     *       the type to hide then - the same rule the module's own label follows.</li>
+     * </ul>
+     */
+    static boolean stockTypeHidden(io.github.yixing233.hyperduo.TrioAppearance a) {
+        if (!a.glyph || !a.typeAnywhere()) {
+            return false;
+        }
+        if (a.typeOutOfRing || a.foldsMobile()) {
+            return true;
+        }
+        return !io.github.yixing233.hyperduo.TrioState.sDataEnabledPublic()
+                && io.github.yixing233.hyperduo.TrioConfig.get().typeHideOnDataOff;
+    }
 
     private static void hideChild(android.view.View child) {
         if (!SAVED_VISIBILITY.containsKey(child)) {
@@ -1071,6 +1191,11 @@ final class FlymeHooks {
                     syncOutSignalFlyme(host);
                 } catch (java.lang.Throwable t) {
                     log(sModule, "out signal failed: " + t);
+                }
+                try {
+                    syncChargeIcon(host);
+                } catch (java.lang.Throwable t) {
+                    log(sModule, "charge icon failed: " + t);
                 }
                 try {
                     // Last, so both pieces exist whichever sync created them.
@@ -1299,6 +1424,100 @@ final class FlymeHooks {
             }
         } catch (java.lang.Throwable ignored) {
             // Ordering is cosmetic; it must never take the reading down.
+        }
+    }
+
+    /** Flyme's own charging bolt, re-mounted beside the glyph; one per battery host. */
+    private static final java.util.Map<android.view.View, android.widget.ImageView> CHARGE_ICONS =
+            java.util.Collections.synchronizedMap(new java.util.WeakHashMap<android.view.View, android.widget.ImageView>());
+
+    /**
+     * Mounts, updates or removes the stock charging bolt for one host.
+     *
+     * <p>The module replaces the battery view's onDraw, so Flyme's bolt (its
+     * {@code mBatteryLightning} / {@code mBatteryLightningQuick} drawables) is never painted.
+     * This puts the same drawable in an ImageView right after the host, tinted with the icon
+     * colour. Excluded regions keep the stock battery, bolt included, so nothing is mounted
+     * there. Posted only (via {@link #requestTypeLabelSync}): it may add a view.
+     */
+    static void syncChargeIcon(android.view.View host) {
+        if (host == null) {
+            return;
+        }
+        final android.view.ViewParent parent = host.getParent();
+        final io.github.yixing233.hyperduo.TrioAppearance a =
+                io.github.yixing233.hyperduo.TrioConfig.appearance();
+        final io.github.yixing233.hyperduo.TrioState state = stateFor(host);
+        if (state != null && a.sysChargeIcon) {
+            // Posted runnable, not a draw: re-read so the bolt follows the plug that just moved.
+            state.refresh();
+        }
+        final boolean wanted = a.glyph && a.sysChargeIcon
+                && !excludedRegion(host)
+                && (parent instanceof android.widget.LinearLayout)
+                && state != null && state.charging;
+        android.widget.ImageView view;
+        synchronized (CHARGE_ICONS) {
+            view = CHARGE_ICONS.get(host);
+        }
+        if (!wanted) {
+            if (view != null) {
+                forgetChargeIcon(host);
+            }
+            return;
+        }
+        final java.lang.Object bolt = io.github.yixing233.hyperduo.Refl.get(
+                io.github.yixing233.hyperduo.Refl.field(host.getClass(),
+                        state.quickCharging ? "mBatteryLightningQuick" : "mBatteryLightning"),
+                host);
+        if (!(bolt instanceof android.graphics.drawable.Drawable)) {
+            return;
+        }
+        final android.widget.LinearLayout row = (android.widget.LinearLayout) parent;
+        if (view == null || view.getParent() != row) {
+            if (view != null) {
+                forgetChargeIcon(host);
+            }
+            view = new android.widget.ImageView(host.getContext());
+            view.setScaleType(android.widget.ImageView.ScaleType.FIT_CENTER);
+            final android.widget.LinearLayout.LayoutParams lp =
+                    new android.widget.LinearLayout.LayoutParams(
+                            android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
+                            android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
+            lp.gravity = android.view.Gravity.CENTER_VERTICAL;
+            lp.leftMargin = java.lang.Math.round(
+                    2 * host.getResources().getDisplayMetrics().density);
+            final int index = row.indexOfChild(host);
+            row.addView(view, index < 0 ? row.getChildCount() : index + 1, lp);
+            synchronized (CHARGE_ICONS) {
+                CHARGE_ICONS.put(host, view);
+            }
+        }
+        final android.graphics.drawable.Drawable.ConstantState cs =
+                ((android.graphics.drawable.Drawable) bolt).getConstantState();
+        final android.graphics.drawable.Drawable copy = (cs != null)
+                ? cs.newDrawable(host.getResources()).mutate()
+                : ((android.graphics.drawable.Drawable) bolt);
+        copy.setColorFilter(new android.graphics.PorterDuffColorFilter(
+                state.foreground(), android.graphics.PorterDuff.Mode.SRC_IN));
+        view.setImageDrawable(copy);
+        if (view.getVisibility() != android.view.View.VISIBLE) {
+            view.setVisibility(android.view.View.VISIBLE);
+        }
+    }
+
+    /** Detaches the charging bolt from its row and forgets it; safe anywhere. */
+    static void forgetChargeIcon(android.view.View host) {
+        final android.widget.ImageView view;
+        synchronized (CHARGE_ICONS) {
+            view = CHARGE_ICONS.remove(host);
+        }
+        if (view != null && view.getParent() instanceof android.view.ViewGroup) {
+            try {
+                ((android.view.ViewGroup) view.getParent()).removeView(view);
+            } catch (java.lang.Throwable ignored) {
+                // a row torn down under us is not worth crashing over
+            }
         }
     }
 

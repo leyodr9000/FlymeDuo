@@ -788,6 +788,12 @@ internal fun DualStackGroup(
                     enabled = settings.dualInsideRing,
                     onCheckedChange = { value -> update { it.setDualStackMatrix(value) } },
                 )
+                SwitchPreferenceGroup(
+                    checked = settings.demoDualSim,
+                    title = stringResource(R.string.demo_dual_sim_title),
+                    summary = stringResource(R.string.demo_dual_sim_summary),
+                    onCheckedChange = { value -> update { it.setDemoDualSim(value) } },
+                )
                 if (settings.dualStackMatrix) {
                     SliderRow(dualMouthExtraSlider, settings, update)
                     SliderRow(dualMatrixSizeSlider, settings, update)
@@ -1127,12 +1133,7 @@ internal fun PartSettingsSheet(
                     }
                 }
 
-                // Size & position is on the home master card only; the dual-SIM group moved
-                // here from that card because it is a property of the signal (ring only -
-                // DualStackGroup returns early otherwise).
-                if (part == TrioSettingsPart.Mobile) {
-                    DualStackGroup(settings, update)
-                }
+                // Size & position and the dual-SIM group live on the home page only.
 
                 rows.forEach { spec ->
                     // The hint is resolved in a composable scope and passed down, the

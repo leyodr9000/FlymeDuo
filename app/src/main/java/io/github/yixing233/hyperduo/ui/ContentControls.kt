@@ -87,10 +87,7 @@ internal enum class ContentControl(val owner: TrioSettingsPart?) {
     TypeHideOnWifi(TrioSettingsPart.Type),
     /** The twin of the row above, for the mobile-data switch. */
     TypeHideOnDataOff(TrioSettingsPart.Type),
-    /** Draw 5GA when the radio reports NR advanced; see Prefs.KEY_TYPE_FOLLOW_NR_ADVANCED. */
-    TypeFollowNrAdvanced(TrioSettingsPart.Type),
-    /** Manual 5GA: a real 5G label is shown as 5GA; see Prefs.KEY_DEMO_MOBILE_TYPE. */
-    TypeForce5ga(TrioSettingsPart.Type),
+
     // --- readouts and fixed pieces --------------------------------------------
     Power(TrioSettingsPart.Readouts),
     Temperature(TrioSettingsPart.Readouts),
@@ -238,16 +235,6 @@ internal fun ContentControlRow(
             R.string.type_hide_on_data_off_title,
             R.string.type_hide_on_data_off_summary, master) { value ->
                 update { it.setTypeHideOnDataOff(value) }
-            }
-        ContentControl.TypeFollowNrAdvanced -> ContentToggle(settings.typeFollowNrAdvanced,
-            R.string.type_follow_nr_advanced_title,
-            R.string.type_follow_nr_advanced_summary, master) { value ->
-                update { it.setTypeFollowNrAdvanced(value) }
-            }
-        ContentControl.TypeForce5ga -> ContentToggle(settings.demoMobileType,
-            R.string.demo_mobile_type_title,
-            R.string.demo_mobile_type_summary, master) { value ->
-                update { it.setDemoMobileType(value) }
             }
         ContentControl.Power -> ContentToggle(settings.perfPower, R.string.perf_power_title,
             null, master) { value -> update { it.setPerfPower(value) } }

@@ -1621,8 +1621,19 @@ final class TrioRenderer {
      */
     static int roleColor(TrioAppearance a, int level, boolean charging,
                          boolean powerSave, boolean low, int fg) {
-        if (a == null || !a.roleColors) {
+        if (a == null) {
             return fg;
+        }
+        // Power saver tints the ring on its own switch, independent of the role colours,
+        // so it matches the stock battery (yellow) even with role colours off.
+        if (!a.roleColors) {
+            if (powerSave && a.powerSaveColor) {
+                return isDarkBackground(fg) ? a.lowOnDark : a.lowOnLight;
+            }
+            return fg;
+        }
+        if (powerSave && !a.powerSaveColor) {
+            powerSave = false;
         }
         final boolean dark = isDarkBackground(fg);
         if (level >= 0 && level < TrioGeometry.CRITICAL_LEVEL) {

@@ -375,4 +375,9 @@
     <string name="font_applied">已应用字体 %1$s</string>
     <string name="font_not_a_font">这个文件不是字体（只支持 .ttf / .otf），已忽略</string>
     <string name="font_failed">字体安装失败，请重试</string>
+    <string name="drawing_display_title">显示与网络</string>
+    <string name="sys_charge_icon_title">显示系统充电图标</string>
+    <string name="sys_charge_icon_summary">充电时在三合一图标旁显示 Flyme 自带的小闪电（快充时为快充闪电）。随「生效范围」：被排除的区域本来就是原版电池，不受影响</string>
+    <string name="power_save_color_title">省电模式时电量环变色</string>
+    <string name="power_save_color_summary">开启省电模式后，电量环使用低电量颜色（默认黄色），与原版电池一致。颜色可在「状态颜色」里改</string>
 </resources>

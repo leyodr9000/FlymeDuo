@@ -181,6 +181,11 @@ final class TrioState {
      * shows a stale one for the two seconds it takes to ask.
      */
     private static volatile boolean sDataEnabled = true;
+
+    /** The last mobile-data reading, for the Flyme adapter's stock-icon rules. */
+    static boolean sDataEnabledPublic() {
+        return sDataEnabled;
+    }
     /**
      * Whether the radio currently reports 5G-Advanced.
      *
@@ -295,6 +300,10 @@ final class TrioState {
         fQuick = Refl.field(c, "mQuickCharging");
         fLow = Refl.field(c, "mLow");
         fPowerSave = Refl.field(c, "mPowerSave");
+        if (fPowerSave == null) {
+            // FlymeBatteryMeterView keeps it as mLowPowerMode (set in onPowerSaveChanged).
+            fPowerSave = Refl.field(c, "mLowPowerMode");
+        }
         fPerformance = Refl.field(c, "mPerformanceMode");
         fUseTint = Refl.field(c, "mUseTint");
         fTint = Refl.field(c, "mTintColor");

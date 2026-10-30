@@ -369,4 +369,9 @@
     <string name="font_applied">Applied %1$s</string>
     <string name="font_not_a_font">That file is not a font (only .ttf / .otf), ignored</string>
     <string name="font_failed">Could not install the font, please try again</string>
+    <string name="drawing_display_title">Display &amp; network</string>
+    <string name="sys_charge_icon_title">Show the system charging icon</string>
+    <string name="sys_charge_icon_summary">While charging, shows Flyme\'s own bolt (the fast-charge bolt when fast charging) beside the glyph. Follows the region setting: excluded regions keep the stock battery anyway.</string>
+    <string name="power_save_color_title">Colour the ring in power saver</string>
+    <string name="power_save_color_summary">With power saver on, the battery ring uses the low-battery colour (yellow by default), like the stock battery. The colour is set under Status colours.</string>
 </resources>

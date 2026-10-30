@@ -136,5 +136,8 @@ final class DataPresence {
         // first, as this class did at first, repainted nothing on the ROM it was written for.
         FlymeHooks.invalidateHosts();
         TrioHooks.invalidateHosts();
+        // The stock signal icon's "5G" follows the data switch too (stockTypeHidden), and
+        // Flyme does not always rebind it on a data toggle - so re-apply it here.
+        FlymeHooks.syncStockTypeViews();
     }
 }
