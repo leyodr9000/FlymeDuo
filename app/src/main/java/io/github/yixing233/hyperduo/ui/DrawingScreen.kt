@@ -545,11 +545,13 @@ private fun DrawingEditorCard(
 
         }
 
-        DrawingSection(R.string.drawing_outside_title) {
-            DrawingOutsideParts(settings, scene, dark,
-                onEdit = { editing = it },
-                onReorder = { order -> update { it.setOutOrder(order) } },
-            )
+        if (Prefs.OUT_RING_FEATURES) {
+            DrawingSection(R.string.drawing_outside_title) {
+                DrawingOutsideParts(settings, scene, dark,
+                    onEdit = { editing = it },
+                    onReorder = { order -> update { it.setOutOrder(order) } },
+                )
+            }
         }
 
     }
@@ -739,7 +741,8 @@ internal fun partsForPage(settings: TrioSettings): List<TrioSettingsPart> {
     val slotted = style == Prefs.STYLE_RING || style == Prefs.STYLE_CAPSULE
     return listOf(TrioSettingsPart.Appearance, TrioSettingsPart.Battery, TrioSettingsPart.Wifi,
         TrioSettingsPart.Mobile, TrioSettingsPart.Value, TrioSettingsPart.Bolt,
-        TrioSettingsPart.Type, TrioSettingsPart.Readouts) +
+        TrioSettingsPart.Type) +
+        (if (Prefs.OUT_RING_FEATURES) listOf(TrioSettingsPart.Readouts) else emptyList()) +
         if (slotted) listOf(TrioSettingsPart.Clock) else emptyList()
 }
 

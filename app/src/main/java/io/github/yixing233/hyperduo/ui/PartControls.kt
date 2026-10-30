@@ -167,7 +167,26 @@ internal class SliderSpec(
  * percentage-weight row, which is gated on the percentage switch rather than on
  * the rule that decides whether a percentage is drawn.
  */
+/** Title ids of the rows that only size out-of-ring pieces; hidden while those are off. */
+private val OUT_RING_ROW_TITLES = setOf(
+    R.string.perf_scale_title,
+    R.string.perf_weight_title,
+    R.string.out_type_size_title,
+    R.string.out_type_margin_left_title,
+    R.string.out_type_margin_right_title,
+    R.string.out_signal_size_title,
+    R.string.out_signal_margin_title,
+    R.string.out_signal_margin_right_title,
+)
+
 internal fun geometrySliders(): List<SliderSpec> {
+    val all = allGeometrySliders()
+    if (Prefs.OUT_RING_FEATURES) return all
+    val probe = TrioAppearance.of(io.github.yixing233.hyperduo.TrioSettings.defaults())
+    return all.filter { it.titleRes(probe) !in OUT_RING_ROW_TITLES }
+}
+
+private fun allGeometrySliders(): List<SliderSpec> {
     val value = TrioZones.Part.VALUE
     val wifi = TrioZones.Part.WIFI
     val mobile = TrioZones.Part.MOBILE

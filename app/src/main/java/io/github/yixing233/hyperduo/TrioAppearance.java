@@ -327,7 +327,9 @@ public final class TrioAppearance {
         wifi = c.showWifi;
         mobile = c.showMobile;
         signalOutOfRing = c.signalMode == Prefs.SIGNAL_OUT_RING;
-        stackedSignal = c.stackedSignal;
+        // The module's own out-of-ring signal reading is disabled with the rest of the
+        // out-of-ring pieces; "signal out of ring" then simply hands the icon back to Flyme.
+        stackedSignal = Prefs.OUT_RING_FEATURES && c.stackedSignal;
         dualSim = c.dualSim;
 
         dualInsideRing = c.dualInsideRing;
@@ -354,14 +356,18 @@ public final class TrioAppearance {
         // the layout. A separate row could contradict the list it was meant to describe.
         boltWanted = true;
         centreValue = c.valueCentred && ring;
-        typeMode = c.mobileTypeMode;
-        typeInRing = c.mobileTypeMode == Prefs.MOBILE_TYPE_IN_RING;
-        typeOutOfRing = c.mobileTypeMode == Prefs.MOBILE_TYPE_OUT_RING;
+        // Out-of-ring type label disabled (Prefs.OUT_RING_FEATURES): a stored OUT_RING means
+        // "not drawn by the module" - the stock 5G stays, nothing is mounted.
+        final int mode = (!Prefs.OUT_RING_FEATURES && c.mobileTypeMode == Prefs.MOBILE_TYPE_OUT_RING)
+                ? Prefs.MOBILE_TYPE_OFF : c.mobileTypeMode;
+        typeMode = mode;
+        typeInRing = mode == Prefs.MOBILE_TYPE_IN_RING;
+        typeOutOfRing = mode == Prefs.MOBILE_TYPE_OUT_RING;
         typeHideOnWifi = c.typeHideOnWifi;
         chargingShowsValue = c.chargingShowsValue;
         fontPath = c.fontPath == null ? "" : c.fontPath;
-        perfPower = c.perfPower;
-        perfTemp = c.perfTemp;
+        perfPower = Prefs.OUT_RING_FEATURES && c.perfPower;
+        perfTemp = Prefs.OUT_RING_FEATURES && c.perfTemp;
         perfTempChargingOnly = c.perfTempChargingOnly;
         perfScale = c.perfScale;
         perfWeight = c.perfWeight;

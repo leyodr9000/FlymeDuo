@@ -1476,6 +1476,13 @@ public final class Prefs {
      * keep the stock battery and therefore their own bolt either way.
      */
     public static final String KEY_SYS_CHARGE_ICON = "sys_charge_icon";
+    /**
+     * Master gate for the module's own out-of-ring pieces (stacked signal reading, out-of-ring
+     * type label, power/temperature readouts and their order strip). Off since 1.7.5-flyme.74:
+     * the settings are hidden and the stored values are read as "off" (TrioAppearance), so no
+     * out-of-ring view is mounted whatever an older build saved. The code stays for later.
+     */
+    public static final boolean OUT_RING_FEATURES = false;
     public static final boolean DEF_SYS_CHARGE_ICON = false;
     /** Which side of the glyph the bolt sits on: left (stock Flyme order, default) or right. */
     public static final String KEY_SYS_CHARGE_ICON_LEFT = "sys_charge_icon_left";

@@ -95,12 +95,18 @@ internal enum class ContentControl(val owner: TrioSettingsPart?) {
     Clock(TrioSettingsPart.Clock),
 }
 
+/** Rows that only configure the module's own out-of-ring pieces; see Prefs.OUT_RING_FEATURES. */
+private val OUT_RING_CONTROLS = setOf(
+    ContentControl.Stacked, ContentControl.DataSim,
+    ContentControl.Power, ContentControl.Temperature, ContentControl.ChargingTemp,
+)
+
 internal fun contentControlsFor(part: TrioSettingsPart): List<ContentControl> =
     ContentControl.entries.filter {
         // One entry per card, so a card's sheet shows that card's rows and nothing
         // else. The signal card is the one card that owns several rows, because its
         // three switches are three readings of the same ink.
-        it.owner == part
+        it.owner == part && (Prefs.OUT_RING_FEATURES || it !in OUT_RING_CONTROLS)
     }
 
 @Composable
@@ -219,9 +225,11 @@ internal fun ContentControlRow(
         // placing the bolt in the layout like any other piece. A row here would be a second
         // answer to the same question, able to contradict the list it describes.
         ContentControl.Bolt -> Unit
+        // a.typeMode is already coerced: a stored OUT_RING reads as OFF while it is disabled.
         ContentControl.Type -> ContentChoice(a.typeMode, R.string.show_mobile_type_title,
             null,
-            listOf(R.string.mobile_type_off, R.string.mobile_type_inside, R.string.mobile_type_outside),
+            listOf(R.string.mobile_type_off, R.string.mobile_type_inside) +
+                if (Prefs.OUT_RING_FEATURES) listOf(R.string.mobile_type_outside) else emptyList(),
             master) { value -> update { it.setMobileTypeMode(value) } }
         // Only meaningful when the label is drawn somewhere: with the type off there is
         // nothing to step aside.
@@ -437,7 +445,7 @@ private fun RingPositionControl(
     // is what produced the wrong label.
     val placedAt = zones.indexOfFirst { it.contains(id) }
     val slotIndex = if (placedAt < 0) 0 else slots.indexOf(TrioZones.Zone.entries[placedAt]) + 1
-    val outOfRing = part == TrioZones.Part.TYPE
+    val outOfRing = Prefs.OUT_RING_FEATURES && part == TrioZones.Part.TYPE
             && settings.mobileTypeMode == Prefs.MOBILE_TYPE_OUT_RING
     val selected = if (outOfRing) slots.size + 1 else slotIndex
     // The row's title is the SLOT it picks, never the component's own switch name.
@@ -465,7 +473,8 @@ private fun RingPositionControl(
                 else -> R.string.drawing_hint_bottom
             }
         } +
-            if (part == TrioZones.Part.TYPE) listOf(R.string.mobile_type_outside) else emptyList(),
+            if (Prefs.OUT_RING_FEATURES && part == TrioZones.Part.TYPE)
+                listOf(R.string.mobile_type_outside) else emptyList(),
         listOf(settings.enabled to R.string.master_title),
         // A signal row cannot be put in the middle band - see [middleBlocked]. The row is
         // mostly used by pieces that have no such restriction, so the set is empty for them
