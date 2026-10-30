@@ -181,6 +181,16 @@ final class TrioState {
      * shows a stale one for the two seconds it takes to ask.
      */
     private static volatile boolean sDataEnabled = true;
+    /**
+     * Whether the radio currently reports 5G-Advanced.
+     *
+     * <p>Not taken from the icon Flyme hands us: the stock SystemUI ships
+     * {@code bool/config_display_5g_a = false}, so on some builds the 5G-A resource is never
+     * requested even when the network is 5G-A. The display info is the value the platform
+     * itself derives from the radio, so reading it directly is what lets the module draw
+     * 5GA on a phone whose stock label would say 5G.
+     */
+    static volatile boolean sNrAdvanced;
 
     /** The current default-data SIM's slot, or {@code -1} when it is unknown. */
     static volatile int sDataSlot = -1;
@@ -387,6 +397,15 @@ final class TrioState {
             // hides with it. One rule, three surfaces - nothing else has to know.
             mobileType = "";
         }
+        // The platform knows before the label does: several Flyme builds ship
+        // bool/config_display_5g_a = false, so the 5G-A resource is never requested and the
+        // icon arrives as plain 5G even on a 5G-A cell. When the display info says the radio
+        // is 5G-Advanced and the label we were handed is a plain 5G, draw 5GA - the module
+        // already owns that reading, so no stock resource is needed.
+        if (sNrAdvanced && "5G".equals(mobileType)
+                && io.github.yixing233.hyperduo.TrioConfig.get().typeFollowNrAdvanced) {
+            mobileType = DEMO_MOBILE_TYPE;
+        }
         // Demo: pretend the radio reports 5G-Advanced, so an install with no 5GA coverage can
         // see how the label is drawn. Display only - nothing reaches telephony, and the
         // sampled value returns the moment the switch goes off.
@@ -451,6 +470,9 @@ final class TrioState {
             // The data switch has no view of its own: it is a setting, and the shade that
             // flips it does not redraw the glyph. Watch it, do not wait to be asked.
             DataPresence.start(sContext);
+            // The radio's own answer, independent of whether the stock label code ever asks
+            // for it: on builds that hide 5G-A, the icon alone can only ever say 5G.
+            NrAdvancedPresence.start(sContext);
         } catch (Throwable ignored) {
             // leave it null; the reading stays on the single-row fallback
         }
@@ -490,6 +512,15 @@ final class TrioState {
      * stays current while nothing is being drawn - the shade case, where the old value used
      * to survive until the next unrelated repaint.
      */
+    /** Records the 5G-A flag and reports whether it moved. */
+    static boolean setNrAdvanced(boolean advanced) {
+        if (sNrAdvanced == advanced) {
+            return false;
+        }
+        sNrAdvanced = advanced;
+        return true;
+    }
+
     static boolean setDataEnabled(boolean enabled) {
         if (sDataEnabled == enabled) {
             return false;

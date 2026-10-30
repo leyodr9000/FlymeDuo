@@ -119,6 +119,8 @@ public final class TrioAppearance {
     public final boolean dualInsideRing;
     /** Pretend a second card is present, so a one-SIM install can see the stacked pair. */
     public final boolean demoDualSim;
+    /** Draw 5GA when the radio is 5G-Advanced. */
+    public final boolean typeFollowNrAdvanced;
     /** Where the stacked pair sits; see {@link Prefs#KEY_DUAL_STACK_POS}. */
     public final int dualStackPos;
     /** Nudges of the stacked pair, in design units. */
@@ -320,6 +322,7 @@ public final class TrioAppearance {
 
         dualInsideRing = c.dualInsideRing;
         demoDualSim = c.demoDualSim;
+        typeFollowNrAdvanced = c.typeFollowNrAdvanced;
         dualStackPos = c.dualStackPos;
         dualStackDy = c.dualStackDy;
         dualStackMatrix = c.dualStackMatrix;

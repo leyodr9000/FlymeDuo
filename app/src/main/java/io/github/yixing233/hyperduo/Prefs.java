@@ -1458,6 +1458,16 @@ public final class Prefs {
      */
     public static final String KEY_DEMO_DUAL_SIM = "demo_dual_sim";
     public static final boolean DEF_DEMO_DUAL_SIM = false;
+    /**
+     * Draw 5GA whenever the radio reports 5G-Advanced, even when Flyme handed us plain 5G.
+     *
+     * <p>On by default because the stock behaviour is the defect: several builds ship
+     * {@code bool/config_display_5g_a = false}, so the 5G-A resource is never requested and
+     * the label cannot say 5GA however good the cell is. Reading the radio state directly
+     * is the only way to show what the network actually is.
+     */
+    public static final String KEY_TYPE_FOLLOW_NR_ADVANCED = "type_follow_nr_advanced";
+    public static final boolean DEF_TYPE_FOLLOW_NR_ADVANCED = true;
     /** On by default: the stacked form is the one that leaves the label a place to live. */
     public static final boolean DEF_DUAL_INSIDE_RING = true;
     public static final int DUAL_STACK_TOP = 0;

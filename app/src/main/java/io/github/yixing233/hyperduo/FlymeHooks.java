@@ -28,6 +28,8 @@ final class FlymeHooks {
     private static volatile java.lang.reflect.Field sWifiStateResIdField;
     private static volatile java.lang.reflect.Field sWifiViewStateField;
     private static final java.util.List<java.lang.String> MANAGED_SLOTS = java.util.Collections.unmodifiableList(java.util.Arrays.asList("wifi", "mobile", "stacked_mobile"));
+    /** The ROM value of OVERRIDE_NETWORK_TYPE_NR_ADVANCED, resolved once in hookDisplayInfo. */
+    private static int sNrAdvancedValue = -1;
     private static final java.util.Map<android.view.View, io.github.yixing233.hyperduo.TrioState> STATES = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
     private static final java.util.Map<android.view.View, java.lang.Integer> SAVED_VISIBILITY = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
     private static final java.util.Map<java.lang.Object, java.util.List<java.lang.String>> ADDED_SLOTS = java.util.Collections.synchronizedMap(new java.util.WeakHashMap());
@@ -136,14 +138,14 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.68";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.69";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
         sActive = true;
         log(module, "flyme adapter build " + ADAPTER_BUILD);
         int count = hookBatteryView(module, cl);
-        return count + hookStatusBarCapture(module, cl) + hookControlCenterCapture(module, cl) + hookKeyguardStatusBarCapture(module, cl) + hookIconContainer(module, cl) + hookWifiState(module, cl) + hookMobileSignal(module, cl) + hookMobileTypeIcon(module, cl);
+        return count + hookStatusBarCapture(module, cl) + hookControlCenterCapture(module, cl) + hookKeyguardStatusBarCapture(module, cl) + hookIconContainer(module, cl) + hookWifiState(module, cl) + hookMobileSignal(module, cl) + hookMobileTypeIcon(module, cl) + hookDisplayInfo(module, cl);
     }
 
     static void onConfigChanged() {
@@ -604,6 +606,17 @@ final class FlymeHooks {
                     wanted.add("mobile");
                     wanted.add("stacked_mobile");
                 }
+                // The network type folds with the same switch, and for the same reason:
+                // while the module draws the type itself, the stock label is a SECOND copy
+                // of the same reading sitting beside it. That is what made "turning mobile
+                // data off does not hide the 5G" look like a refresh bug - the in-ring label
+                // did clear, and the stock one stayed. An earlier pass left this view alone
+                // because hiding it then took the type away entirely, but that was before
+                // the module could draw the type at all; now it has somewhere to come from.
+                if (a.typeAnywhere()) {
+                    wanted.add("mobile_type");
+                    wanted.add("mobile_type_icon");
+                }
             }
             final java.util.List<java.lang.String> added;
             synchronized (ADDED_SLOTS) {
@@ -721,6 +734,58 @@ final class FlymeHooks {
         return 0;
     }
 
+    /**
+     * Reads the platform answer to "is this radio 5G-Advanced".
+     *
+     * <p>Hooked rather than queried, and hooked on the getter rather than on a callback: the
+     * value is already flowing through this process - SystemUI asks it to decide which icon
+     * to show - so reading it at the moment it is asked costs nothing and needs no listener,
+     * no subId bookkeeping and no privileged registry dump. The reference module (FlymeBarSizer)
+     * takes the same route, which is worth something: it is the adapter that already works on
+     * this ROM.
+     *
+     * <p>The comparison is by NAME, not by integer. {@code OVERRIDE_NETWORK_TYPE_NR_ADVANCED}
+     * arrived in API 34 and its ordinal is not something to hard-code across ROMs; the field
+     * name is stable, so the value is resolved once from the class and then compared by
+     * identity. If the ROM has no such field, the hook does nothing and the module keeps
+     * showing whatever the stock label said.
+     */
+    private static int hookDisplayInfo(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
+        final java.lang.Class<?> info = io.github.yixing233.hyperduo.Refl.cls("android.telephony.TelephonyDisplayInfo", cl);
+        if (info == null) {
+            return 0;
+        }
+        // One parser for both this hook and the subscription: two resolutions could disagree
+        // about a field a ROM renamed, and the disagreement would look like a 5G-A flicker.
+        final int advanced = io.github.yixing233.hyperduo.NrAdvancedPresence.advancedValue();
+        if (advanced == -1) {
+            log(module, "no OVERRIDE_NETWORK_TYPE_NR_ADVANCED: 5GA follows the stock label only");
+            return 0;
+        }
+        sNrAdvancedValue = advanced;
+        final java.lang.reflect.Method getter =
+                io.github.yixing233.hyperduo.Refl.method(info, "getOverrideNetworkType", new java.lang.Class[0]);
+        if (getter == null) {
+            return 0;
+        }
+        return hook(module, getter, "hyperduo-flyme-nr-advanced", new io.github.libxposed.api.XposedInterface.Hooker() {
+            public java.lang.Object intercept(io.github.libxposed.api.XposedInterface.Chain chain) throws java.lang.Throwable {
+                final java.lang.Object result = chain.proceed();
+                if (result instanceof java.lang.Integer) {
+                    final boolean advancedNow =
+                            ((java.lang.Integer) result).intValue() == sNrAdvancedValue;
+                    if (io.github.yixing233.hyperduo.TrioState.setNrAdvanced(advancedNow)) {
+                        io.github.yixing233.hyperduo.TrioHooks.log(
+                                io.github.yixing233.hyperduo.TrioHooks.LOG_INFO,
+                                "nr advanced=" + advancedNow);
+                        io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
+                    }
+                }
+                return result;
+            }
+        });
+    }
+
     private static int hookMobileTypeIcon(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         java.lang.Class<?> binder = io.github.yixing233.hyperduo.Refl.cls(ICON_VIEW_BINDER, cl);
         java.lang.Class<?> icon = io.github.yixing233.hyperduo.Refl.cls(SYSTEM_ICON, cl);
@@ -753,13 +818,22 @@ final class FlymeHooks {
                                 "mobile type: \"" + type + "\" (res " + resName + ", id " + resId + ")");
                         io.github.yixing233.hyperduo.FlymeHooks.invalidateHosts();
                     }
-                    // Flyme's own label is left alone: the ring's out-of-ring type
-                    // is not ported to this adapter yet, and hiding this one took
-                    // the type away entirely.
-                    android.view.View typeView = (android.view.View) target;
-                    if (!io.github.yixing233.hyperduo.TrioConfig.get().enabled
-                            && typeView.getVisibility() == android.view.View.GONE) {
-                        typeView.setVisibility(android.view.View.VISIBLE);
+                    // The stock label is hidden while the module draws the type, and only
+                    // then: a user who turned the type off in the module gets Flyme own label
+                    // back rather than no label at all.
+                    //
+                    // This is the other half of "the 5G does not go away when I turn data
+                    // off": the module was clearing its own reading while this view kept the
+                    // old one on screen, so the change looked like it was being ignored.
+                    final android.view.View typeView = (android.view.View) target;
+                    final boolean moduleDrawsType =
+                            io.github.yixing233.hyperduo.TrioConfig.get().enabled
+                            && io.github.yixing233.hyperduo.TrioConfig.appearance().typeAnywhere()
+                            && !io.github.yixing233.hyperduo.FlymeHooks.excludedRegion(typeView);
+                    final int wantVisibility = moduleDrawsType
+                            ? android.view.View.GONE : android.view.View.VISIBLE;
+                    if (typeView.getVisibility() != wantVisibility) {
+                        typeView.setVisibility(wantVisibility);
                     }
                 }
                 return result;

@@ -345,6 +345,16 @@ private fun DrawingEditorCard(
                     insideMargin = SettingsItemMargin,
                     onCheckedChange = { value -> update { it.setDemoMobileType(value) } },
                 )
+                // The stock label cannot say 5GA on builds where config_display_5g_a is
+                // false: Flyme never asks for the 5GA resource, so the module would copy
+                // plain 5G forever. This reads the radio state instead.
+                SwitchPreference(
+                    checked = settings.typeFollowNrAdvanced,
+                    title = stringResource(R.string.type_follow_nr_advanced_title),
+                    summary = stringResource(R.string.type_follow_nr_advanced_summary),
+                    insideMargin = SettingsItemMargin,
+                    onCheckedChange = { value -> update { it.setTypeFollowNrAdvanced(value) } },
+                )
                 // The pair and everything that positions it, as one row that opens a sheet:
                 // these settings only mean anything together.
                 DualStackGroup(settings, update)

@@ -168,6 +168,8 @@
     <string name="icon_offset_summary">整体平移原厂图标区（Wi-Fi、信号、网速指示器等），与三合一互相独立：正值向右、负值向左，可调 −24 到 24 dp</string>
     <string name="glyph_size_group_title">尺寸与位置</string>
     <string name="glyph_size_group_summary">整体 %1$d%% · 三合一 %2$ddp · 图标 %4$ddp · 垂直 %3$ddp，点按调整</string>
+    <string name="type_follow_nr_advanced_title">按网络真实状态显示 5GA</string>
+    <string name="type_follow_nr_advanced_summary">系统配置为不显示 5G-A 的机型，Flyme 不会下发 5GA 图标。打开后由模块直接读网络制式，命中 5G-A 时自行显示 5GA</string>
     <string name="demo_mobile_type_title">模拟 5GA 显示</string>
     <string name="demo_mobile_type_summary">把网络类型强制当成 5GA 来画，方便在没有 5G-A 覆盖时验证显示效果。只改绘制，不碰任何通信状态</string>
     <string name="dual_inside_ring_title">双卡信号放进环里</string>

@@ -322,6 +322,8 @@ public final class TrioSettings {
     public boolean demoMobileType;
     /** Pretend a second card is present; see {@link Prefs#KEY_DEMO_DUAL_SIM}. */
     public boolean demoDualSim;
+    /** Draw 5GA when the radio is 5G-Advanced; see {@link Prefs#KEY_TYPE_FOLLOW_NR_ADVANCED}. */
+    public boolean typeFollowNrAdvanced;
     /** Interior cell nudges, in design units; see Prefs.KEY_CAPSULE_LEFT_DX. */
     public int capsuleLeftDx;
     public int capsuleLeftDy;
@@ -365,6 +367,7 @@ public final class TrioSettings {
 
         s.demoMobileType = Prefs.DEF_DEMO_MOBILE_TYPE;
         s.demoDualSim = Prefs.DEF_DEMO_DUAL_SIM;
+        s.typeFollowNrAdvanced = Prefs.DEF_TYPE_FOLLOW_NR_ADVANCED;
         s.capsuleLeftDx = Prefs.DEF_CAPSULE_NUDGE;
         s.capsuleLeftDy = Prefs.DEF_CAPSULE_NUDGE;
         s.capsuleRightDx = Prefs.DEF_CAPSULE_NUDGE;
@@ -528,6 +531,8 @@ public final class TrioSettings {
         s.demoMobileType = p.getBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, Prefs.DEF_DEMO_MOBILE_TYPE);
         s.demoDualSim = p.getBoolean(Prefs.KEY_DEMO_DUAL_SIM,
                 Prefs.DEF_DEMO_DUAL_SIM);
+        s.typeFollowNrAdvanced = p.getBoolean(Prefs.KEY_TYPE_FOLLOW_NR_ADVANCED,
+                Prefs.DEF_TYPE_FOLLOW_NR_ADVANCED);
         s.capsuleLeftDx = Prefs.clamp(p.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
                 Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X,
                 Prefs.MAX_CAPSULE_NUDGE_X);
@@ -949,6 +954,7 @@ public final class TrioSettings {
 
         s.demoMobileType = demoMobileType;
         s.demoDualSim = demoDualSim;
+        s.typeFollowNrAdvanced = typeFollowNrAdvanced;
         s.capsuleLeftDx = capsuleLeftDx;
         s.capsuleLeftDy = capsuleLeftDy;
         s.capsuleRightDx = capsuleRightDx;
@@ -1056,6 +1062,8 @@ public final class TrioSettings {
 
             case Prefs.KEY_DEMO_MOBILE_TYPE: demoMobileType = src.demoMobileType; return true;
             case Prefs.KEY_DEMO_DUAL_SIM: demoDualSim = src.demoDualSim; return true;
+            case Prefs.KEY_TYPE_FOLLOW_NR_ADVANCED:
+                typeFollowNrAdvanced = src.typeFollowNrAdvanced; return true;
             case Prefs.KEY_CAPSULE_LEFT_DX: capsuleLeftDx = src.capsuleLeftDx; return true;
             case Prefs.KEY_CAPSULE_LEFT_DY: capsuleLeftDy = src.capsuleLeftDy; return true;
             case Prefs.KEY_CAPSULE_RIGHT_DX: capsuleRightDx = src.capsuleRightDx; return true;
@@ -1188,6 +1196,8 @@ public final class TrioSettings {
         s.demoMobileType = bundle.getBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, Prefs.DEF_DEMO_MOBILE_TYPE);
         s.demoDualSim = bundle.getBoolean(Prefs.KEY_DEMO_DUAL_SIM,
                 Prefs.DEF_DEMO_DUAL_SIM);
+        s.typeFollowNrAdvanced = bundle.getBoolean(Prefs.KEY_TYPE_FOLLOW_NR_ADVANCED,
+                Prefs.DEF_TYPE_FOLLOW_NR_ADVANCED);
         s.capsuleLeftDx = Prefs.clamp(bundle.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
                 Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X,
                 Prefs.MAX_CAPSULE_NUDGE_X);
@@ -1368,6 +1378,7 @@ public final class TrioSettings {
 
         b.putBoolean(Prefs.KEY_DEMO_MOBILE_TYPE, demoMobileType);
         b.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, demoDualSim);
+        b.putBoolean(Prefs.KEY_TYPE_FOLLOW_NR_ADVANCED, typeFollowNrAdvanced);
         b.putInt(Prefs.KEY_CAPSULE_LEFT_DX, capsuleLeftDx);
         b.putInt(Prefs.KEY_CAPSULE_LEFT_DY, capsuleLeftDy);
         b.putInt(Prefs.KEY_CAPSULE_RIGHT_DX, capsuleRightDx);
@@ -1502,6 +1513,7 @@ public final class TrioSettings {
 
                 && demoMobileType == s.demoMobileType
                 && demoDualSim == s.demoDualSim
+                && typeFollowNrAdvanced == s.typeFollowNrAdvanced
                 // The four capsule nudges, and the reason this defect was noticed at all:
                 // they were added to defaults(), from(), copy(), applyKeyFrom() and both
                 // bundle directions - the whole pipeline except this list - so the only
@@ -1589,6 +1601,7 @@ public final class TrioSettings {
 
         h = h * 31 + (demoMobileType ? 1 : 0);
         h = h * 31 + (demoDualSim ? 1 : 0);
+        h = h * 31 + (typeFollowNrAdvanced ? 1 : 0);
         h = h * 31 + (perfTempChargingOnly ? 1 : 0);
         h = h * 31 + capsuleLeftDx;
         h = h * 31 + capsuleLeftDy;
