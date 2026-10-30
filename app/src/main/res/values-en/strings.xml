@@ -374,4 +374,15 @@
     <string name="sys_charge_icon_summary">While charging, shows Flyme\'s own bolt (the fast-charge bolt when fast charging) beside the glyph. Follows the region setting: excluded regions keep the stock battery anyway.</string>
     <string name="power_save_color_title">Colour the ring in power saver</string>
     <string name="power_save_color_summary">With power saver on, the battery ring uses the low-battery colour (yellow by default), like the stock battery. The colour is set under Status colours.</string>
+    <string name="group_5ga_title">5GA label</string>
+    <string name="group_battery_hint_title">Charging &amp; power saver</string>
+    <string name="short_5ga_manual">Manual</string>
+    <string name="short_5ga_auto">Auto</string>
+    <string name="short_charge_icon">Charge icon</string>
+    <string name="short_power_save">Saver colour</string>
+    <string name="switch_state_on">on</string>
+    <string name="switch_state_off">off</string>
+    <string name="sys_charge_icon_left_title">Charging icon on the left</string>
+    <string name="sys_charge_icon_left_summary">On: the bolt sits left of the glyph (stock order). Off: on the right.</string>
+    <string name="short_charge_icon_left">Left</string>
 </resources>

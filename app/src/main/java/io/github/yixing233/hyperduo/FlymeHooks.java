@@ -175,6 +175,9 @@ final class FlymeHooks {
                             io.github.yixing233.hyperduo.FlymeHooks.applyBatteryPercent(host);
                         }
                         io.github.yixing233.hyperduo.FlymeHooks.syncTypeLabel(host);
+                        // A settings change (the bolt switch) must take effect now, not at
+                        // the next battery event.
+                        io.github.yixing233.hyperduo.FlymeHooks.requestTypeLabelSync(host);
                         host.requestLayout();
                         host.invalidate();
                     }
@@ -1376,12 +1379,22 @@ final class FlymeHooks {
             synchronized (OUT_SIGNAL_VIEWS) {
                 signal = OUT_SIGNAL_VIEWS.get(host);
             }
-            if (label == null && signal == null) {
+            final android.widget.ImageView bolt;
+            synchronized (CHARGE_ICONS) {
+                bolt = CHARGE_ICONS.get(host);
+            }
+            final boolean boltLeft = bolt != null && bolt.getParent() == parent
+                    && io.github.yixing233.hyperduo.TrioConfig.appearance().sysChargeIconLeft;
+            if (label == null && signal == null && !boltLeft) {
                 return;
             }
-            // Nearest the battery first, as the user arranged it.
+            // Nearest the battery first, as the user arranged it. A left-side bolt is always
+            // the nearest piece: it belongs to the battery, the readings come after it.
             final int[] order = io.github.yixing233.hyperduo.TrioConfig.get().outOrder;
-            final java.util.List<android.view.View> nearestFirst = new java.util.ArrayList<>(2);
+            final java.util.List<android.view.View> nearestFirst = new java.util.ArrayList<>(3);
+            if (boltLeft) {
+                nearestFirst.add(bolt);
+            }
             for (int i = 0; i < order.length; i++) {
                 if (order[i] == io.github.yixing233.hyperduo.Prefs.OUT_SLOT_SIGNAL && signal != null) {
                     nearestFirst.add(signal);
@@ -1427,6 +1440,10 @@ final class FlymeHooks {
         }
     }
 
+    private static final java.util.Set<android.view.View> CHARGE_PARENT_LOG =
+            java.util.Collections.newSetFromMap(
+                    new java.util.WeakHashMap<android.view.View, java.lang.Boolean>());
+
     /** Flyme's own charging bolt, re-mounted beside the glyph; one per battery host. */
     private static final java.util.Map<android.view.View, android.widget.ImageView> CHARGE_ICONS =
             java.util.Collections.synchronizedMap(new java.util.WeakHashMap<android.view.View, android.widget.ImageView>());
@@ -1452,10 +1469,19 @@ final class FlymeHooks {
             // Posted runnable, not a draw: re-read so the bolt follows the plug that just moved.
             state.refresh();
         }
+        // Plugged, not "charging": at 100% the system reports FULL, yet Flyme's own battery
+        // keeps its bolt while the cable is in (apply(): mCharging || mLastPlugged).
+        final boolean plugged = state != null
+                && (state.charging || io.github.yixing233.hyperduo.TrioState.flymePluggedIn());
+        if (a.glyph && a.sysChargeIcon && !(parent instanceof android.widget.LinearLayout)
+                && CHARGE_PARENT_LOG.add(host)) {
+            log(sModule, "charge icon: battery parent is "
+                    + (parent == null ? "null" : parent.getClass().getName()) + ", not mounted");
+        }
         final boolean wanted = a.glyph && a.sysChargeIcon
                 && !excludedRegion(host)
                 && (parent instanceof android.widget.LinearLayout)
-                && state != null && state.charging;
+                && plugged;
         android.widget.ImageView view;
         synchronized (CHARGE_ICONS) {
             view = CHARGE_ICONS.get(host);
@@ -1485,12 +1511,30 @@ final class FlymeHooks {
                             android.view.ViewGroup.LayoutParams.WRAP_CONTENT,
                             android.view.ViewGroup.LayoutParams.WRAP_CONTENT);
             lp.gravity = android.view.Gravity.CENTER_VERTICAL;
-            lp.leftMargin = java.lang.Math.round(
-                    2 * host.getResources().getDisplayMetrics().density);
             final int index = row.indexOfChild(host);
             row.addView(view, index < 0 ? row.getChildCount() : index + 1, lp);
             synchronized (CHARGE_ICONS) {
                 CHARGE_ICONS.put(host, view);
+            }
+        }
+        // Side and gap. Left: the bolt is the piece nearest the glyph and applyOutOrder places
+        // it (so the out-of-ring pieces sit outside it, and the order check stays stable).
+        // Right: it sits directly after the glyph, moved only when it is not already there.
+        final int gap = java.lang.Math.round(2 * host.getResources().getDisplayMetrics().density);
+        final android.widget.LinearLayout.LayoutParams vlp =
+                (android.widget.LinearLayout.LayoutParams) view.getLayoutParams();
+        final int wantLeft = a.sysChargeIconLeft ? 0 : gap;
+        final int wantRight = a.sysChargeIconLeft ? gap : 0;
+        if (vlp.leftMargin != wantLeft || vlp.rightMargin != wantRight) {
+            vlp.leftMargin = wantLeft;
+            vlp.rightMargin = wantRight;
+            view.setLayoutParams(vlp);
+        }
+        if (!a.sysChargeIconLeft) {
+            final int hostAt = row.indexOfChild(host);
+            if (hostAt >= 0 && row.getChildAt(hostAt + 1) != view) {
+                row.removeView(view);
+                row.addView(view, row.indexOfChild(host) + 1, vlp);
             }
         }
         final android.graphics.drawable.Drawable.ConstantState cs =
@@ -1602,6 +1646,19 @@ final class FlymeHooks {
         boolean decided = false;
         android.view.ViewParent parent = host.getParent();
         for (int depth = 0; parent instanceof android.view.View && depth < 24; depth++) {
+            // A captured icon container answers for everything inside it. Without this an
+            // icon in the control centre (its signal / 5G views) met a wrapper class named
+            // "...StatusBar..." first and was filed as the status bar, so excluding the
+            // control centre never reached it - the module kept hiding its stock 5G there.
+            final boolean isContainer;
+            synchronized (STATUS_ICON_CONTAINERS) {
+                isContainer = STATUS_ICON_CONTAINERS.containsKey(parent);
+            }
+            if (isContainer && parent != host) {
+                result = regionOf((android.view.View) parent);
+                decided = true;
+                break;
+            }
             java.lang.String name = parent.getClass().getName().toLowerCase(java.util.Locale.ROOT);
             if (name.contains("controlcenter") || name.contains("qsstatusbar") || name.contains("quickpanel")) {
                 result = REGION_CONTROL_CENTRE;

@@ -380,4 +380,15 @@
     <string name="sys_charge_icon_summary">充电时在三合一图标旁显示 Flyme 自带的小闪电（快充时为快充闪电）。随「生效范围」：被排除的区域本来就是原版电池，不受影响</string>
     <string name="power_save_color_title">省电模式时电量环变色</string>
     <string name="power_save_color_summary">开启省电模式后，电量环使用低电量颜色（默认黄色），与原版电池一致。颜色可在「状态颜色」里改</string>
+    <string name="group_5ga_title">5GA 显示</string>
+    <string name="group_battery_hint_title">充电与省电</string>
+    <string name="short_5ga_manual">手动</string>
+    <string name="short_5ga_auto">自动识别</string>
+    <string name="short_charge_icon">充电图标</string>
+    <string name="short_power_save">省电变色</string>
+    <string name="switch_state_on">开</string>
+    <string name="switch_state_off">关</string>
+    <string name="sys_charge_icon_left_title">充电图标在左侧</string>
+    <string name="sys_charge_icon_left_summary">开：闪电在三合一图标左边（与原版一致）。关：在右边</string>
+    <string name="short_charge_icon_left">左侧</string>
 </resources>

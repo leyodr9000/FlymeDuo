@@ -1477,6 +1477,9 @@ public final class Prefs {
      */
     public static final String KEY_SYS_CHARGE_ICON = "sys_charge_icon";
     public static final boolean DEF_SYS_CHARGE_ICON = false;
+    /** Which side of the glyph the bolt sits on: left (stock Flyme order, default) or right. */
+    public static final String KEY_SYS_CHARGE_ICON_LEFT = "sys_charge_icon_left";
+    public static final boolean DEF_SYS_CHARGE_ICON_LEFT = true;
     /**
      * Colour the battery ring with the low-battery colour (yellow by default) while the
      * system power saver is on, independent of the per-role colour switch.

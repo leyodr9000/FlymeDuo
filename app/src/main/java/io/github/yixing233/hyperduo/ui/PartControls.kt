@@ -807,6 +807,63 @@ internal fun DualStackGroup(
     }
 }
 
+/**
+ * A folded group of switches for the home page: one arrow row whose summary shows the
+ * switches' states, opening a sheet with the switches themselves. Keeps the home page short
+ * without moving anything off it.
+ */
+internal class SheetSwitch(
+    val checked: Boolean,
+    val titleRes: Int,
+    val summaryRes: Int,
+    /** Short label for the folded row's summary, e.g. "手动". */
+    val shortRes: Int,
+    val onChange: (Boolean) -> Unit,
+)
+
+@Composable
+internal fun SwitchSheetGroup(
+    titleRes: Int,
+    switches: List<SheetSwitch>,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+) {
+    var sheet by rememberSaveable { mutableStateOf(false) }
+    val on = stringResource(R.string.switch_state_on)
+    val off = stringResource(R.string.switch_state_off)
+    val summary = switches.map { "${stringResource(it.shortRes)} ${if (it.checked) on else off}" }
+        .joinToString(" · ")
+    ArrowPreference(
+        title = stringResource(titleRes),
+        summary = summary,
+        insideMargin = SettingsItemMargin,
+        enabled = enabled,
+        onClick = { sheet = true },
+        modifier = modifier,
+    )
+    if (sheet) {
+        val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val maxSheet = (LocalConfiguration.current.screenHeightDp * 0.72f).dp
+        OverlayBottomSheet(
+            show = true,
+            title = stringResource(titleRes),
+            onDismissRequest = { sheet = false },
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(max = maxSheet)
+                .verticalScroll(rememberScrollState()).padding(bottom = bottomInset)) {
+                switches.forEach { s ->
+                    SwitchPreferenceGroup(
+                        checked = s.checked,
+                        title = stringResource(s.titleRes),
+                        summary = stringResource(s.summaryRes),
+                        onCheckedChange = s.onChange,
+                    )
+                }
+            }
+        }
+    }
+}
+
 /** One switch inside a sheet: same shape as the page rows, minus the page margins. */
 @Composable
 private fun SwitchPreferenceGroup(

@@ -341,33 +341,29 @@ private fun DrawingEditorCard(
         // only grouped out of the master card so that one answers "on / where / how big".
         DrawingSection(R.string.drawing_display_title, PaddingValues(0.dp)) {
             Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
-                SwitchPreference(
-                    checked = settings.demoMobileType,
-                    title = stringResource(R.string.demo_mobile_type_title),
-                    summary = stringResource(R.string.demo_mobile_type_summary),
-                    insideMargin = SettingsItemMargin,
-                    onCheckedChange = { value -> update { it.setDemoMobileType(value) } },
+                // Folded rows: each opens a sheet with its switches, the summary shows their
+                // states, so the home page stays short.
+                SwitchSheetGroup(
+                    titleRes = R.string.group_5ga_title,
+                    switches = listOf(
+                        SheetSwitch(settings.demoMobileType, R.string.demo_mobile_type_title,
+                            R.string.demo_mobile_type_summary, R.string.short_5ga_manual) { v -> update { it.setDemoMobileType(v) } },
+                        SheetSwitch(settings.typeFollowNrAdvanced, R.string.type_follow_nr_advanced_title,
+                            R.string.type_follow_nr_advanced_summary, R.string.short_5ga_auto) { v -> update { it.setTypeFollowNrAdvanced(v) } },
+                    ),
+                    enabled = settings.enabled,
                 )
-                SwitchPreference(
-                    checked = settings.typeFollowNrAdvanced,
-                    title = stringResource(R.string.type_follow_nr_advanced_title),
-                    summary = stringResource(R.string.type_follow_nr_advanced_summary),
-                    insideMargin = SettingsItemMargin,
-                    onCheckedChange = { value -> update { it.setTypeFollowNrAdvanced(value) } },
-                )
-                SwitchPreference(
-                    checked = settings.sysChargeIcon,
-                    title = stringResource(R.string.sys_charge_icon_title),
-                    summary = stringResource(R.string.sys_charge_icon_summary),
-                    insideMargin = SettingsItemMargin,
-                    onCheckedChange = { value -> update { it.setSysChargeIcon(value) } },
-                )
-                SwitchPreference(
-                    checked = settings.powerSaveColor,
-                    title = stringResource(R.string.power_save_color_title),
-                    summary = stringResource(R.string.power_save_color_summary),
-                    insideMargin = SettingsItemMargin,
-                    onCheckedChange = { value -> update { it.setPowerSaveColor(value) } },
+                SwitchSheetGroup(
+                    titleRes = R.string.group_battery_hint_title,
+                    switches = listOf(
+                        SheetSwitch(settings.sysChargeIcon, R.string.sys_charge_icon_title,
+                            R.string.sys_charge_icon_summary, R.string.short_charge_icon) { v -> update { it.setSysChargeIcon(v) } },
+                        SheetSwitch(settings.sysChargeIconLeft, R.string.sys_charge_icon_left_title,
+                            R.string.sys_charge_icon_left_summary, R.string.short_charge_icon_left) { v -> update { it.setSysChargeIconLeft(v) } },
+                        SheetSwitch(settings.powerSaveColor, R.string.power_save_color_title,
+                            R.string.power_save_color_summary, R.string.short_power_save) { v -> update { it.setPowerSaveColor(v) } },
+                    ),
+                    enabled = settings.enabled,
                 )
                 // The pair and everything that positions it, as one row that opens a sheet.
                 DualStackGroup(settings, update)

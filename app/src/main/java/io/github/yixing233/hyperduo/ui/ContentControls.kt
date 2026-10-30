@@ -159,7 +159,9 @@ internal fun ContentControlRow(
             val regions = listOf(Prefs.REGION_ALL, Prefs.REGION_NO_CONTROL_CENTRE,
                 Prefs.REGION_NO_NOTIFICATION, Prefs.REGION_NO_BOTH)
             ContentChoice(regions.indexOf(settings.excludeRegions).coerceAtLeast(0),
-                R.string.exclude_regions_title, R.string.exclude_regions_summary,
+                // No description on the home page row: the options name themselves, and the
+                // three-line explanation made the master card twice as tall.
+                R.string.exclude_regions_title, null,
                 listOf(R.string.exclude_regions_all, R.string.exclude_regions_no_control_centre,
                     R.string.exclude_regions_no_notification, R.string.exclude_regions_no_both),
                 master) { index -> update { it.setExcludeRegions(regions[index]) } }

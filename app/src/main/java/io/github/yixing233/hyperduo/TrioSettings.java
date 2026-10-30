@@ -327,6 +327,7 @@ public final class TrioSettings {
     /** Draw 5GA when the radio is 5G-Advanced; see {@link Prefs#KEY_TYPE_FOLLOW_NR_ADVANCED}. */
     public boolean typeFollowNrAdvanced;
     public boolean sysChargeIcon;
+    public boolean sysChargeIconLeft;
     public boolean powerSaveColor;
     /** Interior cell nudges, in design units; see Prefs.KEY_CAPSULE_LEFT_DX. */
     public int capsuleLeftDx;
@@ -373,6 +374,7 @@ public final class TrioSettings {
         s.demoDualSim = Prefs.DEF_DEMO_DUAL_SIM;
         s.typeFollowNrAdvanced = Prefs.DEF_TYPE_FOLLOW_NR_ADVANCED;
         s.sysChargeIcon = Prefs.DEF_SYS_CHARGE_ICON;
+        s.sysChargeIconLeft = Prefs.DEF_SYS_CHARGE_ICON_LEFT;
         s.powerSaveColor = Prefs.DEF_POWER_SAVE_COLOR;
         s.capsuleLeftDx = Prefs.DEF_CAPSULE_NUDGE;
         s.capsuleLeftDy = Prefs.DEF_CAPSULE_NUDGE;
@@ -542,6 +544,8 @@ public final class TrioSettings {
                 Prefs.DEF_TYPE_FOLLOW_NR_ADVANCED);
         s.sysChargeIcon = p.getBoolean(Prefs.KEY_SYS_CHARGE_ICON,
                 Prefs.DEF_SYS_CHARGE_ICON);
+        s.sysChargeIconLeft = p.getBoolean(Prefs.KEY_SYS_CHARGE_ICON_LEFT,
+                Prefs.DEF_SYS_CHARGE_ICON_LEFT);
         s.powerSaveColor = p.getBoolean(Prefs.KEY_POWER_SAVE_COLOR,
                 Prefs.DEF_POWER_SAVE_COLOR);
         s.capsuleLeftDx = Prefs.clamp(p.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
@@ -970,6 +974,7 @@ public final class TrioSettings {
         s.demoDualSim = demoDualSim;
         s.typeFollowNrAdvanced = typeFollowNrAdvanced;
         s.sysChargeIcon = sysChargeIcon;
+        s.sysChargeIconLeft = sysChargeIconLeft;
         s.powerSaveColor = powerSaveColor;
         s.capsuleLeftDx = capsuleLeftDx;
         s.capsuleLeftDy = capsuleLeftDy;
@@ -1083,6 +1088,8 @@ public final class TrioSettings {
                 typeFollowNrAdvanced = src.typeFollowNrAdvanced; return true;
             case Prefs.KEY_SYS_CHARGE_ICON:
                 sysChargeIcon = src.sysChargeIcon; return true;
+            case Prefs.KEY_SYS_CHARGE_ICON_LEFT:
+                sysChargeIconLeft = src.sysChargeIconLeft; return true;
             case Prefs.KEY_POWER_SAVE_COLOR:
                 powerSaveColor = src.powerSaveColor; return true;
             case Prefs.KEY_CAPSULE_LEFT_DX: capsuleLeftDx = src.capsuleLeftDx; return true;
@@ -1223,6 +1230,8 @@ public final class TrioSettings {
                 Prefs.DEF_TYPE_FOLLOW_NR_ADVANCED);
         s.sysChargeIcon = bundle.getBoolean(Prefs.KEY_SYS_CHARGE_ICON,
                 Prefs.DEF_SYS_CHARGE_ICON);
+        s.sysChargeIconLeft = bundle.getBoolean(Prefs.KEY_SYS_CHARGE_ICON_LEFT,
+                Prefs.DEF_SYS_CHARGE_ICON_LEFT);
         s.powerSaveColor = bundle.getBoolean(Prefs.KEY_POWER_SAVE_COLOR,
                 Prefs.DEF_POWER_SAVE_COLOR);
         s.capsuleLeftDx = Prefs.clamp(bundle.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
@@ -1410,6 +1419,7 @@ public final class TrioSettings {
         b.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, demoDualSim);
         b.putBoolean(Prefs.KEY_TYPE_FOLLOW_NR_ADVANCED, typeFollowNrAdvanced);
         b.putBoolean(Prefs.KEY_SYS_CHARGE_ICON, sysChargeIcon);
+        b.putBoolean(Prefs.KEY_SYS_CHARGE_ICON_LEFT, sysChargeIconLeft);
         b.putBoolean(Prefs.KEY_POWER_SAVE_COLOR, powerSaveColor);
         b.putInt(Prefs.KEY_CAPSULE_LEFT_DX, capsuleLeftDx);
         b.putInt(Prefs.KEY_CAPSULE_LEFT_DY, capsuleLeftDy);
@@ -1548,6 +1558,7 @@ public final class TrioSettings {
                 && demoDualSim == s.demoDualSim
                 && typeFollowNrAdvanced == s.typeFollowNrAdvanced
                 && sysChargeIcon == s.sysChargeIcon
+                && sysChargeIconLeft == s.sysChargeIconLeft
                 && powerSaveColor == s.powerSaveColor
                 // The four capsule nudges, and the reason this defect was noticed at all:
                 // they were added to defaults(), from(), copy(), applyKeyFrom() and both
@@ -1639,6 +1650,7 @@ public final class TrioSettings {
         h = h * 31 + (demoDualSim ? 1 : 0);
         h = h * 31 + (typeFollowNrAdvanced ? 1 : 0);
         h = h * 31 + (sysChargeIcon ? 1 : 0);
+        h = h * 31 + (sysChargeIconLeft ? 1 : 0);
         h = h * 31 + (powerSaveColor ? 1 : 0);
         h = h * 31 + (perfTempChargingOnly ? 1 : 0);
         h = h * 31 + capsuleLeftDx;

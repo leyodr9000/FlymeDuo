@@ -378,6 +378,7 @@ class SettingsRepository(context: Context) {
     fun setTypeFollowNrAdvanced(value: Boolean) =
         writeBoolean(Prefs.KEY_TYPE_FOLLOW_NR_ADVANCED, value)
     fun setSysChargeIcon(value: Boolean) = writeBoolean(Prefs.KEY_SYS_CHARGE_ICON, value)
+    fun setSysChargeIconLeft(value: Boolean) = writeBoolean(Prefs.KEY_SYS_CHARGE_ICON_LEFT, value)
     fun setPowerSaveColor(value: Boolean) = writeBoolean(Prefs.KEY_POWER_SAVE_COLOR, value)
 
     /** Stack both cards inside the ring instead of across its two mouths. */
@@ -474,6 +475,7 @@ class SettingsRepository(context: Context) {
             prefs.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, snapshot.demoDualSim)
             prefs.putBoolean(Prefs.KEY_TYPE_FOLLOW_NR_ADVANCED, snapshot.typeFollowNrAdvanced)
             prefs.putBoolean(Prefs.KEY_SYS_CHARGE_ICON, snapshot.sysChargeIcon)
+            prefs.putBoolean(Prefs.KEY_SYS_CHARGE_ICON_LEFT, snapshot.sysChargeIconLeft)
             prefs.putBoolean(Prefs.KEY_POWER_SAVE_COLOR, snapshot.powerSaveColor)
             prefs.putBoolean(Prefs.KEY_DUAL_INSIDE_RING, snapshot.dualInsideRing)
             prefs.putInt(Prefs.KEY_DUAL_STACK_POS, snapshot.dualStackPos)

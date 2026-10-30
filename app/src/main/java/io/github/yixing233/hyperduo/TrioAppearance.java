@@ -123,6 +123,8 @@ public final class TrioAppearance {
     public final boolean typeFollowNrAdvanced;
     /** Flyme's own charging bolt beside the glyph; see {@link Prefs#KEY_SYS_CHARGE_ICON}. */
     public final boolean sysChargeIcon;
+    /** Bolt on the glyph's left (true) or right; see {@link Prefs#KEY_SYS_CHARGE_ICON_LEFT}. */
+    public final boolean sysChargeIconLeft;
     /** Power saver colours the ring; see {@link Prefs#KEY_POWER_SAVE_COLOR}. */
     public final boolean powerSaveColor;
     /** Where the stacked pair sits; see {@link Prefs#KEY_DUAL_STACK_POS}. */
@@ -330,6 +332,7 @@ public final class TrioAppearance {
         demoDualSim = c.demoDualSim;
         typeFollowNrAdvanced = c.typeFollowNrAdvanced;
         sysChargeIcon = c.sysChargeIcon;
+        sysChargeIconLeft = c.sysChargeIconLeft;
         powerSaveColor = c.powerSaveColor;
         dualStackPos = c.dualStackPos;
         dualStackDy = c.dualStackDy;

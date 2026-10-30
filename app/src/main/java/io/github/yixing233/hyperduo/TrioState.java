@@ -182,6 +182,11 @@ final class TrioState {
      */
     private static volatile boolean sDataEnabled = true;
 
+    /** Whether Flyme last reported the cable in (true at 100% too, unlike "charging"). */
+    static boolean flymePluggedIn() {
+        return sFlymePluggedIn;
+    }
+
     /** The last mobile-data reading, for the Flyme adapter's stock-icon rules. */
     static boolean sDataEnabledPublic() {
         return sDataEnabled;
