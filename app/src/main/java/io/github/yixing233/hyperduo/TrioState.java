@@ -528,38 +528,48 @@ final class TrioState {
      * about is the one in the pull-down, which these keys record, and on a dual-SIM phone
      * turning data off turns it off for both.
      */
-    private static boolean readDataEnabled() {
+    static boolean readDataEnabled() {
+        if (sContext == null) {
+            return sDataEnabled;
+        }
+        // TelephonyManager first: this is the path Flyme itself takes. Dumping the stock
+        // SystemUI found isDataEnabled three times and mobile_data1/2 not once, and the
+        // manager answers about the DEFAULT data card, which is the switch in the pull-down.
+        try {
+            final android.telephony.TelephonyManager tm =
+                    sContext.getSystemService(android.telephony.TelephonyManager.class);
+            if (tm != null) {
+                return tm.isDataEnabled();
+            }
+        } catch (java.lang.Throwable ignored) {
+            // fall through to the keys
+        }
+        // Keys as the fallback: ALL cards off, never ANY. Measured on a dual-SIM Flyme,
+        // turning mobile data off clears only the data card key while the second card keeps
+        // its 1. OR-ing them - which this did at first - therefore answered "on" forever and
+        // the label never hid. A single-SIM phone cannot show the bug, which is why it
+        // survived until a two-card report arrived.
         try {
             final android.content.ContentResolver cr = sContext.getContentResolver();
             final int[] slots = sSlotLevels;
-            // The card that carries data answers first. With two cards the per-card keys can
-            // disagree, and the reading on screen is about the card the glyph describes.
-            if (sDataSlot >= 0 && sDataSlot < SIM_SLOTS && slots != null && slots[sDataSlot] >= 0) {
-                final int v = android.provider.Settings.Global.getInt(
-                        cr, "mobile_data" + (sDataSlot + 1), -1);
-                if (v >= 0) {
-                    return v != 0;
-                }
-            }
-            // Otherwise ask only the slots that hold a card. An empty slot keeps whatever value
-            // it was left with - measured here: with one card in, mobile_data2 still read 1
-            // while the live card was switched off, so OR-ing every key pinned the label on
-            // forever. That single-card case is what made "hide when data is off" look broken.
             boolean saw = false;
-            boolean anyOn = false;
+            boolean allOff = true;
             for (int i = 0; i < SIM_SLOTS; i++) {
                 if (slots != null && slots[i] < 0) {
                     continue;
                 }
                 final int v = android.provider.Settings.Global.getInt(
                         cr, "mobile_data" + (i + 1), -1);
-                if (v >= 0) {
-                    saw = true;
-                    anyOn |= v != 0;
+                if (v < 0) {
+                    continue;
+                }
+                saw = true;
+                if (v != 0) {
+                    allOff = false;
                 }
             }
             if (saw) {
-                return anyOn;
+                return !allOff;
             }
             return android.provider.Settings.Global.getInt(cr, "mobile_data", 1) != 0;
         } catch (java.lang.Throwable ignored) {

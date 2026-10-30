@@ -109,44 +109,11 @@ final class DataPresence {
     }
 
     /**
-     * Reads the switch the same way {@link TrioState} does, so the event path and the draw path
-     * can never disagree about what "on" means.
+     * Reads the switch through {@link TrioState}, so the event path and the draw path can
+     * never disagree about what "on" means - one implementation, two callers.
      */
     private static boolean read(Context context) {
-        try {
-            final ContentResolver cr = context.getContentResolver();
-            final int[] slots = TrioState.sSlotLevels;
-            // The data card answers first: with two cards the per-card keys can disagree.
-            final int dataSlot = TrioState.sDataSlot;
-            if (dataSlot >= 0 && dataSlot < TrioState.SIM_SLOTS
-                    && slots != null && slots[dataSlot] >= 0) {
-                final int v = Settings.Global.getInt(cr, "mobile_data" + (dataSlot + 1), -1);
-                if (v >= 0) {
-                    return v != 0;
-                }
-            }
-            // Otherwise ask only the slots that hold a card. An empty slot keeps the value it
-            // was left with, which is what pinned the label on for single-card installs.
-            boolean saw = false;
-            boolean anyOn = false;
-            for (int i = 0; i < TrioState.SIM_SLOTS; i++) {
-                if (slots != null && slots[i] < 0) {
-                    continue;
-                }
-                final int v = Settings.Global.getInt(cr, "mobile_data" + (i + 1), -1);
-                if (v >= 0) {
-                    saw = true;
-                    anyOn |= v != 0;
-                }
-            }
-            if (saw) {
-                return anyOn;
-            }
-            return Settings.Global.getInt(cr, "mobile_data", 1) != 0;
-        } catch (Throwable ignored) {
-            final Boolean last = sLast;
-            return last != null ? last.booleanValue() : true;
-        }
+        return TrioState.readDataEnabled();
     }
 
     /** Records the value and schedules a repaint when it changed. */
