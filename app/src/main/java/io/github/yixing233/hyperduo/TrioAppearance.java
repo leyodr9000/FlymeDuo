@@ -139,6 +139,8 @@ public final class TrioAppearance {
     public final int dualMatrixDy;
     /** Extra mouth width the ring gives the matrix, in degrees. */
     public final int dualMouthExtra;
+    public final int chargeGapGlyph;
+    public final int chargeGapIcon;
     /**
      * SIM 1's own row of four dots is wanted, as a component of its own.
      *
@@ -341,6 +343,8 @@ public final class TrioAppearance {
         dualMatrixGap = c.dualMatrixGap;
         dualMatrixDy = c.dualMatrixDy;
         dualMouthExtra = c.dualMouthExtra;
+        chargeGapGlyph = c.chargeGapGlyph;
+        chargeGapIcon = c.chargeGapIcon;
         showSim1 = c.showSim1;
         showSim2 = c.showSim2;
         dataSimOnly = c.dataSimOnly;

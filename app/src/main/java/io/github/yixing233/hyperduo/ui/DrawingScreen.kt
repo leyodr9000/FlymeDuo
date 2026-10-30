@@ -364,6 +364,9 @@ private fun DrawingEditorCard(
                             R.string.power_save_color_summary, R.string.short_power_save) { v -> update { it.setPowerSaveColor(v) } },
                     ),
                     enabled = settings.enabled,
+                    sliders = listOf(chargeGapGlyphSlider, chargeGapIconSlider),
+                    settings = settings,
+                    update = update,
                 )
                 // The pair and everything that positions it, as one row that opens a sheet.
                 DualStackGroup(settings, update)

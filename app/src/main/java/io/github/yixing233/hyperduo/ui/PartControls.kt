@@ -827,6 +827,9 @@ internal fun SwitchSheetGroup(
     switches: List<SheetSwitch>,
     enabled: Boolean,
     modifier: Modifier = Modifier,
+    sliders: List<SliderSpec> = emptyList(),
+    settings: TrioSettings? = null,
+    update: (((SettingsRepository) -> Unit) -> Unit)? = null,
 ) {
     var sheet by rememberSaveable { mutableStateOf(false) }
     val on = stringResource(R.string.switch_state_on)
@@ -858,6 +861,9 @@ internal fun SwitchSheetGroup(
                         summary = stringResource(s.summaryRes),
                         onCheckedChange = s.onChange,
                     )
+                }
+                if (settings != null && update != null) {
+                    sliders.forEach { spec -> SliderRow(spec, settings, update) }
                 }
             }
         }
@@ -894,6 +900,34 @@ internal val dualStackDySlider: SliderSpec = SliderSpec(
     summaryRes = { R.string.dual_stack_dy_summary },
     // Only meaningful for the arc pair; the matrix carries its own vertical nudge.
     enabled = { it.glyph && it.dualInsideRing && !it.dualStackMatrix },
+)
+
+internal val chargeGapGlyphSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_CHARGE_GAP_GLYPH,
+    max = Prefs.MAX_CHARGE_GAP_GLYPH,
+    def = Prefs.DEF_CHARGE_GAP_GLYPH,
+    read = { it.chargeGapGlyph },
+    write = { r, v -> r.setChargeGapGlyph(v) },
+    titleRes = { R.string.charge_gap_glyph_title },
+    summaryRes = { R.string.charge_gap_glyph_summary },
+    enabled = { it.glyph && it.sysChargeIcon },
+    suffix = "dp",
+)
+
+internal val chargeGapIconSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_CHARGE_GAP_ICON,
+    max = Prefs.MAX_CHARGE_GAP_ICON,
+    def = Prefs.DEF_CHARGE_GAP_ICON,
+    read = { it.chargeGapIcon },
+    write = { r, v -> r.setChargeGapIcon(v) },
+    titleRes = { R.string.charge_gap_icon_title },
+    summaryRes = { R.string.charge_gap_icon_summary },
+    enabled = { it.glyph && it.sysChargeIcon },
+    suffix = "dp",
 )
 
 internal val dualMouthExtraSlider: SliderSpec = SliderSpec(

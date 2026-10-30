@@ -1527,6 +1527,16 @@ public final class Prefs {
     public static final int DEF_DUAL_MOUTH_EXTRA = 18;
     public static final int MIN_DUAL_MOUTH_EXTRA = 0;
     public static final int MAX_DUAL_MOUTH_EXTRA = 60;
+    /** Gap between the system charging bolt and the glyph, dp. */
+    public static final String KEY_CHARGE_GAP_GLYPH = "charge_gap_glyph_dp";
+    public static final int DEF_CHARGE_GAP_GLYPH = 2;
+    public static final int MIN_CHARGE_GAP_GLYPH = 0;
+    public static final int MAX_CHARGE_GAP_GLYPH = 16;
+    /** Gap between the system charging bolt and the neighbouring system icon, dp. */
+    public static final String KEY_CHARGE_GAP_ICON = "charge_gap_icon_dp";
+    public static final int DEF_CHARGE_GAP_ICON = 4;
+    public static final int MIN_CHARGE_GAP_ICON = 0;
+    public static final int MAX_CHARGE_GAP_ICON = 16;
     public static final int MIN_DUAL_MATRIX_SIZE = 14;
     public static final int MAX_DUAL_MATRIX_SIZE = 80;
     public static final int MIN_DUAL_MATRIX_GAP = 160;

@@ -391,4 +391,8 @@
     <string name="sys_charge_icon_left_title">充电图标在左侧</string>
     <string name="sys_charge_icon_left_summary">开：闪电在三合一图标左边（与原版一致）。关：在右边</string>
     <string name="short_charge_icon_left">左侧</string>
+    <string name="charge_gap_glyph_title">闪电与三合一间距</string>
+    <string name="charge_gap_glyph_summary">闪电和三合一图标之间的距离</string>
+    <string name="charge_gap_icon_title">闪电与其他图标间距</string>
+    <string name="charge_gap_icon_summary">闪电和另一侧系统图标（如铃铛、信号）之间的距离</string>
 </resources>

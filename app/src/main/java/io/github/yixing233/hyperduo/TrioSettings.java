@@ -228,6 +228,8 @@ public final class TrioSettings {
     public int dualMatrixDy;
     /** Extra mouth width the ring gives the matrix, in degrees. */
     public int dualMouthExtra;
+    public int chargeGapGlyph;
+    public int chargeGapIcon;
     /** While charging the ring centre shows the percentage; see {@link Prefs#KEY_CHARGING_SHOWS_VALUE}. */
     public boolean chargingShowsValue;
     /**
@@ -417,6 +419,8 @@ public final class TrioSettings {
         s.dualMatrixGap = Prefs.DEF_DUAL_MATRIX_GAP;
         s.dualMatrixDy = Prefs.DEF_DUAL_MATRIX_DY;
         s.dualMouthExtra = Prefs.DEF_DUAL_MOUTH_EXTRA;
+        s.chargeGapGlyph = Prefs.DEF_CHARGE_GAP_GLYPH;
+        s.chargeGapIcon = Prefs.DEF_CHARGE_GAP_ICON;
         s.chargingShowsValue = Prefs.DEF_CHARGING_SHOWS_VALUE;
         s.fontPath = Prefs.DEF_FONT_PATH;
         s.dotScale = Prefs.DEF_DOT_SCALE;
@@ -652,6 +656,12 @@ public final class TrioSettings {
         s.dualMouthExtra = Prefs.clamp(
                 p.getInt(Prefs.KEY_DUAL_MOUTH_EXTRA, Prefs.DEF_DUAL_MOUTH_EXTRA),
                 Prefs.MIN_DUAL_MOUTH_EXTRA, Prefs.MAX_DUAL_MOUTH_EXTRA);
+        s.chargeGapGlyph = Prefs.clamp(
+                p.getInt(Prefs.KEY_CHARGE_GAP_GLYPH, Prefs.DEF_CHARGE_GAP_GLYPH),
+                Prefs.MIN_CHARGE_GAP_GLYPH, Prefs.MAX_CHARGE_GAP_GLYPH);
+        s.chargeGapIcon = Prefs.clamp(
+                p.getInt(Prefs.KEY_CHARGE_GAP_ICON, Prefs.DEF_CHARGE_GAP_ICON),
+                Prefs.MIN_CHARGE_GAP_ICON, Prefs.MAX_CHARGE_GAP_ICON);
         s.chargingShowsValue = p.getBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE,
                 Prefs.DEF_CHARGING_SHOWS_VALUE);
         s.fontPath = readFontPath(p.getString(Prefs.KEY_FONT_PATH, Prefs.DEF_FONT_PATH));
@@ -1017,6 +1027,8 @@ public final class TrioSettings {
         s.dualMatrixGap = dualMatrixGap;
         s.dualMatrixDy = dualMatrixDy;
         s.dualMouthExtra = dualMouthExtra;
+        s.chargeGapGlyph = chargeGapGlyph;
+        s.chargeGapIcon = chargeGapIcon;
         s.chargingShowsValue = chargingShowsValue;
         s.fontPath = fontPath;
         s.dotScale = dotScale;
@@ -1131,6 +1143,8 @@ public final class TrioSettings {
             case Prefs.KEY_DUAL_MATRIX_GAP: dualMatrixGap = src.dualMatrixGap; return true;
             case Prefs.KEY_DUAL_MATRIX_DY: dualMatrixDy = src.dualMatrixDy; return true;
             case Prefs.KEY_DUAL_MOUTH_EXTRA: dualMouthExtra = src.dualMouthExtra; return true;
+            case Prefs.KEY_CHARGE_GAP_GLYPH: chargeGapGlyph = src.chargeGapGlyph; return true;
+            case Prefs.KEY_CHARGE_GAP_ICON: chargeGapIcon = src.chargeGapIcon; return true;
             case Prefs.KEY_DUAL_STACK_MATRIX: dualStackMatrix = src.dualStackMatrix;
                 return true;
             case Prefs.KEY_CHARGING_SHOWS_VALUE: chargingShowsValue = src.chargingShowsValue; return true;
@@ -1335,6 +1349,12 @@ public final class TrioSettings {
         s.dualMouthExtra = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_DUAL_MOUTH_EXTRA, Prefs.DEF_DUAL_MOUTH_EXTRA),
                 Prefs.MIN_DUAL_MOUTH_EXTRA, Prefs.MAX_DUAL_MOUTH_EXTRA);
+        s.chargeGapGlyph = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_CHARGE_GAP_GLYPH, Prefs.DEF_CHARGE_GAP_GLYPH),
+                Prefs.MIN_CHARGE_GAP_GLYPH, Prefs.MAX_CHARGE_GAP_GLYPH);
+        s.chargeGapIcon = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_CHARGE_GAP_ICON, Prefs.DEF_CHARGE_GAP_ICON),
+                Prefs.MIN_CHARGE_GAP_ICON, Prefs.MAX_CHARGE_GAP_ICON);
         s.chargingShowsValue = bundle.getBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE,
                 Prefs.DEF_CHARGING_SHOWS_VALUE);
         s.fontPath = readFontPath(bundle.getString(Prefs.KEY_FONT_PATH, Prefs.DEF_FONT_PATH));
@@ -1462,6 +1482,8 @@ public final class TrioSettings {
         b.putInt(Prefs.KEY_DUAL_MATRIX_GAP, dualMatrixGap);
         b.putInt(Prefs.KEY_DUAL_MATRIX_DY, dualMatrixDy);
         b.putInt(Prefs.KEY_DUAL_MOUTH_EXTRA, dualMouthExtra);
+        b.putInt(Prefs.KEY_CHARGE_GAP_GLYPH, chargeGapGlyph);
+        b.putInt(Prefs.KEY_CHARGE_GAP_ICON, chargeGapIcon);
         b.putBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE, chargingShowsValue);
         b.putString(Prefs.KEY_FONT_PATH, fontPath);
         b.putInt(Prefs.KEY_DOT_SCALE, dotScale);
@@ -1605,6 +1627,8 @@ public final class TrioSettings {
                 && dualMatrixGap == s.dualMatrixGap
                 && dualMatrixDy == s.dualMatrixDy
                 && dualMouthExtra == s.dualMouthExtra
+                && chargeGapGlyph == s.chargeGapGlyph
+                && chargeGapIcon == s.chargeGapIcon
                 && chargingShowsValue == s.chargingShowsValue
                 // Objects.equals, not ==: the font path is the one reference-typed
                 // field here, and == would compare identities. Two snapshots built
@@ -1638,6 +1662,8 @@ public final class TrioSettings {
         h = h * 31 + dualMatrixGap;
         h = h * 31 + dualMatrixDy;
         h = h * 31 + dualMouthExtra;
+        h = h * 31 + chargeGapGlyph;
+        h = h * 31 + chargeGapIcon;
         h = h * 31 + perfScale;
         h = h * 31 + perfWeight;
         h = h * 31 + glyphScale;

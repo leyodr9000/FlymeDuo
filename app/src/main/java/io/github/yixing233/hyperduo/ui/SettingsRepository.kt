@@ -399,6 +399,8 @@ class SettingsRepository(context: Context) {
     fun setDualMatrixGap(value: Int) = writeInt(Prefs.KEY_DUAL_MATRIX_GAP, value)
     fun setDualMatrixDy(value: Int) = writeInt(Prefs.KEY_DUAL_MATRIX_DY, value)
     fun setDualMouthExtra(value: Int) = writeInt(Prefs.KEY_DUAL_MOUTH_EXTRA, value)
+    fun setChargeGapGlyph(value: Int) = writeInt(Prefs.KEY_CHARGE_GAP_GLYPH, value)
+    fun setChargeGapIcon(value: Int) = writeInt(Prefs.KEY_CHARGE_GAP_ICON, value)
 
     /** Interior cell nudges; see [Prefs.KEY_CAPSULE_LEFT_DX]. */
     fun setCapsuleLeftDx(value: Int) = writeInt(Prefs.KEY_CAPSULE_LEFT_DX, value)
@@ -485,6 +487,8 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_DUAL_MATRIX_GAP, snapshot.dualMatrixGap)
             prefs.putInt(Prefs.KEY_DUAL_MATRIX_DY, snapshot.dualMatrixDy)
             prefs.putInt(Prefs.KEY_DUAL_MOUTH_EXTRA, snapshot.dualMouthExtra)
+            prefs.putInt(Prefs.KEY_CHARGE_GAP_GLYPH, snapshot.chargeGapGlyph)
+            prefs.putInt(Prefs.KEY_CHARGE_GAP_ICON, snapshot.chargeGapIcon)
             // A key missing from this list is re-pushed as its default after every
             // framework reconnect, so a chosen font would silently revert on the
             // next bind. This is the list DEVELOPMENT.md calls out for exactly that

@@ -138,7 +138,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.72";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.73";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -599,7 +599,7 @@ final class FlymeHooks {
         final boolean hideRule = stockTypeHidden(io.github.yixing233.hyperduo.TrioConfig.appearance());
         for (int i = 0; i < views.size(); i++) {
             final android.view.View v = views.get(i);
-            final boolean hide = enabled && hideRule && !excludedRegion(v);
+            final boolean hide = enabled && hideRule && !iconExcluded(v);
             // Only touch a view that currently shows an icon: an empty one is Flyme's own
             // "no type" state and must stay as Flyme left it.
             if (v instanceof android.widget.ImageView
@@ -921,7 +921,7 @@ final class FlymeHooks {
                     io.github.yixing233.hyperduo.FlymeHooks.noteStockTypeView(typeView);
                     final boolean hideStock =
                             io.github.yixing233.hyperduo.TrioConfig.get().enabled
-                            && !io.github.yixing233.hyperduo.FlymeHooks.excludedRegion(typeView)
+                            && !io.github.yixing233.hyperduo.FlymeHooks.iconExcluded(typeView)
                             && io.github.yixing233.hyperduo.FlymeHooks.stockTypeHidden(
                                     io.github.yixing233.hyperduo.TrioConfig.appearance());
                     final int wantVisibility = hideStock
@@ -934,7 +934,7 @@ final class FlymeHooks {
                     if (!hideStock && "5G".equals(type)
                             && io.github.yixing233.hyperduo.TrioConfig.get().enabled
                             && io.github.yixing233.hyperduo.TrioConfig.get().demoMobileType
-                            && !io.github.yixing233.hyperduo.FlymeHooks.excludedRegion(typeView)) {
+                            && !io.github.yixing233.hyperduo.FlymeHooks.iconExcluded(typeView)) {
                         io.github.yixing233.hyperduo.FlymeHooks.apply5gaResource(
                                 (android.widget.ImageView) typeView, resId);
                     }
@@ -1018,6 +1018,29 @@ final class FlymeHooks {
      *       the type to hide then - the same rule the module's own label follows.</li>
      * </ul>
      */
+    /**
+     * Whether a stock status ICON (not a battery host) sits on an excluded surface.
+     *
+     * <p>Icons are decided by the captured icon container they live in, never by class
+     * names, and a miss is NOT cached: the signal / 5G views are bound before they are
+     * attached under their container, and the battery path's cache then filed every one of
+     * them - the control centre's included - as status bar for the life of the process.
+     */
+    static boolean iconExcluded(android.view.View v) {
+        android.view.ViewParent p = v.getParent();
+        for (int depth = 0; p instanceof android.view.View && depth < 16; depth++) {
+            final boolean isContainer;
+            synchronized (STATUS_ICON_CONTAINERS) {
+                isContainer = STATUS_ICON_CONTAINERS.containsKey(p);
+            }
+            if (isContainer) {
+                return excludedRegion((android.view.View) p);
+            }
+            p = p.getParent();
+        }
+        return false;
+    }
+
     static boolean stockTypeHidden(io.github.yixing233.hyperduo.TrioAppearance a) {
         if (!a.glyph || !a.typeAnywhere()) {
             return false;
@@ -1520,11 +1543,14 @@ final class FlymeHooks {
         // Side and gap. Left: the bolt is the piece nearest the glyph and applyOutOrder places
         // it (so the out-of-ring pieces sit outside it, and the order check stays stable).
         // Right: it sits directly after the glyph, moved only when it is not already there.
-        final int gap = java.lang.Math.round(2 * host.getResources().getDisplayMetrics().density);
+        // Two user gaps: to the glyph, and to the neighbouring system icon on the far side.
+        final float density = host.getResources().getDisplayMetrics().density;
+        final int toGlyph = java.lang.Math.round(a.chargeGapGlyph * density);
+        final int toIcon = java.lang.Math.round(a.chargeGapIcon * density);
         final android.widget.LinearLayout.LayoutParams vlp =
                 (android.widget.LinearLayout.LayoutParams) view.getLayoutParams();
-        final int wantLeft = a.sysChargeIconLeft ? 0 : gap;
-        final int wantRight = a.sysChargeIconLeft ? gap : 0;
+        final int wantLeft = a.sysChargeIconLeft ? toIcon : toGlyph;
+        final int wantRight = a.sysChargeIconLeft ? toGlyph : toIcon;
         if (vlp.leftMargin != wantLeft || vlp.rightMargin != wantRight) {
             vlp.leftMargin = wantLeft;
             vlp.rightMargin = wantRight;

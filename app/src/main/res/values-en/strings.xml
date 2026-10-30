@@ -385,4 +385,8 @@
     <string name="sys_charge_icon_left_title">Charging icon on the left</string>
     <string name="sys_charge_icon_left_summary">On: the bolt sits left of the glyph (stock order). Off: on the right.</string>
     <string name="short_charge_icon_left">Left</string>
+    <string name="charge_gap_glyph_title">Bolt to glyph gap</string>
+    <string name="charge_gap_glyph_summary">Space between the bolt and the glyph.</string>
+    <string name="charge_gap_icon_title">Bolt to icons gap</string>
+    <string name="charge_gap_icon_summary">Space between the bolt and the system icon on its other side.</string>
 </resources>
