@@ -729,12 +729,17 @@ internal fun DualStackGroup(
     )
     if (sheet) {
         val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        // A sheet taller than the screen has to scroll or its last rows are unreachable -
+        // the capsule and matrix sliders alone are taller than a short phone's sheet.
+        // Same 72% cap the component sheet uses, so the two behave alike.
+        val maxSheet = (LocalConfiguration.current.screenHeightDp * 0.72f).dp
         OverlayBottomSheet(
             show = true,
             title = stringResource(R.string.dual_stack_group_title),
             onDismissRequest = { sheet = false },
         ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(bottom = bottomInset)) {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(max = maxSheet)
+                .verticalScroll(rememberScrollState()).padding(bottom = bottomInset)) {
                 SwitchPreferenceGroup(
                     checked = settings.dualInsideRing,
                     title = stringResource(R.string.dual_inside_ring_title),
@@ -878,12 +883,17 @@ internal fun GlyphSizeGroup(
     )
     if (sheet) {
         val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        // A sheet taller than the screen has to scroll or its last rows are unreachable -
+        // the capsule and matrix sliders alone are taller than a short phone's sheet.
+        // Same 72% cap the component sheet uses, so the two behave alike.
+        val maxSheet = (LocalConfiguration.current.screenHeightDp * 0.72f).dp
         OverlayBottomSheet(
             show = true,
             title = stringResource(R.string.glyph_size_group_title),
             onDismissRequest = { sheet = false },
         ) {
-            Column(modifier = Modifier.fillMaxWidth().padding(bottom = bottomInset)) {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(max = maxSheet)
+                .verticalScroll(rememberScrollState()).padding(bottom = bottomInset)) {
                 glyphSizeSpecs.forEach { spec ->
                     val hint = gateHintFor(spec, a)
                     if (hint == null) {

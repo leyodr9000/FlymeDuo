@@ -874,6 +874,8 @@ public final class TrioAppearance {
         public final boolean gapUsed;
         /** The two cards are drawn inside the ring this frame; see stacksDualRows. */
         public final boolean stackedDual;
+        /** The pair is drawn as a matrix this frame, so the mouth widens for it. */
+        public final boolean stackedMatrix;
         /**
          * The level dots are drawn as two rows, one per SIM, instead of one row
          * for the current data SIM.
@@ -894,12 +896,14 @@ public final class TrioAppearance {
          */
         public float gapStart() {
             return !gapUsed ? TrioGeometry.GAP_NONE
+                    : stackedMatrix ? TrioGeometry.GAP_START_STACK
                     : dual ? TrioGeometry.GAP_START_DUAL
                     : bolt ? TrioGeometry.GAP_START_CHARGE : TrioGeometry.GAP_START_IDLE;
         }
 
         public float gapEnd() {
             return !gapUsed ? TrioGeometry.GAP_NONE
+                    : stackedMatrix ? TrioGeometry.GAP_END_STACK
                     : dual ? TrioGeometry.GAP_END_DUAL
                     : bolt ? TrioGeometry.GAP_END_CHARGE : TrioGeometry.GAP_END_IDLE;
         }
@@ -1002,6 +1006,13 @@ public final class TrioAppearance {
             // moves. Keeping the parts means the mouth opens exactly as before, and the
             // renderer skips re-drawing the rows in it (they are painted as the nested pair).
             stackedDual = a.stacksDualRows(sims);
+            // The matrix wants a wider mouth than the arcs do - four dots across is a wider
+            // footprint than one row of beads, and at the idle width the outer dots crowd the
+            // rounded stroke ends. Set before gapUsed, which consults it.
+            // Only when the pair hangs from the top: at the bottom the ring already has its
+            // natural opening to give the matrix, and widening the 12 o'clock mouth instead
+            // would open the wrong end.
+            stackedMatrix = stackedDual && a.dualStackMatrix() && !a.dualStackAtBottom();
 
             // A charger puts the number in the middle, whatever the layout arranged there.
             //
@@ -1026,7 +1037,9 @@ public final class TrioAppearance {
             wifiInGap = parts[0] == Prefs.PART_WIFI;
             typeInCentre = parts[1] == Prefs.PART_TYPE;
             typeInGap = parts[0] == Prefs.PART_TYPE;
-            gapUsed = parts[0] != Prefs.PART_NONE;
+            // The matrix opens the mouth even though nothing is threaded on it: the wider
+            // opening IS the feature - it is room the matrix gets from the ring.
+            gapUsed = parts[0] != Prefs.PART_NONE || stackedMatrix;
             // The dual switch does not change how a zone is drawn. It used to mean "add a
             // second row to the meter, and widen the notch to hold it" - but a zone draws one
             // piece, so a second row has nowhere to go. Two cards are expressed by placing

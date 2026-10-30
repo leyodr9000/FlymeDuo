@@ -148,6 +148,29 @@ final class TrioGeometry {
     static final float GAP_END_DUAL = 180f / B_SWEEP;
 
     /**
+     * Extra mouth width, in degrees, when the two cards are drawn as a matrix.
+     *
+     * <p>The matrix needs room the arc was not leaving it: four dots across is a wider
+     * footprint than a single row of beads, and at the idle mouth the outer dots crowd the
+     * rounded stroke ends. Widening the mouth pulls BOTH side arcs back by half of it, which
+     * is the "the ring gives the matrix some space" look the reference has.
+     *
+     * <p>The battery reading is unaffected in meaning: the level still fills its fraction of
+     * whatever arc remains, so the ring around the matrix is the same ring, just opened a
+     * little further. Nothing about the level-to-sweep mapping changes.
+     */
+    static final float STACK_MOUTH_EXTRA_DEG = 40f;
+
+    /** The matrix mouth, as path progress: the idle gap plus its extra width. */
+    static final float GAP_START_STACK =
+            0.5f - (GAP_WIDTH_DEG + STACK_MOUTH_EXTRA_DEG) / 2f / B_SWEEP;
+    static final float GAP_END_STACK =
+            0.5f + (GAP_WIDTH_DEG + STACK_MOUTH_EXTRA_DEG) / 2f / B_SWEEP;
+
+    /** The same width in degrees, for the dot rows that have to clear it. */
+    static final float GAP_WIDTH_STACK_DEG = GAP_WIDTH_DEG + STACK_MOUTH_EXTRA_DEG;
+
+    /**
      * Gap used when nothing is drawn in the 12 o'clock slot.
      *
      * <p>A zero-width gap at position 0 makes the ring draw as one unbroken arc:
