@@ -1487,6 +1487,18 @@ public final class Prefs {
     public static final int DEF_DUAL_MATRIX_SIZE = 42;
     public static final int DEF_DUAL_MATRIX_GAP = 300;
     public static final int DEF_DUAL_MATRIX_DY = 0;
+    /**
+     * Extra mouth width, in degrees, that the ring gives the matrix.
+     *
+     * <p>A setting rather than a constant because the right answer is a look, not a number:
+     * the first attempt opened 40 degrees, which read as too much of a gap against the
+     * reference. Halving it was the fix, and a knob keeps the next adjustment from being a
+     * release. Zero restores the plain ring.
+     */
+    public static final String KEY_DUAL_MOUTH_EXTRA = "dual_mouth_extra_deg";
+    public static final int DEF_DUAL_MOUTH_EXTRA = 18;
+    public static final int MIN_DUAL_MOUTH_EXTRA = 0;
+    public static final int MAX_DUAL_MOUTH_EXTRA = 60;
     public static final int MIN_DUAL_MATRIX_SIZE = 14;
     public static final int MAX_DUAL_MATRIX_SIZE = 80;
     public static final int MIN_DUAL_MATRIX_GAP = 160;

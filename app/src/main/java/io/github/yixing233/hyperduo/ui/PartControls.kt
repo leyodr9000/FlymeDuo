@@ -776,6 +776,7 @@ internal fun DualStackGroup(
                     onCheckedChange = { value -> update { it.setDemoDualSim(value) } },
                 )
                 if (settings.dualStackMatrix) {
+                    SliderRow(dualMouthExtraSlider, settings, update)
                     SliderRow(dualMatrixSizeSlider, settings, update)
                     SliderRow(dualMatrixGapSlider, settings, update)
                     SliderRow(dualMatrixDySlider, settings, update)
@@ -819,6 +820,19 @@ internal val dualStackDySlider: SliderSpec = SliderSpec(
     enabled = { it.glyph && it.dualInsideRing && !it.dualStackMatrix },
 )
 
+internal val dualMouthExtraSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_DUAL_MOUTH_EXTRA,
+    max = Prefs.MAX_DUAL_MOUTH_EXTRA,
+    def = Prefs.DEF_DUAL_MOUTH_EXTRA,
+    read = { it.dualMouthExtra },
+    write = { r, v -> r.setDualMouthExtra(v) },
+    titleRes = { R.string.dual_mouth_extra_title },
+    summaryRes = { R.string.dual_mouth_extra_summary },
+    enabled = { it.glyph && it.dualInsideRing && it.dualStackMatrix },
+    suffix = "°",
+)
 internal val dualMatrixSizeSlider: SliderSpec = SliderSpec(
     group = GeometryGroup.Scale,
     part = null,

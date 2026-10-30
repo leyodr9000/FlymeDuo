@@ -129,6 +129,8 @@ public final class TrioAppearance {
     public final int dualMatrixSize;
     public final int dualMatrixGap;
     public final int dualMatrixDy;
+    /** Extra mouth width the ring gives the matrix, in degrees. */
+    public final int dualMouthExtra;
     /**
      * SIM 1's own row of four dots is wanted, as a component of its own.
      *
@@ -324,6 +326,7 @@ public final class TrioAppearance {
         dualMatrixSize = c.dualMatrixSize;
         dualMatrixGap = c.dualMatrixGap;
         dualMatrixDy = c.dualMatrixDy;
+        dualMouthExtra = c.dualMouthExtra;
         showSim1 = c.showSim1;
         showSim2 = c.showSim2;
         dataSimOnly = c.dataSimOnly;
@@ -878,6 +881,8 @@ public final class TrioAppearance {
         public final boolean stackedMatrix;
         /** The matrix hangs from the bottom, so the LOWER opening is the one to widen. */
         public final boolean stackedMatrixBottom;
+        /** Degrees of extra mouth the matrix gets; zero means the plain ring. */
+        public final float mouthExtraDeg;
         /**
          * The level dots are drawn as two rows, one per SIM, instead of one row
          * for the current data SIM.
@@ -898,14 +903,18 @@ public final class TrioAppearance {
          */
         public float gapStart() {
             return !gapUsed ? TrioGeometry.GAP_NONE
-                    : stackedMatrix ? TrioGeometry.GAP_START_STACK
+                    : stackedMatrix
+                            ? 0.5f - (TrioGeometry.GAP_WIDTH_DEG + mouthExtraDeg)
+                                    / 2f / TrioGeometry.B_SWEEP
                     : dual ? TrioGeometry.GAP_START_DUAL
                     : bolt ? TrioGeometry.GAP_START_CHARGE : TrioGeometry.GAP_START_IDLE;
         }
 
         public float gapEnd() {
             return !gapUsed ? TrioGeometry.GAP_NONE
-                    : stackedMatrix ? TrioGeometry.GAP_END_STACK
+                    : stackedMatrix
+                            ? 0.5f + (TrioGeometry.GAP_WIDTH_DEG + mouthExtraDeg)
+                                    / 2f / TrioGeometry.B_SWEEP
                     : dual ? TrioGeometry.GAP_END_DUAL
                     : bolt ? TrioGeometry.GAP_END_CHARGE : TrioGeometry.GAP_END_IDLE;
         }
@@ -932,7 +941,7 @@ public final class TrioAppearance {
             // unlike the top gap this one is simply 360 - sweep, so this is the only way to
             // widen it. arcStart re-centres the missing part on 6 o'clock from the sweep.
             if (stackedMatrixBottom) {
-                return TrioGeometry.B_SWEEP_STACK;
+                return TrioGeometry.B_SWEEP - mouthExtraDeg;
             }
             return bottomOpen() ? TrioGeometry.B_SWEEP : 360f;
         }
@@ -1026,6 +1035,9 @@ public final class TrioAppearance {
             // ever have one correct value.
             stackedMatrixBottom = stackedDual && a.dualStackMatrix() && a.dualStackAtBottom();
             stackedMatrix = stackedDual && a.dualStackMatrix() && !a.dualStackAtBottom();
+            // Resolved once here, after both flags: the gap accessors run per frame and this
+            // keeps the arithmetic out of them. Zero restores the plain ring.
+            mouthExtraDeg = stackedMatrix || stackedMatrixBottom ? a.dualMouthExtra : 0f;
 
             // A charger puts the number in the middle, whatever the layout arranged there.
             //

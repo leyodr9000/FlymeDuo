@@ -157,7 +157,9 @@
     <string name="dual_stack_bottom_summary">On puts the pair at 6 o clock, off at 12. The ring opens automatically on whichever side the matrix hangs, so there is no separate switch for it.</string>
     <string name="dual_stack_dx_title">Pair horizontal</string>
     <string name="dual_stack_dx_summary">Shifts the whole pair left or right; negative moves left. Only this pair moves.</string>
-    <string name="slider_default_note">(default %1$s)</string>
+    <string name="slider_default_note">default %1$s</string>
+    <string name="dual_mouth_extra_title">Room the ring gives the matrix</string>
+    <string name="dual_mouth_extra_summary">Extra width, in degrees, added to the mouth on the matrix side, half to each end. Zero leaves the ring untouched. Look only; the battery proportion does not change.</string>
     <string name="dual_matrix_size_title">Matrix dot size</string>
     <string name="dual_matrix_size_summary">Dot radius as a percentage of the ring stroke. The matrix never scales with its vertical position; this is the only size control it has.</string>
     <string name="dual_matrix_gap_title">Matrix pitch</string>

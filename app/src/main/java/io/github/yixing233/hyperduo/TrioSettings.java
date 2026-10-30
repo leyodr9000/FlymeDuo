@@ -224,6 +224,8 @@ public final class TrioSettings {
     public int dualMatrixSize;
     public int dualMatrixGap;
     public int dualMatrixDy;
+    /** Extra mouth width the ring gives the matrix, in degrees. */
+    public int dualMouthExtra;
     /** While charging the ring centre shows the percentage; see {@link Prefs#KEY_CHARGING_SHOWS_VALUE}. */
     public boolean chargingShowsValue;
     /**
@@ -402,6 +404,7 @@ public final class TrioSettings {
         s.dualMatrixSize = Prefs.DEF_DUAL_MATRIX_SIZE;
         s.dualMatrixGap = Prefs.DEF_DUAL_MATRIX_GAP;
         s.dualMatrixDy = Prefs.DEF_DUAL_MATRIX_DY;
+        s.dualMouthExtra = Prefs.DEF_DUAL_MOUTH_EXTRA;
         s.chargingShowsValue = Prefs.DEF_CHARGING_SHOWS_VALUE;
         s.fontPath = Prefs.DEF_FONT_PATH;
         s.dotScale = Prefs.DEF_DOT_SCALE;
@@ -623,6 +626,9 @@ public final class TrioSettings {
         s.dualMatrixDy = Prefs.clamp(
                 p.getInt(Prefs.KEY_DUAL_MATRIX_DY, Prefs.DEF_DUAL_MATRIX_DY),
                 Prefs.MIN_DUAL_STACK_NUDGE, Prefs.MAX_DUAL_STACK_NUDGE);
+        s.dualMouthExtra = Prefs.clamp(
+                p.getInt(Prefs.KEY_DUAL_MOUTH_EXTRA, Prefs.DEF_DUAL_MOUTH_EXTRA),
+                Prefs.MIN_DUAL_MOUTH_EXTRA, Prefs.MAX_DUAL_MOUTH_EXTRA);
         s.chargingShowsValue = p.getBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE,
                 Prefs.DEF_CHARGING_SHOWS_VALUE);
         s.fontPath = readFontPath(p.getString(Prefs.KEY_FONT_PATH, Prefs.DEF_FONT_PATH));
@@ -982,6 +988,7 @@ public final class TrioSettings {
         s.dualMatrixSize = dualMatrixSize;
         s.dualMatrixGap = dualMatrixGap;
         s.dualMatrixDy = dualMatrixDy;
+        s.dualMouthExtra = dualMouthExtra;
         s.chargingShowsValue = chargingShowsValue;
         s.fontPath = fontPath;
         s.dotScale = dotScale;
@@ -1085,6 +1092,7 @@ public final class TrioSettings {
             case Prefs.KEY_DUAL_MATRIX_SIZE: dualMatrixSize = src.dualMatrixSize; return true;
             case Prefs.KEY_DUAL_MATRIX_GAP: dualMatrixGap = src.dualMatrixGap; return true;
             case Prefs.KEY_DUAL_MATRIX_DY: dualMatrixDy = src.dualMatrixDy; return true;
+            case Prefs.KEY_DUAL_MOUTH_EXTRA: dualMouthExtra = src.dualMouthExtra; return true;
             case Prefs.KEY_DUAL_STACK_MATRIX: dualStackMatrix = src.dualStackMatrix;
                 return true;
             case Prefs.KEY_CHARGING_SHOWS_VALUE: chargingShowsValue = src.chargingShowsValue; return true;
@@ -1275,6 +1283,9 @@ public final class TrioSettings {
         s.dualMatrixDy = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_DUAL_MATRIX_DY, Prefs.DEF_DUAL_MATRIX_DY),
                 Prefs.MIN_DUAL_STACK_NUDGE, Prefs.MAX_DUAL_STACK_NUDGE);
+        s.dualMouthExtra = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_DUAL_MOUTH_EXTRA, Prefs.DEF_DUAL_MOUTH_EXTRA),
+                Prefs.MIN_DUAL_MOUTH_EXTRA, Prefs.MAX_DUAL_MOUTH_EXTRA);
         s.chargingShowsValue = bundle.getBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE,
                 Prefs.DEF_CHARGING_SHOWS_VALUE);
         s.fontPath = readFontPath(bundle.getString(Prefs.KEY_FONT_PATH, Prefs.DEF_FONT_PATH));
@@ -1396,6 +1407,7 @@ public final class TrioSettings {
         b.putInt(Prefs.KEY_DUAL_MATRIX_SIZE, dualMatrixSize);
         b.putInt(Prefs.KEY_DUAL_MATRIX_GAP, dualMatrixGap);
         b.putInt(Prefs.KEY_DUAL_MATRIX_DY, dualMatrixDy);
+        b.putInt(Prefs.KEY_DUAL_MOUTH_EXTRA, dualMouthExtra);
         b.putBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE, chargingShowsValue);
         b.putString(Prefs.KEY_FONT_PATH, fontPath);
         b.putInt(Prefs.KEY_DOT_SCALE, dotScale);
@@ -1533,6 +1545,7 @@ public final class TrioSettings {
                 && dualMatrixSize == s.dualMatrixSize
                 && dualMatrixGap == s.dualMatrixGap
                 && dualMatrixDy == s.dualMatrixDy
+                && dualMouthExtra == s.dualMouthExtra
                 && chargingShowsValue == s.chargingShowsValue
                 // Objects.equals, not ==: the font path is the one reference-typed
                 // field here, and == would compare identities. Two snapshots built
@@ -1565,6 +1578,7 @@ public final class TrioSettings {
         h = h * 31 + dualMatrixSize;
         h = h * 31 + dualMatrixGap;
         h = h * 31 + dualMatrixDy;
+        h = h * 31 + dualMouthExtra;
         h = h * 31 + perfScale;
         h = h * 31 + perfWeight;
         h = h * 31 + glyphScale;
