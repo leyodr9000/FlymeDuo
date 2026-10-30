@@ -86,6 +86,32 @@ final class NrAdvancedPresence {
                 subscribe(sContext);
             }
         });
+        // Follow the data card. Without this the subscription stayed on whatever card was
+        // the default at boot (or on nothing, if the SIM was not up yet) for the whole life
+        // of the process.
+        try {
+            final android.content.IntentFilter filter = new android.content.IntentFilter(
+                    // TelephonyIntents.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED (hidden constant)
+                    "android.intent.action.ACTION_DEFAULT_DATA_SUBSCRIPTION_CHANGED");
+            filter.addAction("android.intent.action.SIM_STATE_CHANGED");
+            final android.content.BroadcastReceiver receiver = new android.content.BroadcastReceiver() {
+                @Override
+                public void onReceive(Context c, android.content.Intent intent) {
+                    // The new card's callback reports its own state on registration.
+                    if (TrioState.setNrAdvanced(false)) {
+                        FlymeHooks.invalidateHosts();
+                    }
+                    subscribe(sContext);
+                }
+            };
+            if (android.os.Build.VERSION.SDK_INT >= 33) {
+                sContext.registerReceiver(receiver, filter, null, MAIN, Context.RECEIVER_EXPORTED);
+            } else {
+                sContext.registerReceiver(receiver, filter, null, MAIN);
+            }
+        } catch (Throwable ignored) {
+            // Keeps the boot-time subscription; nothing worse than before.
+        }
     }
 
     /**

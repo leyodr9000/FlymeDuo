@@ -334,30 +334,9 @@ private fun DrawingEditorCard(
                 // question the switch above answers, not a component detail.
                 ContentControlRow(ContentControl.Exclude, settings, update)
                 GlyphScaleHomeRow(settings, update)
-                // The same lever for the type label. 5G-Advanced coverage is rare enough
-                // that a report about it cannot be reproduced on demand, so the label is
-                // substitutable: if the simulated one draws correctly, the fault is in what
-                // the platform sampled rather than in how the glyph renders it.
-                SwitchPreference(
-                    checked = settings.demoMobileType,
-                    title = stringResource(R.string.demo_mobile_type_title),
-                    summary = stringResource(R.string.demo_mobile_type_summary),
-                    insideMargin = SettingsItemMargin,
-                    onCheckedChange = { value -> update { it.setDemoMobileType(value) } },
-                )
-                // The stock label cannot say 5GA on builds where config_display_5g_a is
-                // false: Flyme never asks for the 5GA resource, so the module would copy
-                // plain 5G forever. This reads the radio state instead.
-                SwitchPreference(
-                    checked = settings.typeFollowNrAdvanced,
-                    title = stringResource(R.string.type_follow_nr_advanced_title),
-                    summary = stringResource(R.string.type_follow_nr_advanced_summary),
-                    insideMargin = SettingsItemMargin,
-                    onCheckedChange = { value -> update { it.setTypeFollowNrAdvanced(value) } },
-                )
-                // The pair and everything that positions it, as one row that opens a sheet:
-                // these settings only mean anything together.
-                DualStackGroup(settings, update)
+                // The 5GA switches live in the network-type sheet, the dual-SIM group in the
+                // signal sheet, and the dual-SIM simulator in About > debug: the master card
+                // only answers "is it on, where, how big".
             }
         }
 

@@ -37,13 +37,15 @@ import top.yukonga.miuix.kmp.preference.SwitchPreference
  * out of ring" switch, and the "stacked signal" style that went with it, were asking the
  * user to choose between states the layout already decides.
  */
-internal enum class ContentControl(val owner: TrioSettingsPart) {
+internal enum class ContentControl(val owner: TrioSettingsPart?) {
     // --- placement: where the piece lives -------------------------------------
+    // Enabled / Exclude are drawn on the home master card and the style by the home style
+    // cards. Owner null keeps them out of every component sheet, so each has one home.
     /** Master switch, then layout: both decide what exists at all. */
-    Enabled(TrioSettingsPart.Appearance),
+    Enabled(null),
     /** Which regions keep Flyme's own battery; sits next to the master switch. */
-    Exclude(TrioSettingsPart.Appearance),
-    Style(TrioSettingsPart.Appearance),
+    Exclude(null),
+    Style(null),
     // --- per component: its own switch ----------------------------------------
     Wifi(TrioSettingsPart.Wifi),
     /**
@@ -85,6 +87,10 @@ internal enum class ContentControl(val owner: TrioSettingsPart) {
     TypeHideOnWifi(TrioSettingsPart.Type),
     /** The twin of the row above, for the mobile-data switch. */
     TypeHideOnDataOff(TrioSettingsPart.Type),
+    /** Draw 5GA when the radio reports NR advanced; see Prefs.KEY_TYPE_FOLLOW_NR_ADVANCED. */
+    TypeFollowNrAdvanced(TrioSettingsPart.Type),
+    /** Manual 5GA: a real 5G label is shown as 5GA; see Prefs.KEY_DEMO_MOBILE_TYPE. */
+    TypeForce5ga(TrioSettingsPart.Type),
     // --- readouts and fixed pieces --------------------------------------------
     Power(TrioSettingsPart.Readouts),
     Temperature(TrioSettingsPart.Readouts),
@@ -186,16 +192,14 @@ internal fun ContentControlRow(
             checked = a.showSim1,
             title = R.string.show_sim_1_title,
             summaryRes = null,
-            dependencies = master + (a.mobile to R.string.show_mobile_title) +
-                (signalInsideRing(a) to R.string.ring_position_mobile),
-        ) { value -> update { it.setShowSim1(value) } }
+            dependencies = master + (signalInsideRing(a) to R.string.ring_position_mobile),
+        ) { value -> update { if (value) it.setShowMobile(true); it.setShowSim1(value) } }
         ContentControl.Sim2 -> ContentToggle(
             checked = a.showSim2,
             title = R.string.show_sim_2_title,
             summaryRes = null,
-            dependencies = master + (a.mobile to R.string.show_mobile_title) +
-                (signalInsideRing(a) to R.string.ring_position_mobile),
-        ) { value -> update { it.setShowSim2(value) } }
+            dependencies = master + (signalInsideRing(a) to R.string.ring_position_mobile),
+        ) { value -> update { if (value) it.setShowMobile(true); it.setShowSim2(value) } }
         ContentControl.Value -> ContentToggle(a.value, R.string.show_value_title,
             null,
             master) { value -> update { it.setShowValue(value) } }
@@ -234,6 +238,16 @@ internal fun ContentControlRow(
             R.string.type_hide_on_data_off_title,
             R.string.type_hide_on_data_off_summary, master) { value ->
                 update { it.setTypeHideOnDataOff(value) }
+            }
+        ContentControl.TypeFollowNrAdvanced -> ContentToggle(settings.typeFollowNrAdvanced,
+            R.string.type_follow_nr_advanced_title,
+            R.string.type_follow_nr_advanced_summary, master) { value ->
+                update { it.setTypeFollowNrAdvanced(value) }
+            }
+        ContentControl.TypeForce5ga -> ContentToggle(settings.demoMobileType,
+            R.string.demo_mobile_type_title,
+            R.string.demo_mobile_type_summary, master) { value ->
+                update { it.setDemoMobileType(value) }
             }
         ContentControl.Power -> ContentToggle(settings.perfPower, R.string.perf_power_title,
             null, master) { value -> update { it.setPerfPower(value) } }
@@ -282,8 +296,11 @@ private fun SignalPositionControl(
  * them. The rectangle cannot, and [TrioAppearance.slotted] is what the callers gate on, so
  * this only has to answer the shared part.
  */
+// No `a.mobile` here: its switch was removed from the UI, so an install that once stored
+// show_mobile=false had both card rows greyed out with no way to turn it back on. Switching
+// a card on now writes show_mobile=true as well (see the Sim1/Sim2 rows).
 private fun signalInsideRing(a: TrioAppearance): Boolean =
-    a.mobile && a.slotted && !a.signalOutOfRing
+    a.slotted && !a.signalOutOfRing
 
 /**
  * One card's third, with the thirds the other card holds disabled.

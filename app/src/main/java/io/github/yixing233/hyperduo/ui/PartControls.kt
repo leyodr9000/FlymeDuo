@@ -788,12 +788,6 @@ internal fun DualStackGroup(
                     enabled = settings.dualInsideRing,
                     onCheckedChange = { value -> update { it.setDualStackMatrix(value) } },
                 )
-                SwitchPreferenceGroup(
-                    checked = settings.demoDualSim,
-                    title = stringResource(R.string.demo_dual_sim_title),
-                    summary = stringResource(R.string.demo_dual_sim_summary),
-                    onCheckedChange = { value -> update { it.setDemoDualSim(value) } },
-                )
                 if (settings.dualStackMatrix) {
                     SliderRow(dualMouthExtraSlider, settings, update)
                     SliderRow(dualMatrixSizeSlider, settings, update)
@@ -1062,7 +1056,9 @@ internal fun PartSettingsSheet(
     val a = TrioAppearance.of(settings)
     val rows = slidersForEditor(part).filterNot { it in glyphSizeSpecs }
     val controls = contentControlsFor(part)
-    val colors = if (part == TrioSettingsPart.Appearance || part == TrioSettingsPart.Battery) RoleColor.entries
+    // The full colour list, the role-colour switch and the threshold live in Appearance only.
+    // Value and bolt keep the one or two colours that are theirs, as a shortcut.
+    val colors = if (part == TrioSettingsPart.Appearance) RoleColor.entries
         else part.part?.let(::roleColorsForPart).orEmpty()
     val configuration = LocalConfiguration.current
     val compact = configuration.screenHeightDp < 600 || configuration.fontScale > 1.3f
@@ -1110,7 +1106,7 @@ internal fun PartSettingsSheet(
                     )
                 }
 
-                if (colors.isNotEmpty()) {
+                if (part == TrioSettingsPart.Appearance) {
                     SwitchPreference(
                         checked = a.roleColors,
                         title = stringResource(R.string.color_role_title),
@@ -1118,7 +1114,7 @@ internal fun PartSettingsSheet(
                         enabled = a.glyph,
                         onCheckedChange = { value -> update { it.setRoleColors(value) } },
                     )
-                    if (part != TrioSettingsPart.Bolt) {
+                    run {
                         IntSlider(
                             value = settings.lowThreshold,
                             min = Prefs.MIN_LOW_THRESHOLD,
@@ -1131,10 +1127,11 @@ internal fun PartSettingsSheet(
                     }
                 }
 
-                if (part == TrioSettingsPart.Battery) {
-                    // One folded group instead of three flat rows, the same
-                    // widget the home page's master section shows.
-                    GlyphSizeGroup(settings, update)
+                // Size & position is on the home master card only; the dual-SIM group moved
+                // here from that card because it is a property of the signal (ring only -
+                // DualStackGroup returns early otherwise).
+                if (part == TrioSettingsPart.Mobile) {
+                    DualStackGroup(settings, update)
                 }
 
                 rows.forEach { spec ->

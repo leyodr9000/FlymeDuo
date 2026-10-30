@@ -68,7 +68,7 @@
     <string name="drawing_settings_title">Settings for “%1$s”</string>
     <string name="drawing_settings_none">This part has no size or colour of its own.</string>
     <string name="drawing_close">Close</string>
-    <string name="drawing_part_appearance">Overall appearance</string>
+    <string name="drawing_part_appearance">Status colours</string>
     <string name="drawing_part_readouts">Power and temperature</string>
     <string name="drawing_parts_title">Component appearance</string>
     <string name="drawing_outside_title">Outside components</string>
@@ -143,10 +143,10 @@
     <string name="icon_offset_summary">Moves the stock icon area as a whole (Wi-Fi, signal, network speed), independently of the glyph: positive right, negative left. Range −24 to 24 dp</string>
     <string name="glyph_size_group_title">Size &amp; position</string>
     <string name="glyph_size_group_summary">Overall %1$d%% · glyph %2$d · icons %4$d · vertical %3$d (dp), tap to adjust</string>
-    <string name="type_follow_nr_advanced_title">Show 5GA from the radio state</string>
-    <string name="type_follow_nr_advanced_summary">On builds whose config keeps 5G-A hidden, Flyme never asks for the 5GA icon. With this on the module reads the network state itself and draws 5GA when the radio is 5G-Advanced.</string>
-    <string name="demo_mobile_type_title">Simulate 5GA label</string>
-    <string name="demo_mobile_type_summary">Draws the network type as 5GA so the look can be checked without 5G-Advanced coverage. Drawing only; no radio state is touched.</string>
+    <string name="type_follow_nr_advanced_title">Detect 5GA automatically (experimental)</string>
+    <string name="type_follow_nr_advanced_summary">Shows 5G as 5GA when the network reports 5G-Advanced (NR_ADVANCED). Flyme ports and some Meizu builds never report it; use the manual switch below there.</string>
+    <string name="demo_mobile_type_title">Show 5G as 5GA (manual)</string>
+    <string name="demo_mobile_type_summary">Draws the stock 5G label as 5GA. Only applies while the system shows 5G, so it disappears with Wi-Fi, 4G or mobile data off just like the stock label. Drawing only.</string>
     <string name="dual_inside_ring_title">Stack both cards inside the ring</string>
     <string name="dual_inside_ring_summary">Draws the two cards as concentric arcs along the inside of the ring instead of one row across each mouth. The mouths can then close, and the network type has somewhere to sit beside them.</string>
     <string name="dual_stack_group_title">Stacked dual reading</string>

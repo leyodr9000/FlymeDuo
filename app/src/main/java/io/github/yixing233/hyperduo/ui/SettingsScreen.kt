@@ -1406,6 +1406,14 @@ private fun LazyListScope.aboutTab(
                 summary = stringResource(R.string.debug_summary),
                 insideMargin = SettingsItemMargin,
             )
+            // Debug & preview: draws a second card on a one-SIM phone. Display only.
+            SwitchPreference(
+                checked = settings.demoDualSim,
+                onCheckedChange = { value -> update { it.setDemoDualSim(value) } },
+                title = stringResource(R.string.demo_dual_sim_title),
+                summary = stringResource(R.string.demo_dual_sim_summary),
+                insideMargin = SettingsItemMargin,
+            )
         }
     }
     // issue #38: the launcher entry is a separate activity-alias, so it can be switched off

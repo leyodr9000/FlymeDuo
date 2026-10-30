@@ -138,7 +138,7 @@ final class FlymeHooks {
      * indistinguishable from "the fix does not work" unless the log can say which
      * build answered.
      */
-    static final String ADAPTER_BUILD = "1.7.5-flyme.70";
+    static final String ADAPTER_BUILD = "1.7.5-flyme.71";
 
     static int install(io.github.libxposed.api.XposedModule module, java.lang.ClassLoader cl) {
         sModule = module;
@@ -774,7 +774,11 @@ final class FlymeHooks {
                 if (result instanceof java.lang.Integer) {
                     final boolean advancedNow =
                             ((java.lang.Integer) result).intValue() == sNrAdvancedValue;
-                    if (io.github.yixing233.hyperduo.TrioState.setNrAdvanced(advancedNow)) {
+                    // This getter runs for EVERY subscription in the process, so on a dual-SIM
+                    // phone the second card's NONE used to overwrite the data card's 5G-A.
+                    // The hook may only raise the flag; the per-subscription callback in
+                    // NrAdvancedPresence is the one that lowers it.
+                    if (advancedNow && io.github.yixing233.hyperduo.TrioState.setNrAdvanced(true)) {
                         io.github.yixing233.hyperduo.TrioHooks.log(
                                 io.github.yixing233.hyperduo.TrioHooks.LOG_INFO,
                                 "nr advanced=" + advancedNow);

@@ -66,7 +66,7 @@
     <string name="out_order_move_out">往外移动</string>
     <string name="out_order_outwards">← 往外</string>
     <string name="out_order_battery">贴着电池 →</string>
-    <string name="drawing_part_appearance">外观</string>
+    <string name="drawing_part_appearance">状态颜色</string>
     <string name="drawing_part_battery">电池</string>
     <string name="drawing_part_readouts">读数组</string>
     <string name="drawing_part_ring">环内组件</string>
@@ -170,10 +170,10 @@
     <string name="icon_offset_summary">整体平移原厂图标区（Wi-Fi、信号、网速指示器等），与三合一互相独立：正值向右、负值向左，可调 −24 到 24 dp</string>
     <string name="glyph_size_group_title">尺寸与位置</string>
     <string name="glyph_size_group_summary">整体 %1$d%% · 三合一 %2$ddp · 图标 %4$ddp · 垂直 %3$ddp，点按调整</string>
-    <string name="type_follow_nr_advanced_title">按网络真实状态显示 5GA</string>
-    <string name="type_follow_nr_advanced_summary">系统配置为不显示 5G-A 的机型，Flyme 不会下发 5GA 图标。打开后由模块直接读网络制式，命中 5G-A 时自行显示 5GA</string>
-    <string name="demo_mobile_type_title">模拟 5GA 显示</string>
-    <string name="demo_mobile_type_summary">把网络类型强制当成 5GA 来画，方便在没有 5G-A 覆盖时验证显示效果。只改绘制，不碰任何通信状态</string>
+    <string name="type_follow_nr_advanced_title">自动识别 5GA（实验）</string>
+    <string name="type_follow_nr_advanced_summary">网络上报 5G-A（NR_ADVANCED）时把 5G 显示为 5GA。Flyme 移植包与部分魅族机型的通信层不上报该状态，此时不会生效，请用下方手动开关</string>
+    <string name="demo_mobile_type_title">5G 显示为 5GA（手动）</string>
+    <string name="demo_mobile_type_summary">把系统的 5G 图标显示为 5GA。只在系统显示 5G 时生效，连 Wi-Fi、4G、关闭移动数据时与原 5G 图标一样随之消失。只改绘制，不碰通信状态</string>
     <string name="dual_inside_ring_title">双卡信号放进环里</string>
     <string name="dual_inside_ring_summary">两张卡的信号行改为沿圆环内壁的两条同心弧，不占用环的上下开口</string>
     <string name="dual_stack_group_title">双卡信号</string>

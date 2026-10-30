@@ -406,10 +406,13 @@ final class TrioState {
                 && io.github.yixing233.hyperduo.TrioConfig.get().typeFollowNrAdvanced) {
             mobileType = DEMO_MOBILE_TYPE;
         }
-        // Demo: pretend the radio reports 5G-Advanced, so an install with no 5GA coverage can
-        // see how the label is drawn. Display only - nothing reaches telephony, and the
-        // sampled value returns the moment the switch goes off.
-        if (io.github.yixing233.hyperduo.TrioConfig.get().demoMobileType) {
+        // Manual 5GA: show a real 5G label as 5GA. Only a "5G" is upgraded, AFTER the data-off
+        // rule above, so the label still appears and disappears exactly like the stock 5G one
+        // (Wi-Fi only, 4G, data off -> untouched). Needed because Flyme ports and stock Meizu
+        // builds never report OVERRIDE_NETWORK_TYPE_NR_ADVANCED (carrier config has no NR
+        // advanced threshold, the RIL reports no bandwidth), so the automatic path cannot fire.
+        if (io.github.yixing233.hyperduo.TrioConfig.get().demoMobileType
+                && "5G".equals(mobileType)) {
             mobileType = DEMO_MOBILE_TYPE;
         }
         // The three battery values are read straight from their statics by the
