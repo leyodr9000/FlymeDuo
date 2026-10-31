@@ -37,12 +37,17 @@ Flyme 的测量把电池视图锁死在电池图标的本征盒里（约 10dp）
 细节见 [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md)（上游文档，Flyme 注入点在
 `FlymeHooks.java`）。
 
-## 安装
+## 适用范围
 
 | 项目 | 要求 |
 | --- | --- |
-| 系统 | Flyme AIOS 2（Android 16，API 36）；同代 Flyme 理论可用 |
+| 系统 | Flyme AIOS 2（Android 16 / API 36）；同代 Flyme 理论可用，未逐一验证 |
 | 框架 | LSPosed（libxposed API 102+），已在 2.2.1 上验证 |
+| 作用域 | 系统界面（`com.android.systemui`） |
+
+依赖的 Flyme 侧注入点：`FlymeBatteryMeterView`、`QSStatusBar`、`KeyguardStatusBarView`、`NotificationPanelView`。其它 ROM 或非 Flyme 环境不适用。
+
+## 安装
 
 1. 从 [Releases](https://github.com/leyodr9000/FlymeDuo/releases) 下载最新的
    `FlymeDuo-*.apk` 并安装。
@@ -88,3 +93,7 @@ gradle assembleRelease -PhyperduoVersionName=1.7.5-flyme.38 -PhyperduoVersionCod
 
 Copyright (C) 2026 yixing233 与 HyperDuo 贡献者；FlymeDuo 修改部分同样以 GPL-3.0 发布。
 分发编译好的 APK 时需要一并给出对应源码，指向本仓库该版本的 tag 即可。没有担保。
+
+## 免责声明
+
+本模块运行于系统界面进程内，接管状态栏的电池、Wi-Fi 与信号绘制。模块缺陷可能影响状态栏显示，极端情况下导致系统界面反复重启（LSPosed 会据此进入安全模式）。刷入前请确认系统版本匹配，并自行承担风险。
