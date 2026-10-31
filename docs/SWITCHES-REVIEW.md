@@ -369,7 +369,7 @@ record KeyDef(String key, Kind kind, int def, int min, int max,
 - 修复：提示链 `gateHint(a.glyph to master_title, a.value to show_value_title)`、`enabled = a.glyph && a.value`。
 - **规则（写进注释）**：一行可以被**别的**开关门禁，但**永远不能被自己门禁**。推导门禁时若用的是把本行开关值折进去的判定函数（如 `drawsBolt()`），就会自锁；应当回溯到它所依赖的**上游**开关（这里是「显示电量数字」）。
 - 全行审计：闪电行是**唯一**的自锁。其余门禁都挂在别的开关上——showWifi/showMobile/roleColors = `a.glyph`；双卡 = `a.glyph && a.mobile`（本行是 `dualSim`）；居中 = `a.glyph && !a.rect && a.wifi && a.value`（本行是 `valueCentred`）；字重 = `a.glyph && a.value`；typeSize/outTypeSize/typeWeight = `a.typeInRing`/`a.typeOutOfRing`/`a.typeAnywhere()`（本行分别是这三个网络的类型项，`typeAnywhere` 是它们的或，故不会自锁：关掉全部三个才会禁用本行，而那正是「三个都关」的状态，不是自锁）。
-- **上机证据**（`192.168.1.148:44453`）：`uiautomator dump` 取到该行开关 `bounds="[963,1756][1110,1900]"`，节点 `enabled="true" clickable="true"`。`adb shell su -c "input tap 1036 1828"` 之后：
+- **上机证据**（`<DEVICE_LAN_IP>:<ADB_PORT>`）：`uiautomator dump` 取到该行开关 `bounds="[963,1756][1110,1900]"`，节点 `enabled="true" clickable="true"`。`adb shell su -c "input tap 1036 1828"` 之后：
   - `show_bolt` 由 `true` 变 `false`；
   - 该节点变为 `checked="false"` 而**仍是 `clickable="true" enabled="true"`** —— 关闭后这一行依然可用，自锁消除。旧门禁下这里会是 `clickable="false" enabled="false"`。
 - **取证陷阱**：不能用「预置 `show_bolt=false` 再启动 app」来验证——`SettingsRepository` 会在启动时全量同步并把 pref 回写成 `true`。必须走 UI 点击。本条与本改造同属「验证方法」教训。
@@ -474,7 +474,7 @@ final float scale = Math.min(width / inkW, height / outSignalInkH(dotRow));
 - 五个工装（`gapcheck` / `slotcheck` / `dualsimcheck` / `simcheck` / `outringcheck`）全部 `exit 0`（`outringcheck` 的四个构建：fixed=0、refold/inert/squat=1）。
 - `work/outringcheck/SuffixShot` 新增，量出 A/主字高度比随比例单调，65 → 0.625。
 - Gradle `:app:assembleDebug --offline` `BUILD SUCCESSFUL`。
-- **未做**：设备端两条实证（环外读数尺寸不随下拉变大、仅显示上网卡实时生效）——写出本轮时 `adb devices -l` 仍是 `192.168.1.148:44453 offline`。
+- **未做**：设备端两条实证（环外读数尺寸不随下拉变大、仅显示上网卡实时生效）——写出本轮时 `adb devices -l` 仍是 `<DEVICE_LAN_IP>:<ADB_PORT> offline`。
 
 ### 6.10 1.6.1：环外信号间距取代位置偏移
 
@@ -564,7 +564,7 @@ final float scale = Math.min(width / inkW, height / outSignalInkH(dotRow));
 - **master 开关关闭时要交回槽**：`GlyphDrawable.uninstall` 调 `clearTint()` 让 MIUI 按电池此刻的状态重建（放回记住的 drawable 会把早已离开的状态画回来）；没有 `clearTint` 的 build 退化为把槽置 null。槽的生命周期比任何一次重绘都长。
 - **一并退场的东西**：`TrioOverlay.java`（818 行）、`tests\overlay-window.ps1`、`PorterDuff` import、`isStatusBarHost`、`barCovered` 三件套、`statusIconContainer()`/`statusBarView()` 两个访问器，以及 **5 组只为窗口显隐而存在的 hook**（下拉展开高度、最近任务手势、跨进程脉冲、启动动画）。`group()` 的 switch 从 18 个 case 收敛到 **13**。`AndroidManifest.xml` 本就只有 `INTERNET` 与 `REQUEST_INSTALL_PACKAGES`，槽路线不需要 `SYSTEM_ALERT_WINDOW`。
 - **验证**：构建通过（debug APK 33,175,455 B、release APK 3,128,880 B，R8 后 `GlyphDrawable` 的 `install`/`uninstall`/`draw` 保留原名，APK 字节里 `GlyphDrawable`/`mTintBgDrawable`/`mUseLegacyDrawable` 在、`TrioOverlay`/`glyph_window`/`PRIVATE_FLAG_TRUSTED_OVERLAY`/`TYPE_STATUS_BAR_SUB_PANEL` 全部不在）；**五个**探针全绿（`wifi-presence` 18 / `battery-presence` 44 / `perf-layout` 76 / `glyph-scale` 17 / **`glyph-drawable` 105 条、五种宿主形状**）；五台工作台全部 `VERIFIED`。
-- **真机四态复核（1.6.13 重构版，设备 `8d5e85d9` / houji / HyperOS 4）**：桌面 / 应用内 / 锁屏 / 控制中心，字形与读数均正常；桌面连续 5 帧充电绿弧包围盒**逐帧完全相同**（`1052,44..1111,86`，60×43，668 px）；`dumpsys window windows | grep hyperduo` **四态全 0**，重启 SystemUI 后复拍仍为 0 而字形照常。控制中心里**没有 §31 那个方块背景残影**。日志中 `has no mTintBgDrawable` 与 `legacy drawable` 两条失败路径都未触发。`hooks=22 → 19` 与 `group()` 18 → 13 组（删 5 组窗口专用 hook）量级自洽。
+- **真机四态复核（1.6.13 重构版，设备 `<DEVICE_SERIAL>` / houji / HyperOS 4）**：桌面 / 应用内 / 锁屏 / 控制中心，字形与读数均正常；桌面连续 5 帧充电绿弧包围盒**逐帧完全相同**（`1052,44..1111,86`，60×43，668 px）；`dumpsys window windows | grep hyperduo` **四态全 0**，重启 SystemUI 后复拍仍为 0 而字形照常。控制中心里**没有 §31 那个方块背景残影**。日志中 `has no mTintBgDrawable` 与 `legacy drawable` 两条失败路径都未触发。`hooks=22 → 19` 与 `group()` 18 → 13 组（删 5 组窗口专用 hook）量级自洽。
 - **`tests\glyph-drawable.ps1` 是补上的那一环**：删掉 `overlay-window.ps1` 时，被它锁住的机件（窗口私有标记）确实消失了，但**没有任何探针接管 `GlyphDrawable`** —— 而它正是替掉窗口的那个东西。新脚本把真 `GlyphDrawable.java` + 真 `Refl.java` 编进五种宿主形状（正常 / legacy / 无 `clearTint` / `clearTint` 包级私有 / 连字段都没有），105 条断言分成源码契约钉与执行级用例。**七条负控里后三条（宽高对调、重新 `install` 不重指向、`getBounds()` 换常量）源码钉全部原样通过，只有执行级断言报错**，证明这半边独立承重。
 - **教训（写进 `docs\DEVELOPMENT.md`）**：① 做窗口 A/B 前必须先确认当前行是 `MiuiPhoneStatusBarView` 而不是 Keyguard——早前一次「两臂完全相同」的错误结论就是因为设备停在锁屏，而 `isStatusBarHost()` 遇到名字含 `Keyguard` 就返回 false，两臂都没有资格开窗口；② 从像素反推病因会走错（见 §6.14 的 107px 残影），先把分量打出来；③ `[System.IO.File]` 的相对路径按**进程 CWD** 解析而非 PowerShell 的 `Set-Location`，对 worktree 做脚本手术必须传绝对路径；④ 用「读全部行 → 按下标删除 → 写回」做行号手术不安全，逐条用锚定字符串替换。
 

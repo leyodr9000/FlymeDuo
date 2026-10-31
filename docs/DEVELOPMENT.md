@@ -2696,13 +2696,13 @@ SystemUI 进程会跑到它。它把真实的 `app\src\main\java\io\github\yixin
   「因为错误的原因」通过，必须复用同一 host 并在两次 `refresh()` 之间步进 `SystemClock.now`；
   二是编译源**不能**带 `work\preview\src` 里的 `TrioState.java` / `TrioConfig.java`（同名桌面替身撞类），
   只能借它的 `SharedPreferences.java` 与 `Bundle.java`。
-  **上机验证（当时）仍待补**：设备 `192.168.1.148:33945` 已下线（`adb connect` 失败、
+  **上机验证（当时）仍待补**：设备 `<DEVICE_LAN_IP>:<ADB_PORT>` 已下线（`adb connect` 失败、
   `Test-Connection -Quiet` 为 `False`、`adb devices` 只剩一条 `offline`）；第六轮补到了
   「真双卡手机在无 Wi-Fi 未充电时画出两排点」这条。但**「只插一张卡时退化成单排、
   且那排是当前上网卡」至今仍只有离线证据**（`work\simcheck\verify.ps1` 的 counterexample
   用 subId 9 → 槽 0、subId 5 → 槽 1 的错位映射来暴露「把订阅号当槽位」的写法），
   真机没拔过卡，这条不要当成已验收。
-- **改名后的真机部分验收（第五轮补，双排本身未拍到、由第六轮补上）**：设备经无线 adb 短暂上线（`192.168.1.148:38661`，
+- **改名后的真机部分验收（第五轮补，双排本身未拍到、由第六轮补上）**：设备经无线 adb 短暂上线（`<DEVICE_LAN_IP>:<ADB_PORT>`，
   houji / model `23127PN0CC` / Android 17 / SDK 37 / `wm size` 1200x2670 / density 480），
   本轮取到三条真机事实：
   1. **改名后的包已自动进入 LSPosed 且已加载**。`modules_config.db` 里新包
@@ -2730,18 +2730,18 @@ SystemUI 进程会跑到它。它把真实的 `app\src\main\java\io\github\yixin
   （Java 序列化 boolean 只看 `data` 列**最后一个字节**）、充电/双卡读数、SystemUI 日志里新包
   是否出现、以及关机屏截图。
   **仍未完成的验收，以及为什么主机侧帮不上忙**：截图里还没看到两排点。后来设备整个从局域网
-  消失——`arp -a` 里没有 `.148` 的 MAC，`ping -S 192.168.1.180 192.168.1.148` 得到
-  `Destination host unreachable`（同法 ping 网关 `192.168.1.1` 正常，`time<1ms TTL=64`），
-  异步扫 `192.168.1.0/24` 只有 `192.168.1.1` 与 `192.168.1.180` 活着。**恢复只能靠用户在手机上
+  消失——`arp -a` 里没有该设备的 MAC，`ping -S <HOST_LAN_IP> <DEVICE_LAN_IP>` 得到
+  `Destination host unreachable`（同法 ping 网关 `<GATEWAY_IP>` 正常，`time<1ms TTL=64`），
+  异步扫 `<LAN_SUBNET>` 只有 `<GATEWAY_IP>` 与 `<HOST_LAN_IP>` 活着。**恢复只能靠用户在手机上
   手动重开 Wi-Fi 与无线调试。** 另记一条主机侧陷阱：本机 FlClash 是 TUN 模式
   （`198.18.0.1/30`，默认路由 `0.0.0.0/0 → 198.18.0.2 metric 0`），
-  `Find-NetRoute -RemoteIPAddress 192.168.1.148` 判给 `FlClash` 而不是`以太网`，于是
+  `Find-NetRoute -RemoteIPAddress <DEVICE_LAN_IP>` 判给 `FlClash` 而不是`以太网`，于是
   **任何 TCP 连接都会「成功」**——早先那次「1024..65535 几乎全开」的端口扫描是假象，
   不能用 `TcpClient.ConnectAsync` 判断端口是否开放，要看 `Find-NetRoute` 或 `adb devices`。
   当前 shell 非管理员，加不了静态路由绕开它。
 - **真机双排验收完成（第六轮补）**：设备重开 Wi-Fi 后回到局域网，**端口又变了**
-  （用户给的 `192.168.1.148:38661` 变 `10061` 拒绝）。这次先跑 `adb mdns services`，
-  直接问出真正在听的端口 `_adb-tls-connect._tcp 192.168.1.148:35237`，连上即 `device`。
+  （用户给的 `<DEVICE_LAN_IP>:<ADB_PORT>` 变 `10061` 拒绝）。这次先跑 `adb mdns services`，
+  直接问出真正在听的端口 `_adb-tls-connect._tcp <DEVICE_LAN_IP>:<ADB_PORT>`，连上即 `device`。
   **教训：无线调试端口每次重开都变，别再猜或扫端口，直接 `adb mdns services`。**
   设备事实与上轮一致（houji / `23127PN0CC` / release 17 / SDK 37 / `wm size` 1200x2670 /
   density 480）；模块本机 prefs 里 `dual_sim_signal=true`、`mobile_type_mode=2`、
