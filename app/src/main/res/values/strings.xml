@@ -1,6 +1,7 @@
 <?xml version="1.0" encoding="utf-8"?>
 <resources>
     <string name="app_name">HyperDuo</string>
+    <string name="home_title">HyperDuo</string>
     <string name="xposed_description">把状态栏的 Wi-Fi、移动信号与电池合并为一个仿 iPhone Duo 的三合一体图标。</string>
 
 
@@ -48,6 +49,8 @@
     <string name="out_signal_size_title">堆叠信号大小</string>
     <string name="out_signal_size_summary">默认 15dp，可调 6–20dp。</string>
     <string name="out_signal_margin_title">堆叠信号间距</string>
+    <string name="out_signal_margin_right_title">信号与电池间距</string>
+    <string name="out_signal_margin_right_summary">环外信号读数与三合一图标之间的间隙。左侧外边距管不到这一侧</string>
     <string name="out_signal_margin_summary">默认 2dp，可调 0–16dp。</string>
     <string name="ring_position_sim_1">卡一信号点的位置</string>
     <string name="ring_position_sim_2">卡二信号点的位置</string>
@@ -63,7 +66,7 @@
     <string name="out_order_move_out">往外移动</string>
     <string name="out_order_outwards">← 往外</string>
     <string name="out_order_battery">贴着电池 →</string>
-    <string name="drawing_part_appearance">外观</string>
+    <string name="drawing_part_appearance">状态颜色</string>
     <string name="drawing_part_battery">电池</string>
     <string name="drawing_part_readouts">读数组</string>
     <string name="drawing_part_ring">环内组件</string>
@@ -106,6 +109,13 @@
 
     <string name="master_title">启用三合一图标</string>
 
+    <string name="exclude_regions_title">生效范围</string>
+    <string name="exclude_regions_summary">被排除的位置保留 Flyme 原厂电池，并由原厂的四种样式决定显示方式</string>
+    <string name="exclude_regions_all">所有位置</string>
+    <string name="exclude_regions_no_control_centre">排除控制中心</string>
+    <string name="exclude_regions_no_notification">排除通知中心</string>
+    <string name="exclude_regions_no_both">排除控制中心 + 通知中心</string>
+
     <string name="trio_style_title">三合一样式</string>
     <string name="trio_style_ring">圆环</string>
     <string name="trio_style_capsule">胶囊</string>
@@ -132,6 +142,8 @@
 
     <string name="type_hide_on_wifi_title">连 Wi-Fi 时隐藏网络类型</string>
     <string name="type_hide_on_wifi_summary">Wi-Fi 已连接时隐藏，断开或切到流量后自动恢复。</string>
+    <string name="type_hide_on_data_off_title">关闭流量时隐藏类型</string>
+    <string name="type_hide_on_data_off_summary">打开后，关闭移动数据时不再显示 5G/4G 字样：环内缺口会自动合上，环外标签同步隐藏。这样一眼就能看出流量到底开没开</string>
     <string name="show_mobile_type_title">网络类型</string>
     <string name="show_mobile_type_summary">3G/4G/5G 等文字，可放在环内或环外。</string>
     <string name="mobile_type_off">关闭</string>
@@ -149,7 +161,47 @@
     <string name="perf_temp_title">电池温度</string>
 
     <string name="glyph_scale_title">图标整体尺寸</string>
-    <string name="glyph_scale_summary">默认 100%，可调 60–100%。</string>
+    <string name="glyph_scale_summary">默认 100%，可调 60–100%。100% 即撑满状态栏高度，状态栏、控制中心、通知中心三处尺寸一致。</string>
+    <string name="glyph_offset_x_title">三合一水平</string>
+    <string name="glyph_offset_y_title">垂直位置</string>
+    <string name="glyph_offset_summary">整体左右平移三合一本体，与其他图标互不影响：正值向右、负值向左，可调 −24 到 24 dp</string>
+    <string name="glyph_offset_y_summary">三合一在行内的垂直对齐微调：正值向下、负值向上，可调 −24 到 24 dp</string>
+    <string name="icon_offset_x_title">其他图标水平</string>
+    <string name="icon_offset_summary">整体平移原厂图标区（Wi-Fi、信号、网速指示器等），与三合一互相独立：正值向右、负值向左，可调 −24 到 24 dp</string>
+    <string name="glyph_size_group_title">尺寸与位置</string>
+    <string name="glyph_size_group_summary_scale_only">整体 %1$d%%，点按调整</string>
+    <string name="glyph_size_group_summary">整体 %1$d%% · 三合一 %2$ddp · 图标 %4$ddp · 垂直 %3$ddp，点按调整</string>
+    <string name="type_follow_nr_advanced_title">自动识别 5GA（实验）</string>
+    <string name="type_follow_nr_advanced_summary">网络上报 5G-A（NR_ADVANCED）时把 5G 显示为 5GA。Flyme 移植包与部分魅族机型的通信层不上报该状态，此时不会生效，请用下方手动开关</string>
+    <string name="demo_mobile_type_title">5G 显示为 5GA（手动）</string>
+    <string name="demo_mobile_type_summary">把系统的 5G 图标显示为 5GA。只在系统显示 5G 时生效，连 Wi-Fi、4G、关闭移动数据时与原 5G 图标一样随之消失。只改绘制，不碰通信状态</string>
+    <string name="dual_inside_ring_title">双卡信号放进环里</string>
+    <string name="dual_inside_ring_summary">两张卡的信号行改为沿圆环内壁的两条同心弧，不占用环的上下开口</string>
+    <string name="dual_stack_group_title">双卡信号</string>
+    <string name="dual_stack_group_summary">%1$s · %2$s · 垂直 %3$d</string>
+    <string name="dual_stack_on">已开启</string>
+    <string name="dual_stack_off">已关闭</string>
+    <string name="dual_stack_side_top">上部</string>
+    <string name="dual_stack_side_bottom">下部</string>
+    <string name="dual_stack_bottom_title">放在下方</string>
+    <string name="dual_stack_bottom_summary">下方为 6 点方向，上方为 12 点方向。环口自动为矩阵所在的一侧加宽</string>
+    <string name="dual_stack_dx_title">堆叠水平位置</string>
+    <string name="dual_stack_dx_summary">整组左右平移，负值向左；与环的描边、其他组件无关，只动这一组</string>
+    <string name="slider_default_note">默认 %1$s</string>
+    <string name="dual_mouth_extra_title">环口为矩阵让出的空隙</string>
+    <string name="dual_mouth_extra_summary">矩阵所在那侧环口的额外加宽角度，两侧各分一半。0 表示不加宽</string>
+    <string name="dual_matrix_size_title">矩阵点大小</string>
+    <string name="dual_matrix_size_summary">点半径占环描边的百分比。矩阵不随垂直位置缩放</string>
+    <string name="dual_matrix_gap_title">矩阵点间距</string>
+    <string name="dual_matrix_gap_summary">点与点之间的间距，以点直径的百分比计，行列同距</string>
+    <string name="dual_matrix_dy_title">矩阵垂直位置</string>
+    <string name="dual_matrix_dy_summary">矩阵的上下微调，与弧样式的垂直位置相互独立</string>
+    <string name="demo_dual_sim_title">模拟双卡</string>
+    <string name="demo_dual_sim_summary">单卡时伪造第二张卡，用于预览双卡堆叠的排布。只改绘制，不涉及通信状态</string>
+    <string name="dual_stack_matrix_title">矩阵排布（2×4 点阵）</string>
+    <string name="dual_stack_matrix_summary">关闭时两行沿环弧排布，与环同曲率；打开时改为两行四点的平直矩阵，点更小、整体居中，更接近原生双卡的观感</string>
+    <string name="dual_stack_dy_title">堆叠垂直位置</string>
+    <string name="dual_stack_dy_summary">整组上下平移，负值向上；用来把两条弧从环口、类型标签旁边挪开</string>
 
     <string name="perf_scale_title">读数整体尺寸</string>
     <string name="perf_scale_summary">默认 100%，可调 60–150%。</string>
@@ -200,10 +252,10 @@
     <string name="clock_weight_summary">默认 700，可调 100–900。</string>
 
     <string name="type_size_title">网络类型字号</string>
-    <string name="type_size_summary">默认 32，可调 16–44。</string>
+    <string name="type_size_summary">默认 32，可调 16–56。按所在格的宽度自适应：标签越宽自动越小，短标签可以放得更大。</string>
 
     <string name="out_type_size_title">环外网络类型字号</string>
-    <string name="out_type_size_summary">默认 14dp，可调 8–26dp。</string>
+    <string name="out_type_size_summary">默认 14dp，可调 8–44dp。环外标签有自己的视图，不受环内那格的宽度限制。</string>
 
     <string name="out_type_margin_left_title">环外网络类型左边距</string>
     <string name="out_type_margin_left_summary">默认 2dp，可调 0–16dp。</string>
@@ -299,6 +351,8 @@
     <string name="capsule_container_title">胶囊结构</string>
     <string name="capsule_container_summary">长度与左右两格的位置。</string>
     <string name="capsule_length_title">胶囊长度</string>
+    <string name="capsule_scale_title">胶囊大小微调</string>
+    <string name="capsule_scale_summary">75 是起点（等于旧版 100 的样子），往上继续放大，可调 75 到 140。圆环的墨迹是整块方，胶囊是扁长条，所以同样的百分比视觉高度本来就不同，这一项用来把两者拉平</string>
     <string name="capsule_length_summary">默认 0，可调 -30 到 60。加长的是两端圆角之间的直线段，胶囊随之变宽，圆角与高度不变。</string>
     <string name="capsule_nudge_left_dx_title">左格水平位置</string>
     <string name="capsule_nudge_left_dx_summary">正值右移，负值左移。</string>
@@ -322,4 +376,24 @@
     <string name="font_applied">已应用字体 %1$s</string>
     <string name="font_not_a_font">这个文件不是字体（只支持 .ttf / .otf），已忽略</string>
     <string name="font_failed">字体安装失败，请重试</string>
+    <string name="drawing_display_title">显示与网络</string>
+    <string name="sys_charge_icon_title">显示系统充电图标</string>
+    <string name="sys_charge_icon_summary">充电时在三合一图标旁显示 Flyme 自带的小闪电（快充时为快充闪电）。随「生效范围」：被排除的区域本来就是原版电池，不受影响</string>
+    <string name="power_save_color_title">省电模式时电量环变色</string>
+    <string name="power_save_color_summary">开启省电模式后，电量环使用低电量颜色（默认黄色），与原版电池一致。颜色可在「状态颜色」里改</string>
+    <string name="group_5ga_title">5GA 显示</string>
+    <string name="group_battery_hint_title">充电与省电</string>
+    <string name="short_5ga_manual">手动</string>
+    <string name="short_5ga_auto">自动识别</string>
+    <string name="short_charge_icon">充电图标</string>
+    <string name="short_power_save">省电变色</string>
+    <string name="switch_state_on">开</string>
+    <string name="switch_state_off">关</string>
+    <string name="sys_charge_icon_left_title">充电图标在左侧</string>
+    <string name="sys_charge_icon_left_summary">开：闪电在三合一图标左边（与原版一致）。关：在右边</string>
+    <string name="short_charge_icon_left">左侧</string>
+    <string name="charge_gap_glyph_title">闪电与三合一间距</string>
+    <string name="charge_gap_glyph_summary">闪电和三合一图标之间的距离</string>
+    <string name="charge_gap_icon_title">闪电与其他图标间距</string>
+    <string name="charge_gap_icon_summary">闪电和另一侧系统图标（如铃铛、信号）之间的距离</string>
 </resources>

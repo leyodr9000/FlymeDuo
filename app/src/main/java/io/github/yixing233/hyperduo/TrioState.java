@@ -165,6 +165,21 @@ final class TrioState {
      */
     static volatile int[] sSlotLevels = { -1, -1 };
 
+    /** How often the mobile-data toggle may be re-read; the same budget as the SIM poll. */
+    private static final long DATA_INTERVAL_MS = 2000L;
+    /** The demo's two card levels - one strong, one mid, so the rows read apart. */
+    private static final int DEMO_SIM1_LEVEL = 4;
+    private static final int DEMO_SIM2_LEVEL = 2;
+    private static volatile long sDataDueAt;
+    /**
+     * Whether mobile data is switched on.
+     *
+     * <p>Starts true so nothing hides before the first sample: an unknown state must not
+     * blank the label, and a module that silently drops a reading is worse than one that
+     * shows a stale one for the two seconds it takes to ask.
+     */
+    private static volatile boolean sDataEnabled = true;
+
     /** The current default-data SIM's slot, or {@code -1} when it is unknown. */
     static volatile int sDataSlot = -1;
 
@@ -261,6 +276,10 @@ final class TrioState {
         fQuick = Refl.field(c, "mQuickCharging");
         fLow = Refl.field(c, "mLow");
         fPowerSave = Refl.field(c, "mPowerSave");
+        if (fPowerSave == null) {
+            // FlymeBatteryMeterView keeps it as mLowPowerMode (set in onPowerSaveChanged).
+            fPowerSave = Refl.field(c, "mLowPowerMode");
+        }
         fPerformance = Refl.field(c, "mPerformanceMode");
         fUseTint = Refl.field(c, "mUseTint");
         fTint = Refl.field(c, "mTintColor");
@@ -270,10 +289,27 @@ final class TrioState {
         fieldsReady = fLevel != null;
     }
 
+    private static int systemBatteryLevel(View host) {
+        try {
+            android.os.BatteryManager battery =
+                    (android.os.BatteryManager) host.getContext().getSystemService("batterymanager");
+            if (battery == null) {
+                return -1;
+            }
+            int level = battery.getIntProperty(android.os.BatteryManager.BATTERY_PROPERTY_CAPACITY);
+            return (level < 0 || level > 100) ? -1 : level;
+        } catch (Throwable t) {
+            return -1;
+        }
+    }
+
     /** Re-reads every status value from the host. Cheap enough to call in onDraw. */
     void refresh() {
         ensureFields(host.getClass());
         level = Refl.getInt(fLevel, host, level);
+        if (level < 0) {
+            level = systemBatteryLevel(host);
+        }
         charging = Refl.getBool(fCharging, host, charging);
         quickCharging = Refl.getBool(fQuick, host, quickCharging);
         low = Refl.getBool(fLow, host, low);
@@ -304,11 +340,36 @@ final class TrioState {
         wifiPresent = sWifiPresent;
         islandHideBattery = sIslandHideBattery;
         mobileType = sMobileType;
+        // Ask the data toggle first, so the demo below can still override it: the demo exists
+        // to inspect the drawing, and burying it behind a switch about the radio would make it
+        // untestable on a phone whose data happens to be off.
+        sampleDataIfDue();
+        if (!sDataEnabled && io.github.yixing233.hyperduo.TrioConfig.get().typeHideOnDataOff) {
+            // An empty type is exactly "no ink": the ring's notch closes on its own, the
+            // capsule cell falls through to its next candidate, and the out-of-ring label
+            // hides with it. One rule, three surfaces - nothing else has to know.
+            mobileType = "";
+        }
         // The three battery values are read straight from their statics by the
         // readout's own refresh path, which runs on the layout pass rather than
         // on refresh(), so there is nothing to mirror them into here.
 
-        final int[] slots = sSlotLevels;
+        int[] slots = sSlotLevels;
+        // Demo: pretend a second card answered, so a one-SIM install can check the stacked
+        // reading. Display only - the level never reaches telephony, and the real levels
+        // return the moment the switch goes off. A card that really is present wins: the
+        // demo is a stand-in for a missing one, never a replacement for a real one.
+        if (io.github.yixing233.hyperduo.TrioConfig.get().demoDualSim) {
+            final int[] faked = new int[slots.length];
+            System.arraycopy(slots, 0, faked, 0, slots.length);
+            if (faked[0] < 0) {
+                faked[0] = DEMO_SIM1_LEVEL;
+            }
+            if (faked.length > 1 && faked[1] < 0) {
+                faked[1] = DEMO_SIM2_LEVEL;
+            }
+            slots = faked;
+        }
         slotLevels = new int[] { slots[0], slots[1] };
         sims = (slots[0] >= 0 ? 1 : 0) + (slots[1] >= 0 ? 1 : 0);
 
@@ -344,6 +405,9 @@ final class TrioState {
             // The one reading with no event behind it: the clock is correct until
             // the minute rolls over, so it has to wake itself up.
             ClockTicker.start(sContext);
+            // The data switch has no view of its own: it is a setting, and the shade that
+            // flips it does not redraw the glyph. Watch it, do not wait to be asked.
+            DataPresence.start(sContext);
         } catch (Throwable ignored) {
             // leave it null; the reading stays on the single-row fallback
         }
@@ -362,6 +426,112 @@ final class TrioState {
         }
         sSimsDueAt = now + SIMS_INTERVAL_MS;
         sampleSims(sContext);
+    }
+
+    /**
+     * Re-reads the mobile-data toggle at most once per {@link #DATA_INTERVAL_MS}.
+     *
+     * <p>{@code mobile_data} is the user-facing master switch, which is the exact question
+     * the label was failing to answer: not "is a network attached" but "did I turn data on".
+     * Reading the switch rather than the connection keeps the glyph from flickering while the
+     * radio is still attaching, and needs no privileged telephony call - the setting is
+     * readable by the uid SystemUI already runs as.
+     *
+     * <p>Failure is silent and keeps the last value: a SecurityException here must not take
+     * the drawing down, and an unknown state must not blank the label.
+     */
+    /**
+     * Records the data switch and reports whether it moved.
+     *
+     * <p>Called from {@link DataPresence}, which watches the settings keys so the reading
+     * stays current while nothing is being drawn - the shade case, where the old value used
+     * to survive until the next unrelated repaint.
+     */
+    static boolean setDataEnabled(boolean enabled) {
+        if (sDataEnabled == enabled) {
+            return false;
+        }
+        sDataEnabled = enabled;
+        return true;
+    }
+
+    private static void sampleDataIfDue() {
+        final long now = SystemClock.elapsedRealtime();
+        if (now < sDataDueAt || sContext == null) {
+            return;
+        }
+        sDataDueAt = now + DATA_INTERVAL_MS;
+        // DataPresence owns this value: it watches the settings keys so the answer stays
+        // current while nothing is being drawn. This draw-path read is only a safety net in
+        // case both the observer and its backstop missed, which keeps the two in step.
+        if (setDataEnabled(readDataEnabled())) {
+            io.github.yixing233.hyperduo.TrioHooks.log(
+                    io.github.yixing233.hyperduo.TrioHooks.LOG_INFO,
+                    "mobile data enabled=" + sDataEnabled + " (draw)");
+        }
+    }
+
+    /**
+     * Whether the user's mobile-data switch is on.
+     *
+     * <p><b>Per-card keys first, the plain one only as a fallback.</b> Measured on this Flyme
+     * build by watching every candidate while the switch was flipped by hand: the global
+     * {@code mobile_data} key stayed put the whole time, while {@code mobile_data1} /
+     * {@code mobile_data2} and the telephony registry's data-enabled flag followed the switch.
+     * AOSP writes the plain key, MIUI-style firmwares write the per-card ones, so reading both
+     * - per-card when present - is what makes the answer portable.
+     *
+     * <p>"Any card enabled" rather than "the data card enabled": the switch the user is asking
+     * about is the one in the pull-down, which these keys record, and on a dual-SIM phone
+     * turning data off turns it off for both.
+     */
+    static boolean readDataEnabled() {
+        if (sContext == null) {
+            return sDataEnabled;
+        }
+        // TelephonyManager first: this is the path Flyme itself takes. Dumping the stock
+        // SystemUI found isDataEnabled three times and mobile_data1/2 not once, and the
+        // manager answers about the DEFAULT data card, which is the switch in the pull-down.
+        try {
+            final android.telephony.TelephonyManager tm =
+                    sContext.getSystemService(android.telephony.TelephonyManager.class);
+            if (tm != null) {
+                return tm.isDataEnabled();
+            }
+        } catch (java.lang.Throwable ignored) {
+            // fall through to the keys
+        }
+        // Keys as the fallback: ALL cards off, never ANY. Measured on a dual-SIM Flyme,
+        // turning mobile data off clears only the data card key while the second card keeps
+        // its 1. OR-ing them - which this did at first - therefore answered "on" forever and
+        // the label never hid. A single-SIM phone cannot show the bug, which is why it
+        // survived until a two-card report arrived.
+        try {
+            final android.content.ContentResolver cr = sContext.getContentResolver();
+            final int[] slots = sSlotLevels;
+            boolean saw = false;
+            boolean allOff = true;
+            for (int i = 0; i < SIM_SLOTS; i++) {
+                if (slots != null && slots[i] < 0) {
+                    continue;
+                }
+                final int v = android.provider.Settings.Global.getInt(
+                        cr, "mobile_data" + (i + 1), -1);
+                if (v < 0) {
+                    continue;
+                }
+                saw = true;
+                if (v != 0) {
+                    allOff = false;
+                }
+            }
+            if (saw) {
+                return !allOff;
+            }
+            return android.provider.Settings.Global.getInt(cr, "mobile_data", 1) != 0;
+        } catch (java.lang.Throwable ignored) {
+            return sDataEnabled;
+        }
     }
 
     /**

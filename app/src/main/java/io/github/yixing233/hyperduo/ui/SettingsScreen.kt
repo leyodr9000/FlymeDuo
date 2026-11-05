@@ -665,7 +665,13 @@ private fun SettingsPage(
         }
     }
     val pageTitle = stringResource(
-        if (tab == SettingsTab.About) R.string.about_title else R.string.app_name,
+        // The home page signs the fork honestly; everywhere else the launcher
+        // name carries the branding.
+        when (tab) {
+            SettingsTab.About -> R.string.about_title
+            SettingsTab.Drawing -> R.string.home_title
+            else -> R.string.app_name
+        },
     )
     val restartTitle = stringResource(R.string.restart_title)
     val surfaceColor = MiuixTheme.colorScheme.surface

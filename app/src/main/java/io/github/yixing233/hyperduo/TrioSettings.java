@@ -39,6 +39,8 @@ public final class TrioSettings {
      * Clamped to that range wherever it is read.
      */
     public int mobileTypeMode;
+    /** See Prefs.KEY_EXCLUDE_REGIONS: which regions keep Flyme's own battery. */
+    public int excludeRegions;
     /**
      * Draws the battery percentage enlarged in the middle of the ring, with the
      * Wi-Fi arcs shrunk into the 12 o'clock notch. While charging the bolt owns
@@ -190,6 +192,8 @@ public final class TrioSettings {
      * by the same amount, so the reading can never end up on top of the icons.
      */
     public int outSignalMargin;
+    /** Margin between the out-of-ring signal and the battery, in dp. */
+    public int outSignalMarginRight;
     /**
      * Scale of a trailing "A" in the network type, as a percentage of the main
      * size. 100 means no shrink; the reference "5GA" is 65.
@@ -208,6 +212,24 @@ public final class TrioSettings {
     public int wifiScale;
     /** Drop the network type while Wi-Fi is up; see {@link Prefs#KEY_TYPE_HIDE_ON_WIFI}. */
     public boolean typeHideOnWifi;
+    /** Drop the network type while mobile data is off; see {@link Prefs#KEY_TYPE_HIDE_ON_DATA_OFF}. */
+    public boolean typeHideOnDataOff;
+    /** Stack both cards inside the ring; see {@link Prefs#KEY_DUAL_INSIDE_RING}. */
+    public boolean dualInsideRing;
+    /** Where the stacked pair sits; see {@link Prefs#KEY_DUAL_STACK_POS}. */
+    public int dualStackPos;
+    /** Vertical nudge of the stacked pair, in design units; see {@link Prefs#KEY_DUAL_STACK_DY}. */
+    public int dualStackDy;
+    /** Draw the pair as a flat 2x4 matrix instead of concentric arcs. */
+    public boolean dualStackMatrix;
+    /** Matrix-only geometry: dot size, pitch and vertical nudge. */
+    public int dualMatrixSize;
+    public int dualMatrixGap;
+    public int dualMatrixDy;
+    /** Extra mouth width the ring gives the matrix, in degrees. */
+    public int dualMouthExtra;
+    public int chargeGapGlyph;
+    public int chargeGapIcon;
     /** While charging the ring centre shows the percentage; see {@link Prefs#KEY_CHARGING_SHOWS_VALUE}. */
     public boolean chargingShowsValue;
     /**
@@ -259,7 +281,7 @@ public final class TrioSettings {
      * view away entirely, and turning either on brings back the same view with
      * only the requested segment drawn.
      */
-    public boolean perfTemp;
+    public boolean perfTemp;
     /** Drops the temperature unless charging; see {@link Prefs#KEY_PERF_TEMP_CHARGING_ONLY}. */
     public boolean perfTempChargingOnly;
 
@@ -289,6 +311,22 @@ public final class TrioSettings {
      * implies. Shrink-only; see {@link Prefs#KEY_GLYPH_SCALE}.
      */
     public int glyphScale;
+    /** The capsule's own size correction; see {@link Prefs#KEY_CAPSULE_SCALE}. */
+    public int capsuleScale;
+    /**
+     * Horizontal / vertical nudge of the whole glyph, in density pixels units of
+     * dp, sign as screen axes: negative X moves left, negative Y moves up. See
+     * {@link Prefs#KEY_GLYPH_OFFSET_X} / {@link Prefs#KEY_GLYPH_OFFSET_Y}.
+     */
+    public int glyphOffsetX;
+    public int glyphOffsetY;
+    /** Horizontal shift of the stock icon area itself; see {@link Prefs#KEY_ICON_OFFSET_X}. */
+    public int iconOffsetX;
+    /** Pretend a second card is present; see {@link Prefs#KEY_DEMO_DUAL_SIM}. */
+    public boolean demoDualSim;
+    public boolean sysChargeIcon;
+    public boolean sysChargeIconLeft;
+    public boolean powerSaveColor;
     /** Interior cell nudges, in design units; see Prefs.KEY_CAPSULE_LEFT_DX. */
     public int capsuleLeftDx;
     public int capsuleLeftDy;
@@ -308,6 +346,7 @@ public final class TrioSettings {
         s.showValue = Prefs.DEF_SHOW_VALUE;
         s.showBolt = Prefs.DEF_SHOW_BOLT;
         s.mobileTypeMode = Prefs.DEF_MOBILE_TYPE_MODE;
+        s.excludeRegions = Prefs.DEF_EXCLUDE_REGIONS;
         s.valueCentred = Prefs.DEF_VALUE_CENTRED;
         s.navStyle = Prefs.DEF_NAV_STYLE;
         s.navLabels = Prefs.DEF_NAV_LABELS;
@@ -324,6 +363,15 @@ public final class TrioSettings {
         s.perfScale = Prefs.DEF_PERF_SCALE;
         s.perfWeight = Prefs.DEF_PERF_WEIGHT;
         s.glyphScale = Prefs.DEF_GLYPH_SCALE;
+        s.capsuleScale = Prefs.DEF_CAPSULE_SCALE;
+        s.glyphOffsetX = Prefs.DEF_GLYPH_OFFSET;
+        s.glyphOffsetY = Prefs.DEF_GLYPH_OFFSET;
+        s.iconOffsetX = Prefs.DEF_ICON_OFFSET;
+
+        s.demoDualSim = Prefs.DEF_DEMO_DUAL_SIM;
+        s.sysChargeIcon = Prefs.DEF_SYS_CHARGE_ICON;
+        s.sysChargeIconLeft = Prefs.DEF_SYS_CHARGE_ICON_LEFT;
+        s.powerSaveColor = Prefs.DEF_POWER_SAVE_COLOR;
         s.capsuleLeftDx = Prefs.DEF_CAPSULE_NUDGE;
         s.capsuleLeftDy = Prefs.DEF_CAPSULE_NUDGE;
         s.capsuleRightDx = Prefs.DEF_CAPSULE_NUDGE;
@@ -351,10 +399,22 @@ public final class TrioSettings {
         s.outTypeMarginLeft = Prefs.DEF_OUT_TYPE_MARGIN_LEFT;
         s.outTypeMarginRight = Prefs.DEF_OUT_TYPE_MARGIN_RIGHT;
         s.outSignalMargin = Prefs.DEF_OUT_SIGNAL_MARGIN;
+        s.outSignalMarginRight = Prefs.DEF_OUT_SIGNAL_MARGIN_RIGHT;
         s.typeSuffixScale = Prefs.DEF_TYPE_SUFFIX_SCALE;
         s.boltScale = Prefs.DEF_BOLT_SCALE;
         s.wifiScale = Prefs.DEF_WIFI_SCALE;
         s.typeHideOnWifi = Prefs.DEF_TYPE_HIDE_ON_WIFI;
+        s.typeHideOnDataOff = Prefs.DEF_TYPE_HIDE_ON_DATA_OFF;
+        s.dualInsideRing = Prefs.DEF_DUAL_INSIDE_RING;
+        s.dualStackPos = Prefs.DEF_DUAL_STACK_POS;
+        s.dualStackDy = Prefs.DEF_DUAL_STACK_NUDGE;
+        s.dualStackMatrix = Prefs.DEF_DUAL_STACK_MATRIX;
+        s.dualMatrixSize = Prefs.DEF_DUAL_MATRIX_SIZE;
+        s.dualMatrixGap = Prefs.DEF_DUAL_MATRIX_GAP;
+        s.dualMatrixDy = Prefs.DEF_DUAL_MATRIX_DY;
+        s.dualMouthExtra = Prefs.DEF_DUAL_MOUTH_EXTRA;
+        s.chargeGapGlyph = Prefs.DEF_CHARGE_GAP_GLYPH;
+        s.chargeGapIcon = Prefs.DEF_CHARGE_GAP_ICON;
         s.chargingShowsValue = Prefs.DEF_CHARGING_SHOWS_VALUE;
         s.fontPath = Prefs.DEF_FONT_PATH;
         s.dotScale = Prefs.DEF_DOT_SCALE;
@@ -425,6 +485,7 @@ public final class TrioSettings {
                 s.trioStyle);
         s.showBolt = readStyledBoolean(p, Prefs.KEY_SHOW_BOLT, Prefs.DEF_SHOW_BOLT, s.trioStyle);
         s.mobileTypeMode = readMobileTypeMode(p, s.trioStyle);
+        s.excludeRegions = Prefs.clamp(p.getInt(Prefs.KEY_EXCLUDE_REGIONS, Prefs.DEF_EXCLUDE_REGIONS), 0, Prefs.MAX_EXCLUDE_REGIONS);
         s.valueCentred = readStyledBoolean(p, Prefs.KEY_VALUE_CENTRED, Prefs.DEF_VALUE_CENTRED,
                 s.trioStyle);
         s.ringZones = Prefs.decodeLayout(readRingLayout(p, s.trioStyle));
@@ -461,6 +522,27 @@ public final class TrioSettings {
         s.glyphScale = Prefs.clamp(
                 p.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
+        s.capsuleScale = Prefs.clamp(
+                p.getInt(Prefs.KEY_CAPSULE_SCALE, Prefs.DEF_CAPSULE_SCALE),
+                Prefs.MIN_CAPSULE_SCALE, Prefs.MAX_CAPSULE_SCALE);
+        s.glyphOffsetX = Prefs.clamp(
+                p.getInt(Prefs.KEY_GLYPH_OFFSET_X, Prefs.DEF_GLYPH_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+        s.iconOffsetX = Prefs.clamp(
+                p.getInt(Prefs.KEY_ICON_OFFSET_X, Prefs.DEF_ICON_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+        s.glyphOffsetY = Prefs.clamp(
+                p.getInt(Prefs.KEY_GLYPH_OFFSET_Y, Prefs.DEF_GLYPH_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+
+        s.demoDualSim = p.getBoolean(Prefs.KEY_DEMO_DUAL_SIM,
+                Prefs.DEF_DEMO_DUAL_SIM);
+        s.sysChargeIcon = p.getBoolean(Prefs.KEY_SYS_CHARGE_ICON,
+                Prefs.DEF_SYS_CHARGE_ICON);
+        s.sysChargeIconLeft = p.getBoolean(Prefs.KEY_SYS_CHARGE_ICON_LEFT,
+                Prefs.DEF_SYS_CHARGE_ICON_LEFT);
+        s.powerSaveColor = p.getBoolean(Prefs.KEY_POWER_SAVE_COLOR,
+                Prefs.DEF_POWER_SAVE_COLOR);
         s.capsuleLeftDx = Prefs.clamp(p.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
                 Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X,
                 Prefs.MAX_CAPSULE_NUDGE_X);
@@ -527,6 +609,9 @@ public final class TrioSettings {
         s.outSignalMargin = Prefs.clamp(
                 p.getInt(Prefs.KEY_OUT_SIGNAL_MARGIN, Prefs.DEF_OUT_SIGNAL_MARGIN),
                 Prefs.MIN_OUT_SIGNAL_MARGIN, Prefs.MAX_OUT_SIGNAL_MARGIN);
+        s.outSignalMarginRight = Prefs.clamp(
+                p.getInt(Prefs.KEY_OUT_SIGNAL_MARGIN_RIGHT, Prefs.DEF_OUT_SIGNAL_MARGIN_RIGHT),
+                Prefs.MIN_OUT_SIGNAL_MARGIN, Prefs.MAX_OUT_SIGNAL_MARGIN);
         s.typeSuffixScale = Prefs.clamp(
                 p.getInt(Prefs.KEY_TYPE_SUFFIX_SCALE, Prefs.DEF_TYPE_SUFFIX_SCALE),
                 Prefs.MIN_TYPE_SUFFIX_SCALE, Prefs.MAX_TYPE_SUFFIX_SCALE);
@@ -538,6 +623,36 @@ public final class TrioSettings {
                 Prefs.MIN_WIFI_SCALE, Prefs.MAX_WIFI_SCALE);
         s.typeHideOnWifi = p.getBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI,
                 Prefs.DEF_TYPE_HIDE_ON_WIFI);
+        s.typeHideOnDataOff = p.getBoolean(Prefs.KEY_TYPE_HIDE_ON_DATA_OFF,
+                Prefs.DEF_TYPE_HIDE_ON_DATA_OFF);
+        s.dualInsideRing = p.getBoolean(Prefs.KEY_DUAL_INSIDE_RING,
+                Prefs.DEF_DUAL_INSIDE_RING);
+        s.dualStackPos = Prefs.clamp(
+                p.getInt(Prefs.KEY_DUAL_STACK_POS, Prefs.DEF_DUAL_STACK_POS),
+                Prefs.MIN_DUAL_STACK_POS, Prefs.MAX_DUAL_STACK_POS);
+        s.dualStackDy = Prefs.clamp(
+                p.getInt(Prefs.KEY_DUAL_STACK_DY, Prefs.DEF_DUAL_STACK_NUDGE),
+                Prefs.MIN_DUAL_STACK_NUDGE, Prefs.MAX_DUAL_STACK_NUDGE);
+        s.dualStackMatrix = p.getBoolean(Prefs.KEY_DUAL_STACK_MATRIX,
+                Prefs.DEF_DUAL_STACK_MATRIX);
+        s.dualMatrixSize = Prefs.clamp(
+                p.getInt(Prefs.KEY_DUAL_MATRIX_SIZE, Prefs.DEF_DUAL_MATRIX_SIZE),
+                Prefs.MIN_DUAL_MATRIX_SIZE, Prefs.MAX_DUAL_MATRIX_SIZE);
+        s.dualMatrixGap = Prefs.clamp(
+                p.getInt(Prefs.KEY_DUAL_MATRIX_GAP, Prefs.DEF_DUAL_MATRIX_GAP),
+                Prefs.MIN_DUAL_MATRIX_GAP, Prefs.MAX_DUAL_MATRIX_GAP);
+        s.dualMatrixDy = Prefs.clamp(
+                p.getInt(Prefs.KEY_DUAL_MATRIX_DY, Prefs.DEF_DUAL_MATRIX_DY),
+                Prefs.MIN_DUAL_STACK_NUDGE, Prefs.MAX_DUAL_STACK_NUDGE);
+        s.dualMouthExtra = Prefs.clamp(
+                p.getInt(Prefs.KEY_DUAL_MOUTH_EXTRA, Prefs.DEF_DUAL_MOUTH_EXTRA),
+                Prefs.MIN_DUAL_MOUTH_EXTRA, Prefs.MAX_DUAL_MOUTH_EXTRA);
+        s.chargeGapGlyph = Prefs.clamp(
+                p.getInt(Prefs.KEY_CHARGE_GAP_GLYPH, Prefs.DEF_CHARGE_GAP_GLYPH),
+                Prefs.MIN_CHARGE_GAP_GLYPH, Prefs.MAX_CHARGE_GAP_GLYPH);
+        s.chargeGapIcon = Prefs.clamp(
+                p.getInt(Prefs.KEY_CHARGE_GAP_ICON, Prefs.DEF_CHARGE_GAP_ICON),
+                Prefs.MIN_CHARGE_GAP_ICON, Prefs.MAX_CHARGE_GAP_ICON);
         s.chargingShowsValue = p.getBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE,
                 Prefs.DEF_CHARGING_SHOWS_VALUE);
         s.fontPath = readFontPath(p.getString(Prefs.KEY_FONT_PATH, Prefs.DEF_FONT_PATH));
@@ -769,6 +884,7 @@ public final class TrioSettings {
         s.showSim1 = other.showSim1;
         s.showSim2 = other.showSim2;
         s.mobileTypeMode = other.mobileTypeMode;
+        s.excludeRegions = other.excludeRegions;
         s.valueCentred = other.valueCentred;
         s.dualSim = other.dualSim;
         s.signalMode = other.signalMode;
@@ -850,6 +966,15 @@ public final class TrioSettings {
         s.perfScale = perfScale;
         s.perfWeight = perfWeight;
         s.glyphScale = glyphScale;
+        s.capsuleScale = capsuleScale;
+        s.glyphOffsetX = glyphOffsetX;
+        s.glyphOffsetY = glyphOffsetY;
+        s.iconOffsetX = iconOffsetX;
+
+        s.demoDualSim = demoDualSim;
+        s.sysChargeIcon = sysChargeIcon;
+        s.sysChargeIconLeft = sysChargeIconLeft;
+        s.powerSaveColor = powerSaveColor;
         s.capsuleLeftDx = capsuleLeftDx;
         s.capsuleLeftDy = capsuleLeftDy;
         s.capsuleRightDx = capsuleRightDx;
@@ -877,10 +1002,22 @@ public final class TrioSettings {
         s.outTypeMarginLeft = outTypeMarginLeft;
         s.outTypeMarginRight = outTypeMarginRight;
         s.outSignalMargin = outSignalMargin;
+        s.outSignalMarginRight = outSignalMarginRight;
         s.typeSuffixScale = typeSuffixScale;
         s.boltScale = boltScale;
         s.wifiScale = wifiScale;
         s.typeHideOnWifi = typeHideOnWifi;
+        s.typeHideOnDataOff = typeHideOnDataOff;
+        s.dualInsideRing = dualInsideRing;
+        s.dualStackPos = dualStackPos;
+        s.dualStackDy = dualStackDy;
+        s.dualStackMatrix = dualStackMatrix;
+        s.dualMatrixSize = dualMatrixSize;
+        s.dualMatrixGap = dualMatrixGap;
+        s.dualMatrixDy = dualMatrixDy;
+        s.dualMouthExtra = dualMouthExtra;
+        s.chargeGapGlyph = chargeGapGlyph;
+        s.chargeGapIcon = chargeGapIcon;
         s.chargingShowsValue = chargingShowsValue;
         s.fontPath = fontPath;
         s.dotScale = dotScale;
@@ -918,6 +1055,7 @@ public final class TrioSettings {
         }
         switch (key) {
             case Prefs.KEY_ENABLED: enabled = src.enabled; return true;
+            case Prefs.KEY_EXCLUDE_REGIONS: excludeRegions = src.excludeRegions; return true;
             case Prefs.KEY_SHOW_WIFI: showWifi = src.showWifi; return true;
             case Prefs.KEY_SHOW_MOBILE: showMobile = src.showMobile; return true;
             case Prefs.KEY_SHOW_VALUE: showValue = src.showValue; return true;
@@ -940,6 +1078,18 @@ public final class TrioSettings {
             case Prefs.KEY_PERF_SCALE: perfScale = src.perfScale; return true;
         case Prefs.KEY_PERF_WEIGHT: perfWeight = src.perfWeight; return true;
             case Prefs.KEY_GLYPH_SCALE: glyphScale = src.glyphScale; return true;
+            case Prefs.KEY_CAPSULE_SCALE: capsuleScale = src.capsuleScale; return true;
+            case Prefs.KEY_GLYPH_OFFSET_X: glyphOffsetX = src.glyphOffsetX; return true;
+            case Prefs.KEY_ICON_OFFSET_X: iconOffsetX = src.iconOffsetX; return true;
+            case Prefs.KEY_GLYPH_OFFSET_Y: glyphOffsetY = src.glyphOffsetY; return true;
+
+            case Prefs.KEY_DEMO_DUAL_SIM: demoDualSim = src.demoDualSim; return true;
+            case Prefs.KEY_SYS_CHARGE_ICON:
+                sysChargeIcon = src.sysChargeIcon; return true;
+            case Prefs.KEY_SYS_CHARGE_ICON_LEFT:
+                sysChargeIconLeft = src.sysChargeIconLeft; return true;
+            case Prefs.KEY_POWER_SAVE_COLOR:
+                powerSaveColor = src.powerSaveColor; return true;
             case Prefs.KEY_CAPSULE_LEFT_DX: capsuleLeftDx = src.capsuleLeftDx; return true;
             case Prefs.KEY_CAPSULE_LEFT_DY: capsuleLeftDy = src.capsuleLeftDy; return true;
             case Prefs.KEY_CAPSULE_RIGHT_DX: capsuleRightDx = src.capsuleRightDx; return true;
@@ -965,10 +1115,24 @@ public final class TrioSettings {
             case Prefs.KEY_OUT_TYPE_MARGIN_LEFT: outTypeMarginLeft = src.outTypeMarginLeft; return true;
             case Prefs.KEY_OUT_TYPE_MARGIN_RIGHT: outTypeMarginRight = src.outTypeMarginRight; return true;
             case Prefs.KEY_OUT_SIGNAL_MARGIN: outSignalMargin = src.outSignalMargin; return true;
+            case Prefs.KEY_OUT_SIGNAL_MARGIN_RIGHT:
+                outSignalMarginRight = src.outSignalMarginRight; return true;
             case Prefs.KEY_TYPE_SUFFIX_SCALE: typeSuffixScale = src.typeSuffixScale; return true;
             case Prefs.KEY_BOLT_SCALE: boltScale = src.boltScale; return true;
             case Prefs.KEY_WIFI_SCALE: wifiScale = src.wifiScale; return true;
             case Prefs.KEY_TYPE_HIDE_ON_WIFI: typeHideOnWifi = src.typeHideOnWifi; return true;
+            case Prefs.KEY_TYPE_HIDE_ON_DATA_OFF: typeHideOnDataOff = src.typeHideOnDataOff; return true;
+            case Prefs.KEY_DUAL_INSIDE_RING: dualInsideRing = src.dualInsideRing; return true;
+            case Prefs.KEY_DUAL_STACK_POS: dualStackPos = src.dualStackPos; return true;
+            case Prefs.KEY_DUAL_STACK_DY: dualStackDy = src.dualStackDy; return true;
+            case Prefs.KEY_DUAL_MATRIX_SIZE: dualMatrixSize = src.dualMatrixSize; return true;
+            case Prefs.KEY_DUAL_MATRIX_GAP: dualMatrixGap = src.dualMatrixGap; return true;
+            case Prefs.KEY_DUAL_MATRIX_DY: dualMatrixDy = src.dualMatrixDy; return true;
+            case Prefs.KEY_DUAL_MOUTH_EXTRA: dualMouthExtra = src.dualMouthExtra; return true;
+            case Prefs.KEY_CHARGE_GAP_GLYPH: chargeGapGlyph = src.chargeGapGlyph; return true;
+            case Prefs.KEY_CHARGE_GAP_ICON: chargeGapIcon = src.chargeGapIcon; return true;
+            case Prefs.KEY_DUAL_STACK_MATRIX: dualStackMatrix = src.dualStackMatrix;
+                return true;
             case Prefs.KEY_CHARGING_SHOWS_VALUE: chargingShowsValue = src.chargingShowsValue; return true;
             case Prefs.KEY_FONT_PATH: fontPath = src.fontPath; return true;
             case Prefs.KEY_DOT_SCALE: dotScale = src.dotScale; return true;
@@ -997,6 +1161,12 @@ public final class TrioSettings {
             return defaults();
         }
         s.enabled = bundle.getBoolean(Prefs.KEY_ENABLED, Prefs.DEF_ENABLED);
+        // The scope switch travels with the snapshot like every other setting. It
+        // was missing here while the settings screen already wrote it, which made
+        // the row look live and change nothing until the next reboot.
+        s.excludeRegions = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_EXCLUDE_REGIONS, Prefs.DEF_EXCLUDE_REGIONS),
+                0, Prefs.MAX_EXCLUDE_REGIONS);
         // The style first, for the same reason as the stored read: the component switches below
         // are per arrangement.
         s.navStyle = Prefs.normalizeNavStyle(bundle.getInt(Prefs.KEY_NAV_STYLE, Prefs.DEF_NAV_STYLE));
@@ -1040,6 +1210,27 @@ public final class TrioSettings {
         s.glyphScale = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_GLYPH_SCALE, Prefs.DEF_GLYPH_SCALE),
                 Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE);
+        s.capsuleScale = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_CAPSULE_SCALE, Prefs.DEF_CAPSULE_SCALE),
+                Prefs.MIN_CAPSULE_SCALE, Prefs.MAX_CAPSULE_SCALE);
+        s.glyphOffsetX = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_GLYPH_OFFSET_X, Prefs.DEF_GLYPH_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+        s.iconOffsetX = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_ICON_OFFSET_X, Prefs.DEF_ICON_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+        s.glyphOffsetY = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_GLYPH_OFFSET_Y, Prefs.DEF_GLYPH_OFFSET),
+                Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+
+        s.demoDualSim = bundle.getBoolean(Prefs.KEY_DEMO_DUAL_SIM,
+                Prefs.DEF_DEMO_DUAL_SIM);
+        s.sysChargeIcon = bundle.getBoolean(Prefs.KEY_SYS_CHARGE_ICON,
+                Prefs.DEF_SYS_CHARGE_ICON);
+        s.sysChargeIconLeft = bundle.getBoolean(Prefs.KEY_SYS_CHARGE_ICON_LEFT,
+                Prefs.DEF_SYS_CHARGE_ICON_LEFT);
+        s.powerSaveColor = bundle.getBoolean(Prefs.KEY_POWER_SAVE_COLOR,
+                Prefs.DEF_POWER_SAVE_COLOR);
         s.capsuleLeftDx = Prefs.clamp(bundle.getInt(Prefs.KEY_CAPSULE_LEFT_DX,
                 Prefs.DEF_CAPSULE_NUDGE), Prefs.MIN_CAPSULE_NUDGE_X,
                 Prefs.MAX_CAPSULE_NUDGE_X);
@@ -1103,6 +1294,9 @@ public final class TrioSettings {
         s.outSignalMargin = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_OUT_SIGNAL_MARGIN, Prefs.DEF_OUT_SIGNAL_MARGIN),
                 Prefs.MIN_OUT_SIGNAL_MARGIN, Prefs.MAX_OUT_SIGNAL_MARGIN);
+        s.outSignalMarginRight = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_OUT_SIGNAL_MARGIN_RIGHT, Prefs.DEF_OUT_SIGNAL_MARGIN_RIGHT),
+                Prefs.MIN_OUT_SIGNAL_MARGIN, Prefs.MAX_OUT_SIGNAL_MARGIN);
         s.typeSuffixScale = Prefs.clamp(
                 bundle.getInt(Prefs.KEY_TYPE_SUFFIX_SCALE, Prefs.DEF_TYPE_SUFFIX_SCALE),
                 Prefs.MIN_TYPE_SUFFIX_SCALE, Prefs.MAX_TYPE_SUFFIX_SCALE);
@@ -1114,6 +1308,36 @@ public final class TrioSettings {
                 Prefs.MIN_WIFI_SCALE, Prefs.MAX_WIFI_SCALE);
         s.typeHideOnWifi = bundle.getBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI,
                 Prefs.DEF_TYPE_HIDE_ON_WIFI);
+        s.typeHideOnDataOff = bundle.getBoolean(Prefs.KEY_TYPE_HIDE_ON_DATA_OFF,
+                Prefs.DEF_TYPE_HIDE_ON_DATA_OFF);
+        s.dualInsideRing = bundle.getBoolean(Prefs.KEY_DUAL_INSIDE_RING,
+                Prefs.DEF_DUAL_INSIDE_RING);
+        s.dualStackPos = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_DUAL_STACK_POS, Prefs.DEF_DUAL_STACK_POS),
+                Prefs.MIN_DUAL_STACK_POS, Prefs.MAX_DUAL_STACK_POS);
+        s.dualStackDy = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_DUAL_STACK_DY, Prefs.DEF_DUAL_STACK_NUDGE),
+                Prefs.MIN_DUAL_STACK_NUDGE, Prefs.MAX_DUAL_STACK_NUDGE);
+        s.dualStackMatrix = bundle.getBoolean(Prefs.KEY_DUAL_STACK_MATRIX,
+                Prefs.DEF_DUAL_STACK_MATRIX);
+        s.dualMatrixSize = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_DUAL_MATRIX_SIZE, Prefs.DEF_DUAL_MATRIX_SIZE),
+                Prefs.MIN_DUAL_MATRIX_SIZE, Prefs.MAX_DUAL_MATRIX_SIZE);
+        s.dualMatrixGap = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_DUAL_MATRIX_GAP, Prefs.DEF_DUAL_MATRIX_GAP),
+                Prefs.MIN_DUAL_MATRIX_GAP, Prefs.MAX_DUAL_MATRIX_GAP);
+        s.dualMatrixDy = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_DUAL_MATRIX_DY, Prefs.DEF_DUAL_MATRIX_DY),
+                Prefs.MIN_DUAL_STACK_NUDGE, Prefs.MAX_DUAL_STACK_NUDGE);
+        s.dualMouthExtra = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_DUAL_MOUTH_EXTRA, Prefs.DEF_DUAL_MOUTH_EXTRA),
+                Prefs.MIN_DUAL_MOUTH_EXTRA, Prefs.MAX_DUAL_MOUTH_EXTRA);
+        s.chargeGapGlyph = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_CHARGE_GAP_GLYPH, Prefs.DEF_CHARGE_GAP_GLYPH),
+                Prefs.MIN_CHARGE_GAP_GLYPH, Prefs.MAX_CHARGE_GAP_GLYPH);
+        s.chargeGapIcon = Prefs.clamp(
+                bundle.getInt(Prefs.KEY_CHARGE_GAP_ICON, Prefs.DEF_CHARGE_GAP_ICON),
+                Prefs.MIN_CHARGE_GAP_ICON, Prefs.MAX_CHARGE_GAP_ICON);
         s.chargingShowsValue = bundle.getBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE,
                 Prefs.DEF_CHARGING_SHOWS_VALUE);
         s.fontPath = readFontPath(bundle.getString(Prefs.KEY_FONT_PATH, Prefs.DEF_FONT_PATH));
@@ -1167,6 +1391,7 @@ public final class TrioSettings {
         b.putInt(Prefs.KEY_TRIO_STYLE, Prefs.normalizeTrioStyle(trioStyle));
         final int style = Prefs.normalizeTrioStyle(trioStyle);
         b.putBoolean(Prefs.KEY_ENABLED, enabled);
+        b.putInt(Prefs.KEY_EXCLUDE_REGIONS, excludeRegions);
         b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_WIFI, style), showWifi);
         b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_MOBILE, style), showMobile);
         b.putBoolean(Prefs.styledKey(Prefs.KEY_SHOW_VALUE, style), showValue);
@@ -1188,6 +1413,15 @@ public final class TrioSettings {
         b.putInt(Prefs.KEY_PERF_SCALE, perfScale);
         b.putInt(Prefs.KEY_PERF_WEIGHT, perfWeight);
         b.putInt(Prefs.KEY_GLYPH_SCALE, glyphScale);
+        b.putInt(Prefs.KEY_CAPSULE_SCALE, capsuleScale);
+        b.putInt(Prefs.KEY_GLYPH_OFFSET_X, glyphOffsetX);
+        b.putInt(Prefs.KEY_ICON_OFFSET_X, iconOffsetX);
+        b.putInt(Prefs.KEY_GLYPH_OFFSET_Y, glyphOffsetY);
+
+        b.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, demoDualSim);
+        b.putBoolean(Prefs.KEY_SYS_CHARGE_ICON, sysChargeIcon);
+        b.putBoolean(Prefs.KEY_SYS_CHARGE_ICON_LEFT, sysChargeIconLeft);
+        b.putBoolean(Prefs.KEY_POWER_SAVE_COLOR, powerSaveColor);
         b.putInt(Prefs.KEY_CAPSULE_LEFT_DX, capsuleLeftDx);
         b.putInt(Prefs.KEY_CAPSULE_LEFT_DY, capsuleLeftDy);
         b.putInt(Prefs.KEY_CAPSULE_RIGHT_DX, capsuleRightDx);
@@ -1215,10 +1449,22 @@ public final class TrioSettings {
         b.putInt(Prefs.KEY_OUT_TYPE_MARGIN_LEFT, outTypeMarginLeft);
         b.putInt(Prefs.KEY_OUT_TYPE_MARGIN_RIGHT, outTypeMarginRight);
         b.putInt(Prefs.KEY_OUT_SIGNAL_MARGIN, outSignalMargin);
+        b.putInt(Prefs.KEY_OUT_SIGNAL_MARGIN_RIGHT, outSignalMarginRight);
         b.putInt(Prefs.KEY_TYPE_SUFFIX_SCALE, typeSuffixScale);
         b.putInt(Prefs.KEY_BOLT_SCALE, boltScale);
         b.putInt(Prefs.KEY_WIFI_SCALE, wifiScale);
         b.putBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI, typeHideOnWifi);
+        b.putBoolean(Prefs.KEY_TYPE_HIDE_ON_DATA_OFF, typeHideOnDataOff);
+        b.putBoolean(Prefs.KEY_DUAL_INSIDE_RING, dualInsideRing);
+        b.putInt(Prefs.KEY_DUAL_STACK_POS, dualStackPos);
+        b.putInt(Prefs.KEY_DUAL_STACK_DY, dualStackDy);
+        b.putBoolean(Prefs.KEY_DUAL_STACK_MATRIX, dualStackMatrix);
+        b.putInt(Prefs.KEY_DUAL_MATRIX_SIZE, dualMatrixSize);
+        b.putInt(Prefs.KEY_DUAL_MATRIX_GAP, dualMatrixGap);
+        b.putInt(Prefs.KEY_DUAL_MATRIX_DY, dualMatrixDy);
+        b.putInt(Prefs.KEY_DUAL_MOUTH_EXTRA, dualMouthExtra);
+        b.putInt(Prefs.KEY_CHARGE_GAP_GLYPH, chargeGapGlyph);
+        b.putInt(Prefs.KEY_CHARGE_GAP_ICON, chargeGapIcon);
         b.putBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE, chargingShowsValue);
         b.putString(Prefs.KEY_FONT_PATH, fontPath);
         b.putInt(Prefs.KEY_DOT_SCALE, dotScale);
@@ -1235,7 +1481,7 @@ public final class TrioSettings {
      * {@code TrioConfig}, which must not notify the listeners (and re-fold every
      * container) when the delayed read saw the same values the first one did -
      * but a full comparison is also what a snapshot type ought to answer.
-     */
+     */
     /**
      * Normalises a stored font path to a non-null string.
      *
@@ -1258,6 +1504,11 @@ public final class TrioSettings {
         }
         final TrioSettings s = (TrioSettings) o;
         return enabled == s.enabled
+                // The scope switch decides per region whether the stock battery is
+                // left alone. Left out, the settings row could write it and never
+                // see its own value come back, because the screen holds the
+                // snapshot in a mutableStateOf compared with this method.
+                && excludeRegions == s.excludeRegions
                 && showWifi == s.showWifi
                 && showMobile == s.showMobile
                 && showValue == s.showValue
@@ -1301,6 +1552,15 @@ public final class TrioSettings {
                 // the old number on the next recomposition.
                 && perfWeight == s.perfWeight
                 && glyphScale == s.glyphScale
+                && capsuleScale == s.capsuleScale
+                && glyphOffsetX == s.glyphOffsetX
+                && glyphOffsetY == s.glyphOffsetY
+                && iconOffsetX == s.iconOffsetX
+
+                && demoDualSim == s.demoDualSim
+                && sysChargeIcon == s.sysChargeIcon
+                && sysChargeIconLeft == s.sysChargeIconLeft
+                && powerSaveColor == s.powerSaveColor
                 // The four capsule nudges, and the reason this defect was noticed at all:
                 // they were added to defaults(), from(), copy(), applyKeyFrom() and both
                 // bundle directions - the whole pipeline except this list - so the only
@@ -1332,10 +1592,22 @@ public final class TrioSettings {
                 && outTypeMarginLeft == s.outTypeMarginLeft
                 && outTypeMarginRight == s.outTypeMarginRight
                 && outSignalMargin == s.outSignalMargin
+                && outSignalMarginRight == s.outSignalMarginRight
                 && typeSuffixScale == s.typeSuffixScale
                 && boltScale == s.boltScale
                 && wifiScale == s.wifiScale
                 && typeHideOnWifi == s.typeHideOnWifi
+                && typeHideOnDataOff == s.typeHideOnDataOff
+                && dualInsideRing == s.dualInsideRing
+                && dualStackPos == s.dualStackPos
+                && dualStackDy == s.dualStackDy
+                && dualStackMatrix == s.dualStackMatrix
+                && dualMatrixSize == s.dualMatrixSize
+                && dualMatrixGap == s.dualMatrixGap
+                && dualMatrixDy == s.dualMatrixDy
+                && dualMouthExtra == s.dualMouthExtra
+                && chargeGapGlyph == s.chargeGapGlyph
+                && chargeGapIcon == s.chargeGapIcon
                 && chargingShowsValue == s.chargingShowsValue
                 // Objects.equals, not ==: the font path is the one reference-typed
                 // field here, and == would compare identities. Two snapshots built
@@ -1359,14 +1631,36 @@ public final class TrioSettings {
         int h = (enabled ? 1 : 0) ^ (mobileTypeMode << 1) ^ trioStyle;
         h = h * 31 + (perfPower ? 1 : 0);
         h = h * 31 + (perfTemp ? 1 : 0);
+        h = h * 31 + (typeHideOnWifi ? 1 : 0);
+        h = h * 31 + (typeHideOnDataOff ? 1 : 0);
+        h = h * 31 + (dualInsideRing ? 1 : 0);
+        h = h * 31 + dualStackPos;
+        h = h * 31 + dualStackDy;
+        h = h * 31 + (dualStackMatrix ? 1 : 0);
+        h = h * 31 + dualMatrixSize;
+        h = h * 31 + dualMatrixGap;
+        h = h * 31 + dualMatrixDy;
+        h = h * 31 + dualMouthExtra;
+        h = h * 31 + chargeGapGlyph;
+        h = h * 31 + chargeGapIcon;
         h = h * 31 + perfScale;
         h = h * 31 + perfWeight;
         h = h * 31 + glyphScale;
+        h = h * 31 + capsuleScale;
+        h = h * 31 + glyphOffsetX;
+        h = h * 31 + glyphOffsetY;
+        h = h * 31 + iconOffsetX;
+
+        h = h * 31 + (demoDualSim ? 1 : 0);
+        h = h * 31 + (sysChargeIcon ? 1 : 0);
+        h = h * 31 + (sysChargeIconLeft ? 1 : 0);
+        h = h * 31 + (powerSaveColor ? 1 : 0);
         h = h * 31 + (perfTempChargingOnly ? 1 : 0);
         h = h * 31 + capsuleLeftDx;
         h = h * 31 + capsuleLeftDy;
         h = h * 31 + capsuleRightDx;
         h = h * 31 + capsuleRightDy;
+        h = h * 31 + excludeRegions;
         return h != 0 ? h : 1;
     }
 }

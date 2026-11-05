@@ -270,6 +270,9 @@ class SettingsRepository(context: Context) {
     /** Drop the network type while Wi-Fi is up; see [Prefs.KEY_TYPE_HIDE_ON_WIFI]. */
     fun setTypeHideOnWifi(value: Boolean) =
         writeBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI, value)
+    /** Drop the network type while mobile data is off. */
+    fun setTypeHideOnDataOff(value: Boolean) =
+        writeBoolean(Prefs.KEY_TYPE_HIDE_ON_DATA_OFF, value)
     /** While charging the ring centre shows the percentage; see [Prefs.KEY_CHARGING_SHOWS_VALUE]. */
     fun setChargingShowsValue(value: Boolean) =
         writeBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE, value)
@@ -341,18 +344,58 @@ class SettingsRepository(context: Context) {
     fun setValueWeight(value: Int) = writeInt(Prefs.KEY_VALUE_WEIGHT, value)
     fun setClockSize(value: Int) = writeInt(Prefs.KEY_CLOCK_SIZE, value)
     fun setClockWeight(value: Int) = writeInt(Prefs.KEY_CLOCK_WEIGHT, value)
+    fun setExcludeRegions(value: Int) = writeInt(Prefs.KEY_EXCLUDE_REGIONS, value)
     fun setTypeSize(value: Int) = writeInt(Prefs.KEY_TYPE_SIZE, value)
     fun setOutTypeSize(value: Int) = writeInt(Prefs.KEY_OUT_TYPE_SIZE_DP, value)
     fun setOutSignalSize(value: Int) = writeInt(Prefs.KEY_OUT_SIGNAL_SIZE, value)
     fun setOutTypeMarginLeft(value: Int) = writeInt(Prefs.KEY_OUT_TYPE_MARGIN_LEFT, value)
     fun setOutTypeMarginRight(value: Int) = writeInt(Prefs.KEY_OUT_TYPE_MARGIN_RIGHT, value)
     fun setOutSignalMargin(value: Int) = writeInt(Prefs.KEY_OUT_SIGNAL_MARGIN, value)
+    fun setOutSignalMarginRight(value: Int) = writeInt(Prefs.KEY_OUT_SIGNAL_MARGIN_RIGHT, value)
     fun setTypeSuffixScale(value: Int) = writeInt(Prefs.KEY_TYPE_SUFFIX_SCALE, value)
     fun setTypeWeight(value: Int) = writeInt(Prefs.KEY_TYPE_WEIGHT, value)
     fun setTrackAlpha(value: Int) = writeInt(Prefs.KEY_TRACK_ALPHA, value)
 
     /** Overall size of the trio glyph, in percent - see [Prefs.KEY_GLYPH_SCALE]. */
     fun setGlyphScale(value: Int) = writeInt(Prefs.KEY_GLYPH_SCALE, value)
+
+    /** Whole-body nudges, in dp; negative moves left / up. */
+    /** The capsule's own size correction, in percent of the shared glyph fit. */
+    fun setCapsuleScale(value: Int) = writeInt(Prefs.KEY_CAPSULE_SCALE, value)
+    fun setGlyphOffsetX(value: Int) = writeInt(Prefs.KEY_GLYPH_OFFSET_X, value)
+    fun setGlyphOffsetY(value: Int) = writeInt(Prefs.KEY_GLYPH_OFFSET_Y, value)
+
+    /** The stock icon area's own horizontal shift, in dp. */
+    fun setIconOffsetX(value: Int) = writeInt(Prefs.KEY_ICON_OFFSET_X, value)
+
+
+    /** Pretend a second card so the stacked reading can be previewed on a one-SIM phone. */
+    fun setDemoDualSim(value: Boolean) = writeBoolean(Prefs.KEY_DEMO_DUAL_SIM, value)
+
+    fun setSysChargeIcon(value: Boolean) = writeBoolean(Prefs.KEY_SYS_CHARGE_ICON, value)
+    fun setSysChargeIconLeft(value: Boolean) = writeBoolean(Prefs.KEY_SYS_CHARGE_ICON_LEFT, value)
+    fun setPowerSaveColor(value: Boolean) = writeBoolean(Prefs.KEY_POWER_SAVE_COLOR, value)
+
+    /** Stack both cards inside the ring instead of across its two mouths. */
+    fun setDualInsideRing(value: Boolean) = writeBoolean(Prefs.KEY_DUAL_INSIDE_RING, value)
+
+    /** Which side the stacked pair hangs from: false top, true bottom. */
+    fun setDualStackAtBottom(value: Boolean) = writeInt(
+        Prefs.KEY_DUAL_STACK_POS,
+        if (value) Prefs.DUAL_STACK_BOTTOM else Prefs.DUAL_STACK_TOP,
+    )
+
+    fun setDualStackDy(value: Int) = writeInt(Prefs.KEY_DUAL_STACK_DY, value)
+
+    /** Flat 2x4 matrix instead of concentric arcs. */
+    fun setDualStackMatrix(value: Boolean) = writeBoolean(Prefs.KEY_DUAL_STACK_MATRIX, value)
+
+    fun setDualMatrixSize(value: Int) = writeInt(Prefs.KEY_DUAL_MATRIX_SIZE, value)
+    fun setDualMatrixGap(value: Int) = writeInt(Prefs.KEY_DUAL_MATRIX_GAP, value)
+    fun setDualMatrixDy(value: Int) = writeInt(Prefs.KEY_DUAL_MATRIX_DY, value)
+    fun setDualMouthExtra(value: Int) = writeInt(Prefs.KEY_DUAL_MOUTH_EXTRA, value)
+    fun setChargeGapGlyph(value: Int) = writeInt(Prefs.KEY_CHARGE_GAP_GLYPH, value)
+    fun setChargeGapIcon(value: Int) = writeInt(Prefs.KEY_CHARGE_GAP_ICON, value)
 
     /** Interior cell nudges; see [Prefs.KEY_CAPSULE_LEFT_DX]. */
     fun setCapsuleLeftDx(value: Int) = writeInt(Prefs.KEY_CAPSULE_LEFT_DX, value)
@@ -420,6 +463,25 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_PERF_SCALE, snapshot.perfScale)
             prefs.putInt(Prefs.KEY_PERF_WEIGHT, snapshot.perfWeight)
             prefs.putInt(Prefs.KEY_GLYPH_SCALE, snapshot.glyphScale)
+            prefs.putInt(Prefs.KEY_CAPSULE_SCALE, snapshot.capsuleScale)
+            prefs.putInt(Prefs.KEY_GLYPH_OFFSET_X, snapshot.glyphOffsetX)
+            prefs.putInt(Prefs.KEY_GLYPH_OFFSET_Y, snapshot.glyphOffsetY)
+            prefs.putInt(Prefs.KEY_ICON_OFFSET_X, snapshot.iconOffsetX)
+
+            prefs.putBoolean(Prefs.KEY_DEMO_DUAL_SIM, snapshot.demoDualSim)
+            prefs.putBoolean(Prefs.KEY_SYS_CHARGE_ICON, snapshot.sysChargeIcon)
+            prefs.putBoolean(Prefs.KEY_SYS_CHARGE_ICON_LEFT, snapshot.sysChargeIconLeft)
+            prefs.putBoolean(Prefs.KEY_POWER_SAVE_COLOR, snapshot.powerSaveColor)
+            prefs.putBoolean(Prefs.KEY_DUAL_INSIDE_RING, snapshot.dualInsideRing)
+            prefs.putInt(Prefs.KEY_DUAL_STACK_POS, snapshot.dualStackPos)
+            prefs.putInt(Prefs.KEY_DUAL_STACK_DY, snapshot.dualStackDy)
+            prefs.putBoolean(Prefs.KEY_DUAL_STACK_MATRIX, snapshot.dualStackMatrix)
+            prefs.putInt(Prefs.KEY_DUAL_MATRIX_SIZE, snapshot.dualMatrixSize)
+            prefs.putInt(Prefs.KEY_DUAL_MATRIX_GAP, snapshot.dualMatrixGap)
+            prefs.putInt(Prefs.KEY_DUAL_MATRIX_DY, snapshot.dualMatrixDy)
+            prefs.putInt(Prefs.KEY_DUAL_MOUTH_EXTRA, snapshot.dualMouthExtra)
+            prefs.putInt(Prefs.KEY_CHARGE_GAP_GLYPH, snapshot.chargeGapGlyph)
+            prefs.putInt(Prefs.KEY_CHARGE_GAP_ICON, snapshot.chargeGapIcon)
             // A key missing from this list is re-pushed as its default after every
             // framework reconnect, so a chosen font would silently revert on the
             // next bind. This is the list DEVELOPMENT.md calls out for exactly that
@@ -446,12 +508,14 @@ class SettingsRepository(context: Context) {
             // the look an install had when the two readings shared one size.
             prefs.putInt(Prefs.KEY_CLOCK_SIZE, snapshot.clockSize)
             prefs.putInt(Prefs.KEY_CLOCK_WEIGHT, snapshot.clockWeight)
+            prefs.putInt(Prefs.KEY_EXCLUDE_REGIONS, snapshot.excludeRegions)
             prefs.putInt(Prefs.KEY_TYPE_SIZE, snapshot.typeSize)
             prefs.putInt(Prefs.KEY_OUT_TYPE_SIZE_DP, snapshot.outTypeSize)
             prefs.putInt(Prefs.KEY_OUT_SIGNAL_SIZE, snapshot.outSignalSize)
             prefs.putInt(Prefs.KEY_OUT_TYPE_MARGIN_LEFT, snapshot.outTypeMarginLeft)
             prefs.putInt(Prefs.KEY_OUT_TYPE_MARGIN_RIGHT, snapshot.outTypeMarginRight)
             prefs.putInt(Prefs.KEY_OUT_SIGNAL_MARGIN, snapshot.outSignalMargin)
+            prefs.putInt(Prefs.KEY_OUT_SIGNAL_MARGIN_RIGHT, snapshot.outSignalMarginRight)
             prefs.putInt(Prefs.KEY_TYPE_SUFFIX_SCALE, snapshot.typeSuffixScale)
             prefs.putInt(Prefs.KEY_TYPE_WEIGHT, snapshot.typeWeight)
             prefs.putInt(Prefs.KEY_TRACK_ALPHA, snapshot.trackAlpha)
@@ -462,6 +526,7 @@ class SettingsRepository(context: Context) {
             prefs.putInt(Prefs.KEY_BOLT_SCALE, snapshot.boltScale)
             prefs.putInt(Prefs.KEY_WIFI_SCALE, snapshot.wifiScale)
             prefs.putBoolean(Prefs.KEY_TYPE_HIDE_ON_WIFI, snapshot.typeHideOnWifi)
+            prefs.putBoolean(Prefs.KEY_TYPE_HIDE_ON_DATA_OFF, snapshot.typeHideOnDataOff)
             prefs.putBoolean(Prefs.KEY_CHARGING_SHOWS_VALUE, snapshot.chargingShowsValue)
             prefs.putInt(Prefs.KEY_DOT_SCALE, snapshot.dotScale)
             prefs.putString(Prefs.KEY_OUT_ORDER, Prefs.encodeOutOrder(snapshot.outOrder))

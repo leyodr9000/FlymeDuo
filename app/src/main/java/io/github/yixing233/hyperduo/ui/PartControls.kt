@@ -23,6 +23,10 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.CompositionLocalProvider
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.saveable.rememberSaveable
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.platform.LocalConfiguration
@@ -133,6 +137,11 @@ internal class SliderSpec(
      * Defaults to [max], so every other row keeps its constant span.
      */
     val maxFor: (TrioAppearance) -> Int = { max },
+    /**
+     * The value this row shipped with, shown in its note so a user who has dragged it
+     * around can put it back. Null on rows whose default is not a number worth stating.
+     */
+    val def: Int? = null,
     val read: (TrioSettings) -> Int,
     val write: (SettingsRepository, Int) -> Unit,
     val titleRes: (TrioAppearance) -> Int,
@@ -158,7 +167,26 @@ internal class SliderSpec(
  * percentage-weight row, which is gated on the percentage switch rather than on
  * the rule that decides whether a percentage is drawn.
  */
+/** Title ids of the rows that only size out-of-ring pieces; hidden while those are off. */
+private val OUT_RING_ROW_TITLES = setOf(
+    R.string.perf_scale_title,
+    R.string.perf_weight_title,
+    R.string.out_type_size_title,
+    R.string.out_type_margin_left_title,
+    R.string.out_type_margin_right_title,
+    R.string.out_signal_size_title,
+    R.string.out_signal_margin_title,
+    R.string.out_signal_margin_right_title,
+)
+
 internal fun geometrySliders(): List<SliderSpec> {
+    val all = allGeometrySliders()
+    if (Prefs.OUT_RING_FEATURES) return all
+    val probe = TrioAppearance.of(io.github.yixing233.hyperduo.TrioSettings.defaults())
+    return all.filter { it.titleRes(probe) !in OUT_RING_ROW_TITLES }
+}
+
+private fun allGeometrySliders(): List<SliderSpec> {
     val value = TrioZones.Part.VALUE
     val wifi = TrioZones.Part.WIFI
     val mobile = TrioZones.Part.MOBILE
@@ -251,21 +279,25 @@ internal fun geometrySliders(): List<SliderSpec> {
             summaryRes = { R.string.capsule_length_summary },
             enabled = { it.glyph && it.capsule },
         ),
+        // The capsule's own size correction. The shared size is one number for both shapes;
+        // this is the one that says the capsule's ink box does not match the row the way the
+        // ring's square does, so at the same percentage its body lands visibly smaller.
+        // Kept with the capsule's other geometry, so it lives in the capsule's own section.
         SliderSpec(
             group = GeometryGroup.Scale,
             part = null,
-            min = Prefs.MIN_GLYPH_SCALE,
-            max = Prefs.MAX_GLYPH_SCALE,
-            read = { it.glyphScale },
-            write = { r, v -> r.setGlyphScale(v) },
-            titleRes = { R.string.glyph_scale_title },
-            summaryRes = { R.string.glyph_scale_summary },
-            // Gated on the master switch and nothing else: it sizes the glyph
-            // itself, so with the glyph off there is nothing for it to act on. No
-            // row is gated by it, so it can never be the reason another is shut.
-            enabled = { it.glyph },
-            suffix = "%",
+            min = Prefs.MIN_CAPSULE_SCALE,
+            max = Prefs.MAX_CAPSULE_SCALE,
+            def = Prefs.DEF_CAPSULE_SCALE,
+    read = { it.capsuleScale },
+            write = { r, v -> r.setCapsuleScale(v) },
+            titleRes = { R.string.capsule_scale_title },
+            summaryRes = { R.string.capsule_scale_summary },
+            enabled = { it.glyph && it.capsule },
         ),
+        // The glyph's overall size lives as a named spec so the home page's master
+        // section and the battery editor render one and the same row object.
+        glyphScaleSlider,
         SliderSpec(
             group = GeometryGroup.Scale,
             part = null,
@@ -602,6 +634,421 @@ internal fun slidersForPart(part: TrioZones.Part): List<SliderSpec> =
     geometrySliders().filter { it.part == part }
 
 /**
+ * The glyph's overall size, as one named row. The battery editor draws it, and
+ * the home page draws it again beside the master switch - "how big is the icon"
+ * reads as a master-level decision there, not a component detail. One spec
+ * object on both surfaces, so the two can never disagree about min, max or gate.
+ */
+internal val glyphScaleSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_GLYPH_SCALE,
+    max = Prefs.MAX_GLYPH_SCALE,
+    read = { it.glyphScale },
+    write = { r, v -> r.setGlyphScale(v) },
+    titleRes = { R.string.glyph_scale_title },
+    summaryRes = { R.string.glyph_scale_summary },
+    // Gated on the master switch and nothing else: it sizes the glyph itself,
+    // so with the glyph off there is nothing for it to act on. No row is gated
+    // by it, so it can never be the reason another is shut.
+    enabled = { it.glyph },
+    editorOwner = TrioSettingsPart.Battery,
+    suffix = "%",
+)
+
+/**
+ * The glyph's whole-body horizontal nudge, as a named row beside the size row -
+ * same two surfaces, same one-object rule. Negative moves left.
+ */
+internal val glyphOffsetXSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_GLYPH_OFFSET,
+    max = Prefs.MAX_GLYPH_OFFSET,
+    def = Prefs.DEF_GLYPH_OFFSET,
+    read = { it.glyphOffsetX },
+    write = { r, v -> r.setGlyphOffsetX(v) },
+    titleRes = { R.string.glyph_offset_x_title },
+    summaryRes = { R.string.glyph_offset_summary },
+    enabled = { it.glyph },
+    editorOwner = TrioSettingsPart.Battery,
+    suffix = "dp",
+)
+
+/** The vertical twin of [glyphOffsetXSlider]; negative moves up. */
+internal val glyphOffsetYSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_GLYPH_OFFSET,
+    max = Prefs.MAX_GLYPH_OFFSET,
+    def = Prefs.DEF_GLYPH_OFFSET,
+    read = { it.glyphOffsetY },
+    write = { r, v -> r.setGlyphOffsetY(v) },
+    titleRes = { R.string.glyph_offset_y_title },
+    summaryRes = { R.string.glyph_offset_y_summary },
+    enabled = { it.glyph },
+    editorOwner = TrioSettingsPart.Battery,
+    suffix = "dp",
+)
+
+/**
+ * The stock icon area's own horizontal shift, as a named row beside the glyph's.
+ * Independent on purpose: a third-party theme can get BOTH gaps wrong, so the
+ * two sides are tuned separately rather than one following the other.
+ */
+internal val iconOffsetXSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_GLYPH_OFFSET,
+    max = Prefs.MAX_GLYPH_OFFSET,
+    def = Prefs.DEF_ICON_OFFSET,
+    read = { it.iconOffsetX },
+    write = { r, v -> r.setIconOffsetX(v) },
+    titleRes = { R.string.icon_offset_x_title },
+    summaryRes = { R.string.icon_offset_summary },
+    enabled = { it.glyph },
+    editorOwner = TrioSettingsPart.Battery,
+    suffix = "dp",
+)
+
+/** The rows the merged size-and-position group folds away. */
+/** Where the stacked pair hangs, and how far it may be nudged. */
+
+/**
+ * The stacked pair as one row: where it hangs, and how far it may be lifted.
+ *
+ * <p>Grouped into a sheet rather than left as loose switches on the page because these three
+ * settings only mean anything together - the switch decides whether the pair exists at all,
+ * and the other two move that pair. Spread across the page they read as unrelated rows, and
+ * the position control in particular looked like it belonged to the glyph.
+ */
+@Composable
+internal fun DualStackGroup(
+    settings: TrioSettings,
+    update: ((SettingsRepository) -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val a = TrioAppearance.of(settings)
+    // Ring only. The pair is drawn on the ring's own arc, and the other two arrangements
+    // have no arc to draw it on - the capsule draws its readings in cells and the rectangle
+    // in columns, so a row here would be a setting that changes nothing.
+    if (!a.ring) return
+    var sheet by rememberSaveable { mutableStateOf(false) }
+    ArrowPreference(
+        title = stringResource(R.string.dual_stack_group_title),
+        summary = stringResource(
+            R.string.dual_stack_group_summary,
+            stringResource(
+                if (settings.dualInsideRing) R.string.dual_stack_on else R.string.dual_stack_off
+            ),
+            stringResource(
+                if (settings.dualStackPos == Prefs.DUAL_STACK_BOTTOM) R.string.dual_stack_side_bottom
+                else R.string.dual_stack_side_top
+            ),
+            settings.dualStackDy,
+        ),
+        insideMargin = SettingsItemMargin,
+        enabled = a.glyph,
+        onClick = { sheet = true },
+        modifier = modifier,
+    )
+    if (sheet) {
+        val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        // A sheet taller than the screen has to scroll or its last rows are unreachable -
+        // the capsule and matrix sliders alone are taller than a short phone's sheet.
+        // Same 72% cap the component sheet uses, so the two behave alike.
+        val maxSheet = (LocalConfiguration.current.screenHeightDp * 0.72f).dp
+        OverlayBottomSheet(
+            show = true,
+            title = stringResource(R.string.dual_stack_group_title),
+            onDismissRequest = { sheet = false },
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(max = maxSheet)
+                .verticalScroll(rememberScrollState()).padding(bottom = bottomInset)) {
+                SwitchPreferenceGroup(
+                    checked = settings.dualInsideRing,
+                    title = stringResource(R.string.dual_inside_ring_title),
+                    summary = stringResource(R.string.dual_inside_ring_summary),
+                    onCheckedChange = { value -> update { it.setDualInsideRing(value) } },
+                )
+                SwitchPreferenceGroup(
+                    checked = settings.dualStackPos == Prefs.DUAL_STACK_BOTTOM,
+                    title = stringResource(R.string.dual_stack_bottom_title),
+                    summary = stringResource(R.string.dual_stack_bottom_summary),
+                    enabled = settings.dualInsideRing,
+                    onCheckedChange = { value -> update { it.setDualStackAtBottom(value) } },
+                )
+                SwitchPreferenceGroup(
+                    checked = settings.dualStackMatrix,
+                    title = stringResource(R.string.dual_stack_matrix_title),
+                    summary = stringResource(R.string.dual_stack_matrix_summary),
+                    enabled = settings.dualInsideRing,
+                    onCheckedChange = { value -> update { it.setDualStackMatrix(value) } },
+                )
+                SwitchPreferenceGroup(
+                    checked = settings.demoDualSim,
+                    title = stringResource(R.string.demo_dual_sim_title),
+                    summary = stringResource(R.string.demo_dual_sim_summary),
+                    onCheckedChange = { value -> update { it.setDemoDualSim(value) } },
+                )
+                if (settings.dualStackMatrix) {
+                    SliderRow(dualMouthExtraSlider, settings, update)
+                    SliderRow(dualMatrixSizeSlider, settings, update)
+                    SliderRow(dualMatrixGapSlider, settings, update)
+                    SliderRow(dualMatrixDySlider, settings, update)
+                } else {
+                    SliderRow(dualStackDySlider, settings, update)
+                }
+            }
+        }
+    }
+}
+
+/**
+ * A folded group of switches for the home page: one arrow row whose summary shows the
+ * switches' states, opening a sheet with the switches themselves. Keeps the home page short
+ * without moving anything off it.
+ */
+internal class SheetSwitch(
+    val checked: Boolean,
+    val titleRes: Int,
+    val summaryRes: Int,
+    /** Short label for the folded row's summary, e.g. "手动". */
+    val shortRes: Int,
+    val onChange: (Boolean) -> Unit,
+)
+
+@Composable
+internal fun SwitchSheetGroup(
+    titleRes: Int,
+    switches: List<SheetSwitch>,
+    enabled: Boolean,
+    modifier: Modifier = Modifier,
+    sliders: List<SliderSpec> = emptyList(),
+    settings: TrioSettings? = null,
+    update: (((SettingsRepository) -> Unit) -> Unit)? = null,
+) {
+    var sheet by rememberSaveable { mutableStateOf(false) }
+    val on = stringResource(R.string.switch_state_on)
+    val off = stringResource(R.string.switch_state_off)
+    val summary = switches.map { "${stringResource(it.shortRes)} ${if (it.checked) on else off}" }
+        .joinToString(" · ")
+    ArrowPreference(
+        title = stringResource(titleRes),
+        summary = summary,
+        insideMargin = SettingsItemMargin,
+        enabled = enabled,
+        onClick = { sheet = true },
+        modifier = modifier,
+    )
+    if (sheet) {
+        val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        val maxSheet = (LocalConfiguration.current.screenHeightDp * 0.72f).dp
+        OverlayBottomSheet(
+            show = true,
+            title = stringResource(titleRes),
+            onDismissRequest = { sheet = false },
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(max = maxSheet)
+                .verticalScroll(rememberScrollState()).padding(bottom = bottomInset)) {
+                switches.forEach { s ->
+                    SwitchPreferenceGroup(
+                        checked = s.checked,
+                        title = stringResource(s.titleRes),
+                        summary = stringResource(s.summaryRes),
+                        onCheckedChange = s.onChange,
+                    )
+                }
+                if (settings != null && update != null) {
+                    sliders.forEach { spec -> SliderRow(spec, settings, update) }
+                }
+            }
+        }
+    }
+}
+
+/** One switch inside a sheet: same shape as the page rows, minus the page margins. */
+@Composable
+private fun SwitchPreferenceGroup(
+    checked: Boolean,
+    title: String,
+    summary: String?,
+    onCheckedChange: (Boolean) -> Unit,
+    enabled: Boolean = true,
+) {
+    top.yukonga.miuix.kmp.preference.SwitchPreference(
+        checked = checked,
+        title = title,
+        summary = summary,
+        insideMargin = SettingsItemMargin,
+        enabled = enabled,
+        onCheckedChange = onCheckedChange,
+    )
+}
+internal val dualStackDySlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_DUAL_STACK_NUDGE,
+    max = Prefs.MAX_DUAL_STACK_NUDGE,
+    def = Prefs.DEF_DUAL_STACK_NUDGE,
+    read = { it.dualStackDy },
+    write = { r, v -> r.setDualStackDy(v) },
+    titleRes = { R.string.dual_stack_dy_title },
+    summaryRes = { R.string.dual_stack_dy_summary },
+    // Only meaningful for the arc pair; the matrix carries its own vertical nudge.
+    enabled = { it.glyph && it.dualInsideRing && !it.dualStackMatrix },
+)
+
+internal val chargeGapGlyphSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_CHARGE_GAP_GLYPH,
+    max = Prefs.MAX_CHARGE_GAP_GLYPH,
+    def = Prefs.DEF_CHARGE_GAP_GLYPH,
+    read = { it.chargeGapGlyph },
+    write = { r, v -> r.setChargeGapGlyph(v) },
+    titleRes = { R.string.charge_gap_glyph_title },
+    summaryRes = { R.string.charge_gap_glyph_summary },
+    enabled = { it.glyph && it.sysChargeIcon },
+    suffix = "dp",
+)
+
+internal val chargeGapIconSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_CHARGE_GAP_ICON,
+    max = Prefs.MAX_CHARGE_GAP_ICON,
+    def = Prefs.DEF_CHARGE_GAP_ICON,
+    read = { it.chargeGapIcon },
+    write = { r, v -> r.setChargeGapIcon(v) },
+    titleRes = { R.string.charge_gap_icon_title },
+    summaryRes = { R.string.charge_gap_icon_summary },
+    enabled = { it.glyph && it.sysChargeIcon },
+    suffix = "dp",
+)
+
+internal val dualMouthExtraSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_DUAL_MOUTH_EXTRA,
+    max = Prefs.MAX_DUAL_MOUTH_EXTRA,
+    def = Prefs.DEF_DUAL_MOUTH_EXTRA,
+    read = { it.dualMouthExtra },
+    write = { r, v -> r.setDualMouthExtra(v) },
+    titleRes = { R.string.dual_mouth_extra_title },
+    summaryRes = { R.string.dual_mouth_extra_summary },
+    enabled = { it.glyph && it.dualInsideRing && it.dualStackMatrix },
+    suffix = "°",
+)
+internal val dualMatrixSizeSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_DUAL_MATRIX_SIZE,
+    max = Prefs.MAX_DUAL_MATRIX_SIZE,
+    def = Prefs.DEF_DUAL_MATRIX_SIZE,
+    read = { it.dualMatrixSize },
+    write = { r, v -> r.setDualMatrixSize(v) },
+    titleRes = { R.string.dual_matrix_size_title },
+    summaryRes = { R.string.dual_matrix_size_summary },
+    enabled = { it.glyph && it.dualInsideRing && it.dualStackMatrix },
+)
+
+internal val dualMatrixGapSlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_DUAL_MATRIX_GAP,
+    max = Prefs.MAX_DUAL_MATRIX_GAP,
+    def = Prefs.DEF_DUAL_MATRIX_GAP,
+    read = { it.dualMatrixGap },
+    write = { r, v -> r.setDualMatrixGap(v) },
+    titleRes = { R.string.dual_matrix_gap_title },
+    summaryRes = { R.string.dual_matrix_gap_summary },
+    enabled = { it.glyph && it.dualInsideRing && it.dualStackMatrix },
+)
+
+internal val dualMatrixDySlider: SliderSpec = SliderSpec(
+    group = GeometryGroup.Scale,
+    part = null,
+    min = Prefs.MIN_DUAL_STACK_NUDGE,
+    max = Prefs.MAX_DUAL_STACK_NUDGE,
+    def = Prefs.DEF_DUAL_MATRIX_DY,
+    read = { it.dualMatrixDy },
+    write = { r, v -> r.setDualMatrixDy(v) },
+    titleRes = { R.string.dual_matrix_dy_title },
+    summaryRes = { R.string.dual_matrix_dy_summary },
+    enabled = { it.glyph && it.dualInsideRing && it.dualStackMatrix },
+)
+
+internal val glyphSizeSpecs: List<SliderSpec> =
+    listOf(glyphScaleSlider)
+
+/**
+ * The glyph's size and position as ONE row: the collapsed header shows the three
+ * live values, and tapping it expands the very same [SliderSpec] objects the old
+ * flat list drew - one source of truth for range, gate and wording, drawn on both
+ * surfaces (the home master section and the battery sheet) as one widget.
+ */
+@Composable
+internal fun GlyphSizeGroup(
+    settings: TrioSettings,
+    update: ((SettingsRepository) -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    val a = TrioAppearance.of(settings)
+    // A sheet, not an inline expansion. Expanding pushed four sliders - three of them
+    // numeric nudges - into the middle of the page, and on the home page that meant the
+    // master section grew past the fold and pushed the sections below it out of sight.
+    // The capsule shape rows solved the same problem the same way, so this is that surface:
+    // one summary row, and the sliders live one tap away.
+    var sheet by rememberSaveable { mutableStateOf(false) }
+    ArrowPreference(
+        title = stringResource(R.string.glyph_size_group_title),
+        summary = stringResource(R.string.glyph_size_group_summary_scale_only, settings.glyphScale),
+        insideMargin = SettingsItemMargin,
+        enabled = a.glyph,
+        onClick = { sheet = true },
+        modifier = modifier,
+    )
+    if (sheet) {
+        val bottomInset = WindowInsets.navigationBars.asPaddingValues().calculateBottomPadding()
+        // A sheet taller than the screen has to scroll or its last rows are unreachable -
+        // the capsule and matrix sliders alone are taller than a short phone's sheet.
+        // Same 72% cap the component sheet uses, so the two behave alike.
+        val maxSheet = (LocalConfiguration.current.screenHeightDp * 0.72f).dp
+        OverlayBottomSheet(
+            show = true,
+            title = stringResource(R.string.glyph_size_group_title),
+            onDismissRequest = { sheet = false },
+        ) {
+            Column(modifier = Modifier.fillMaxWidth().heightIn(max = maxSheet)
+                .verticalScroll(rememberScrollState()).padding(bottom = bottomInset)) {
+                glyphSizeSpecs.forEach { spec ->
+                    val hint = gateHintFor(spec, a)
+                    if (hint == null) {
+                        SliderRow(spec, settings, update)
+                    } else {
+                        TooltipBox(text = hint, enabled = true) {
+                            SliderRow(spec, settings, update)
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+/**
+ * That group as the home page's master section draws it.
+ */
+@Composable
+internal fun GlyphScaleHomeRow(
+    settings: TrioSettings,
+    update: ((SettingsRepository) -> Unit) -> Unit,
+    modifier: Modifier = Modifier,
+) {
+    GlyphSizeGroup(settings, update, modifier)
+}
+
+/**
  * The capsule container's own parameters: its length and the two interior cells' offsets.
  *
  * <p>Here rather than in a sheet because these size the CONTAINER, not a component. They
@@ -695,9 +1142,11 @@ internal fun PartSettingsSheet(
     ringSettings: TrioSettings = settings,
 ) {
     val a = TrioAppearance.of(settings)
-    val rows = slidersForEditor(part)
+    val rows = slidersForEditor(part).filterNot { it in glyphSizeSpecs }
     val controls = contentControlsFor(part)
-    val colors = if (part == TrioSettingsPart.Appearance || part == TrioSettingsPart.Battery) RoleColor.entries
+    // The full colour list, the role-colour switch and the threshold live in Appearance only.
+    // Value and bolt keep the one or two colours that are theirs, as a shortcut.
+    val colors = if (part == TrioSettingsPart.Appearance) RoleColor.entries
         else part.part?.let(::roleColorsForPart).orEmpty()
     val configuration = LocalConfiguration.current
     val compact = configuration.screenHeightDp < 600 || configuration.fontScale > 1.3f
@@ -745,7 +1194,7 @@ internal fun PartSettingsSheet(
                     )
                 }
 
-                if (colors.isNotEmpty()) {
+                if (part == TrioSettingsPart.Appearance) {
                     SwitchPreference(
                         checked = a.roleColors,
                         title = stringResource(R.string.color_role_title),
@@ -753,7 +1202,7 @@ internal fun PartSettingsSheet(
                         enabled = a.glyph,
                         onCheckedChange = { value -> update { it.setRoleColors(value) } },
                     )
-                    if (part != TrioSettingsPart.Bolt) {
+                    run {
                         IntSlider(
                             value = settings.lowThreshold,
                             min = Prefs.MIN_LOW_THRESHOLD,
@@ -765,6 +1214,8 @@ internal fun PartSettingsSheet(
                         )
                     }
                 }
+
+                // Size & position and the dual-SIM group live on the home page only.
 
                 rows.forEach { spec ->
                     // The hint is resolved in a composable scope and passed down, the
@@ -814,6 +1265,13 @@ internal fun PartSettingsSheet(
     }
 }
 
+/** The "（默认 N）" tail of a row's note, or an empty string when the row has no default. */
+@Composable
+private fun defaultNote(spec: SliderSpec): String {
+    val d = spec.def ?: return ""
+    return " " + stringResource(R.string.slider_default_note, "${d}${spec.suffix ?: ""}")
+}
+
 /** One size row, rendered from its spec. Shared by the page and this dialog. */
 @Composable
 private fun SliderRow(
@@ -828,7 +1286,9 @@ private fun SliderRow(
         max = spec.maxFor(a),
         step = spec.step,
         title = stringResource(spec.titleRes(a)),
-        summary = stringResource(spec.summaryRes(a)),
+        // The default is appended rather than baked into every summary string: one note in
+        // one place cannot drift from the constant the row actually ships with.
+        summary = stringResource(spec.summaryRes(a)) + defaultNote(spec),
         enabled = spec.enabled(a),
         valueTextSuffix = spec.suffix,
         onValueChange = { v -> update { r -> spec.write(r, v) } },

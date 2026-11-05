@@ -107,6 +107,38 @@ public final class TrioAppearance {
      * neither Wi-Fi ink nor a charger to report - see {@link #dualReading}.
      */
     public final boolean dualSim;
+
+    /**
+     * The demo switch: the module treats itself as holding two cards that report
+     * {@code 4}/{@code 2} while it is on. Same reading pipeline as the real
+     * switch, one explicit toggle, and nothing outside the module's own drawing
+     * changes.
+     */
+
+    /** Stack both cards inside the ring; see {@link Prefs#KEY_DUAL_INSIDE_RING}. */
+    public final boolean dualInsideRing;
+    /** Pretend a second card is present, so a one-SIM install can see the stacked pair. */
+    public final boolean demoDualSim;
+    /** Flyme's own charging bolt beside the glyph; see {@link Prefs#KEY_SYS_CHARGE_ICON}. */
+    public final boolean sysChargeIcon;
+    /** Bolt on the glyph's left (true) or right; see {@link Prefs#KEY_SYS_CHARGE_ICON_LEFT}. */
+    public final boolean sysChargeIconLeft;
+    /** Power saver colours the ring; see {@link Prefs#KEY_POWER_SAVE_COLOR}. */
+    public final boolean powerSaveColor;
+    /** Where the stacked pair sits; see {@link Prefs#KEY_DUAL_STACK_POS}. */
+    public final int dualStackPos;
+    /** Nudges of the stacked pair, in design units. */
+    public final int dualStackDy;
+    /** Draw the pair as a flat 2x4 matrix instead of concentric arcs. */
+    public final boolean dualStackMatrix;
+    /** Matrix-only geometry: dot size, pitch and vertical nudge, as percentages/units. */
+    public final int dualMatrixSize;
+    public final int dualMatrixGap;
+    public final int dualMatrixDy;
+    /** Extra mouth width the ring gives the matrix, in degrees. */
+    public final int dualMouthExtra;
+    public final int chargeGapGlyph;
+    public final int chargeGapIcon;
     /**
      * SIM 1's own row of four dots is wanted, as a component of its own.
      *
@@ -149,7 +181,7 @@ public final class TrioAppearance {
      */
     public final boolean perfPower;
     /** The battery temperature is drawn in the same out-of-ring strip. */
-    public final boolean perfTemp;
+    public final boolean perfTemp;
     /** Drops the temperature unless a charger is attached; see {@link Prefs#KEY_PERF_TEMP_CHARGING_ONLY}. */
     public final boolean perfTempChargingOnly;
     /**
@@ -177,6 +209,15 @@ public final class TrioAppearance {
      * {@code TrioRenderer.drawInto}.
      */
     public final int glyphScale;
+    /** The capsule's own size correction; see {@link Prefs#KEY_CAPSULE_SCALE}. */
+    public final int capsuleScale;
+
+    /** Horizontal nudge of the whole glyph, in dp; negative moves left. */
+    public final int glyphOffsetX;
+    /** Vertical nudge of the whole glyph, in dp; negative moves up. */
+    public final int glyphOffsetY;
+    /** Horizontal shift of the stock icon area itself, in dp; independent of the glyph. */
+    public final int iconOffsetX;
 
     public final boolean roleColors;
     public final int criticalOnDark;
@@ -212,6 +253,8 @@ public final class TrioAppearance {
      * reading can never be moved on top of its neighbours.
      */
     public final int outSignalMargin;
+    /** Margin between the out-of-ring signal and the battery, in dp. */
+    public final int outSignalMarginRight;
     /** Scale of a trailing "A" in the network type, as a percentage. */
     public final int typeSuffixScale;
     /**
@@ -282,8 +325,25 @@ public final class TrioAppearance {
         wifi = c.showWifi;
         mobile = c.showMobile;
         signalOutOfRing = c.signalMode == Prefs.SIGNAL_OUT_RING;
-        stackedSignal = c.stackedSignal;
+        // The module's own out-of-ring signal reading is disabled with the rest of the
+        // out-of-ring pieces; "signal out of ring" then simply hands the icon back to Flyme.
+        stackedSignal = Prefs.OUT_RING_FEATURES && c.stackedSignal;
         dualSim = c.dualSim;
+
+        dualInsideRing = c.dualInsideRing;
+        demoDualSim = c.demoDualSim;
+        sysChargeIcon = c.sysChargeIcon;
+        sysChargeIconLeft = c.sysChargeIconLeft;
+        powerSaveColor = c.powerSaveColor;
+        dualStackPos = c.dualStackPos;
+        dualStackDy = c.dualStackDy;
+        dualStackMatrix = c.dualStackMatrix;
+        dualMatrixSize = c.dualMatrixSize;
+        dualMatrixGap = c.dualMatrixGap;
+        dualMatrixDy = c.dualMatrixDy;
+        dualMouthExtra = c.dualMouthExtra;
+        chargeGapGlyph = c.chargeGapGlyph;
+        chargeGapIcon = c.chargeGapIcon;
         showSim1 = c.showSim1;
         showSim2 = c.showSim2;
         dataSimOnly = c.dataSimOnly;
@@ -293,18 +353,26 @@ public final class TrioAppearance {
         // the layout. A separate row could contradict the list it was meant to describe.
         boltWanted = true;
         centreValue = c.valueCentred && ring;
-        typeMode = c.mobileTypeMode;
-        typeInRing = c.mobileTypeMode == Prefs.MOBILE_TYPE_IN_RING;
-        typeOutOfRing = c.mobileTypeMode == Prefs.MOBILE_TYPE_OUT_RING;
+        // Out-of-ring type label disabled (Prefs.OUT_RING_FEATURES): a stored OUT_RING means
+        // "not drawn by the module" - the stock 5G stays, nothing is mounted.
+        final int mode = (!Prefs.OUT_RING_FEATURES && c.mobileTypeMode == Prefs.MOBILE_TYPE_OUT_RING)
+                ? Prefs.MOBILE_TYPE_OFF : c.mobileTypeMode;
+        typeMode = mode;
+        typeInRing = mode == Prefs.MOBILE_TYPE_IN_RING;
+        typeOutOfRing = mode == Prefs.MOBILE_TYPE_OUT_RING;
         typeHideOnWifi = c.typeHideOnWifi;
         chargingShowsValue = c.chargingShowsValue;
         fontPath = c.fontPath == null ? "" : c.fontPath;
-        perfPower = c.perfPower;
-        perfTemp = c.perfTemp;
+        perfPower = Prefs.OUT_RING_FEATURES && c.perfPower;
+        perfTemp = Prefs.OUT_RING_FEATURES && c.perfTemp;
         perfTempChargingOnly = c.perfTempChargingOnly;
         perfScale = c.perfScale;
         perfWeight = c.perfWeight;
         glyphScale = c.glyphScale;
+        capsuleScale = c.capsuleScale;
+        glyphOffsetX = c.glyphOffsetX;
+        glyphOffsetY = c.glyphOffsetY;
+        iconOffsetX = c.iconOffsetX;
 
         roleColors = c.roleColors;
         criticalOnDark = c.criticalOnDark;
@@ -328,6 +396,7 @@ public final class TrioAppearance {
         outTypeMarginLeft = c.outTypeMarginLeft;
         outTypeMarginRight = c.outTypeMarginRight;
         outSignalMargin = c.outSignalMargin;
+        outSignalMarginRight = c.outSignalMarginRight;
         typeSuffixScale = c.typeSuffixScale;
         boltScale = c.boltScale;
         wifiScale = c.wifiScale;
@@ -449,6 +518,27 @@ public final class TrioAppearance {
      */
     public boolean ownsWifi() {
         return wifi && (!ring || hasRingPart(Prefs.PART_WIFI));
+    }
+
+    /**
+     * Whether the two cards are stacked inside the ring this frame.
+     *
+     * <p>Needs three things: the ring is the arrangement being drawn, the user asked for the
+     * stacked form, and there really are two cards. One card is a single row and belongs in a
+     * mouth like any other reading - stacking it would leave the ring looking half-filled.
+     */
+    /** Whether the stacked pair is drawn at the bottom rather than the top. */
+    /** Whether the pair is a flat matrix rather than a pair of arcs. */
+    public boolean dualStackMatrix() {
+        return dualStackMatrix;
+    }
+
+    public boolean dualStackAtBottom() {
+        return dualStackPos == Prefs.DUAL_STACK_BOTTOM;
+    }
+
+    public boolean stacksDualRows(int sims) {
+        return ring && dualInsideRing && sims >= 2;
     }
 
     public boolean ownsValue() {
@@ -686,6 +776,43 @@ public final class TrioAppearance {
         return Prefs.clamp(glyphScale, Prefs.MIN_GLYPH_SCALE, Prefs.MAX_GLYPH_SCALE) / 100f;
     }
 
+    /**
+     * The capsule's size multiplier, clamped.
+     *
+     * <p>Divided by {@link Prefs#CAPSULE_SCALE_UNIT}, not by 100: the number on the slider was
+     * rebased so that its lower end renders what the old 100 did. Written here rather than at
+     * the call site so the drawing and the preview cannot disagree, and because the broadcast
+     * path can hand this class extras that never went through a clamp.
+     *
+     * <p>The shared {@code glyph_scale} is still the base - one number for what icon size
+     * means - and this is the one shape-specific multiplier, because the ring's ink is a full
+     * square while the capsule's is a short stadium, so equal percentages are not equal
+     * heights on screen.
+     */
+    public float capsuleFit() {
+        return Prefs.clamp(capsuleScale, Prefs.MIN_CAPSULE_SCALE, Prefs.MAX_CAPSULE_SCALE)
+                / (float) Prefs.CAPSULE_SCALE_UNIT;
+    }
+
+    /**
+     * The horizontal nudge in dp, clamped. Stated here for the same reason
+     * {@link #glyphFit} is: the broadcast path and the draw path must not be able
+     * to disagree about what a stored value means.
+     */
+    public int glyphOffsetXDp() {
+        return Prefs.clamp(glyphOffsetX, Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+    }
+
+    /** The vertical nudge in dp, clamped; see {@link #glyphOffsetXDp()}. */
+    public int glyphOffsetYDp() {
+        return Prefs.clamp(glyphOffsetY, Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+    }
+
+    /** The icon area's own horizontal shift in dp, clamped; see {@link #glyphOffsetXDp()}. */
+    public int iconOffsetXDp() {
+        return Prefs.clamp(iconOffsetX, Prefs.MIN_GLYPH_OFFSET, Prefs.MAX_GLYPH_OFFSET);
+    }
+
     /** The same, for the reading: {@code perfScale} as a multiplier. */
     public float perfFit() {
         return Prefs.clamp(perfScale, Prefs.MIN_PERF_SCALE, Prefs.MAX_PERF_SCALE) / 100f;
@@ -770,6 +897,14 @@ public final class TrioAppearance {
         public final boolean typeInGap;
         /** Something occupies the notch, so the ring has to open for it. */
         public final boolean gapUsed;
+        /** The two cards are drawn inside the ring this frame; see stacksDualRows. */
+        public final boolean stackedDual;
+        /** The pair is drawn as a matrix this frame, so the mouth widens for it. */
+        public final boolean stackedMatrix;
+        /** The matrix hangs from the bottom, so the LOWER opening is the one to widen. */
+        public final boolean stackedMatrixBottom;
+        /** Degrees of extra mouth the matrix gets; zero means the plain ring. */
+        public final float mouthExtraDeg;
         /**
          * The level dots are drawn as two rows, one per SIM, instead of one row
          * for the current data SIM.
@@ -790,12 +925,18 @@ public final class TrioAppearance {
          */
         public float gapStart() {
             return !gapUsed ? TrioGeometry.GAP_NONE
+                    : stackedMatrix
+                            ? 0.5f - (TrioGeometry.GAP_WIDTH_DEG + mouthExtraDeg)
+                                    / 2f / TrioGeometry.B_SWEEP
                     : dual ? TrioGeometry.GAP_START_DUAL
                     : bolt ? TrioGeometry.GAP_START_CHARGE : TrioGeometry.GAP_START_IDLE;
         }
 
         public float gapEnd() {
             return !gapUsed ? TrioGeometry.GAP_NONE
+                    : stackedMatrix
+                            ? 0.5f + (TrioGeometry.GAP_WIDTH_DEG + mouthExtraDeg)
+                                    / 2f / TrioGeometry.B_SWEEP
                     : dual ? TrioGeometry.GAP_END_DUAL
                     : bolt ? TrioGeometry.GAP_END_CHARGE : TrioGeometry.GAP_END_IDLE;
         }
@@ -818,6 +959,12 @@ public final class TrioAppearance {
 
         /** The arc's angular sweep this frame; the full circle minus the bottom opening. */
         public float sweep() {
+            // A matrix hanging from the bottom opens the lower mouth by shortening the arc:
+            // unlike the top gap this one is simply 360 - sweep, so this is the only way to
+            // widen it. arcStart re-centres the missing part on 6 o'clock from the sweep.
+            if (stackedMatrixBottom) {
+                return TrioGeometry.B_SWEEP - mouthExtraDeg;
+            }
             return bottomOpen() ? TrioGeometry.B_SWEEP : 360f;
         }
 
@@ -887,6 +1034,33 @@ public final class TrioAppearance {
                 parts[z] = firstDrawableInk(a, a.ringZones[z], z,
                         level, charging, wifiLevel, mobileType, yieldType);
             }
+            // Stacked dual reading: both cards move inside the ring, so neither mouth has to
+            // stay open for them. Cleared here rather than at the drawing site because the
+            // notch decision is made from these parts - a mouth left open with nothing
+            // threaded on it reads as a broken outline, and keeping the pieces in would also
+            // keep the type label squeezed out of the glyph, which is the conflict the
+            // stacked form exists to solve.
+            // The stacking does NOT take the pieces out of the bands. The mouth is part of the
+            // shape the user arranged, and closing it was not the request: only the drawing
+            // moves. Keeping the parts means the mouth opens exactly as before, and the
+            // renderer skips re-drawing the rows in it (they are painted as the nested pair).
+            stackedDual = a.stacksDualRows(sims);
+            // The matrix wants a wider mouth than the arcs do - four dots across is a wider
+            // footprint than one row of beads, and at the idle width the outer dots crowd the
+            // rounded stroke ends. Set before gapUsed, which consults it.
+            // Only when the pair hangs from the top: at the bottom the ring already has its
+            // natural opening to give the matrix, and widening the 12 o'clock mouth instead
+            // would open the wrong end.
+            // Whichever side the matrix hangs from is the side that opens for it. The top
+            // mouth is a gap constant; the bottom one is 360 - sweep, so it opens by
+            // shortening the arc instead. Automatic, because a setting for it would only
+            // ever have one correct value.
+            stackedMatrixBottom = stackedDual && a.dualStackMatrix() && a.dualStackAtBottom();
+            stackedMatrix = stackedDual && a.dualStackMatrix() && !a.dualStackAtBottom();
+            // Resolved once here, after both flags: the gap accessors run per frame and this
+            // keeps the arithmetic out of them. Zero restores the plain ring.
+            mouthExtraDeg = stackedMatrix || stackedMatrixBottom ? a.dualMouthExtra : 0f;
+
             // A charger puts the number in the middle, whatever the layout arranged there.
             //
             // An override of what this FRAME shows, not an edit to what is stored: the
@@ -910,7 +1084,9 @@ public final class TrioAppearance {
             wifiInGap = parts[0] == Prefs.PART_WIFI;
             typeInCentre = parts[1] == Prefs.PART_TYPE;
             typeInGap = parts[0] == Prefs.PART_TYPE;
-            gapUsed = parts[0] != Prefs.PART_NONE;
+            // The matrix opens the mouth even though nothing is threaded on it: the wider
+            // opening IS the feature - it is room the matrix gets from the ring.
+            gapUsed = parts[0] != Prefs.PART_NONE || stackedMatrix;
             // The dual switch does not change how a zone is drawn. It used to mean "add a
             // second row to the meter, and widen the notch to hold it" - but a zone draws one
             // piece, so a second row has nowhere to go. Two cards are expressed by placing
@@ -1140,7 +1316,7 @@ public final class TrioAppearance {
         }
         for (int i = 0; i < order.length; i++) {
             final int id = order[i];
-            if (!Prefs.zoneAccepts(band, id)) {
+            if (a.refusesInBand(band, id)) {
                 continue;
             }
             if (!hasInk(a, id, level, charging, wifiLevel, mobileType)) {
@@ -1156,13 +1332,31 @@ public final class TrioAppearance {
         return Prefs.PART_NONE;
     }
 
+    /**
+     * Whether this arrangement refuses {@code id} in {@code band}.
+     *
+     * <p>{@link Prefs#zoneAccepts(int, int)} states the rule for the <b>ring's</b> middle
+     * band: a row of beads threaded across the closed battery arc reads as a smudge, so the
+     * ring's centre belongs to readings. The capsule's interior is a body cell, not a
+     * notched opening, and its rows carry their own baseline - {@code TrioZones.accepts}
+     * has said so for a long time, which is why the editing page offers a signal row there.
+     *
+     * <p>Asking the ring's rule of every arrangement is what made that offer a lie: the
+     * editor accepted the placement, then this resolve loop skipped the very piece that had
+     * just been chosen, and the cell came up empty. The rule is now asked of the arrangement
+     * that is actually being drawn.
+     */
+    private boolean refusesInBand(int band, int id) {
+        return !(capsule || rect) && !Prefs.zoneAccepts(band, id);
+    }
+
     /** Whether any entry from {@code from} on can occupy {@code band} this frame. */
     private static boolean hasDrawableBehind(TrioAppearance a, int[] order, int from, int band,
                                              int level, boolean charging, int wifiLevel,
                                              String mobileType) {
         for (int i = from; i < order.length; i++) {
             final int id = order[i];
-            if (Prefs.zoneAccepts(band, id)
+            if (!a.refusesInBand(band, id)
                     && hasInk(a, id, level, charging, wifiLevel, mobileType)) {
                 return true;
             }

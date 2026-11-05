@@ -103,6 +103,7 @@ import top.yukonga.miuix.kmp.utils.overScrollVertical
 import top.yukonga.miuix.kmp.basic.SmallTitle
 import top.yukonga.miuix.kmp.basic.TabRowWithContour
 import top.yukonga.miuix.kmp.overlay.OverlayDialog
+import top.yukonga.miuix.kmp.preference.SwitchPreference
 import top.yukonga.miuix.kmp.theme.MiuixTheme
 import java.io.File
 
@@ -326,7 +327,33 @@ private fun DrawingEditorCard(
 
     Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
         DrawingSection(R.string.drawing_master_title, PaddingValues(0.dp)) {
-            ContentControlRow(ContentControl.Enabled, settings, update)
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                ContentControlRow(ContentControl.Enabled, settings, update)
+                // Overall size sits at the master's level: it decides how large the
+                // icon is, which is the same question the switch above answers.
+                // (The scope row is not offered on HyperOS yet: its exclusion is only
+                // implemented by the Flyme adapter, which this branch does not ship.)
+                GlyphScaleHomeRow(settings, update)
+            }
+        }
+
+        // The everyday switches stay on the home page, where users already look for them;
+        // only grouped out of the master card so that one answers "on / where / how big".
+        DrawingSection(R.string.drawing_display_title, PaddingValues(0.dp)) {
+            Column(verticalArrangement = Arrangement.spacedBy(12.dp)) {
+                // Folded rows: each opens a sheet with its switches, the summary shows their
+                // states, so the home page stays short.
+                SwitchSheetGroup(
+                    titleRes = R.string.group_battery_hint_title,
+                    switches = listOf(
+                        SheetSwitch(settings.powerSaveColor, R.string.power_save_color_title,
+                            R.string.power_save_color_summary, R.string.short_power_save) { v -> update { it.setPowerSaveColor(v) } },
+                    ),
+                    enabled = settings.enabled,
+                )
+                // The pair and everything that positions it, as one row that opens a sheet.
+                DualStackGroup(settings, update)
+            }
         }
 
         DrawingSection(R.string.drawing_quick_edit_title) {
@@ -501,11 +528,13 @@ private fun DrawingEditorCard(
 
         }
 
-        DrawingSection(R.string.drawing_outside_title) {
-            DrawingOutsideParts(settings, scene, dark,
-                onEdit = { editing = it },
-                onReorder = { order -> update { it.setOutOrder(order) } },
-            )
+        if (Prefs.OUT_RING_FEATURES) {
+            DrawingSection(R.string.drawing_outside_title) {
+                DrawingOutsideParts(settings, scene, dark,
+                    onEdit = { editing = it },
+                    onReorder = { order -> update { it.setOutOrder(order) } },
+                )
+            }
         }
 
     }
@@ -695,7 +724,8 @@ internal fun partsForPage(settings: TrioSettings): List<TrioSettingsPart> {
     val slotted = style == Prefs.STYLE_RING || style == Prefs.STYLE_CAPSULE
     return listOf(TrioSettingsPart.Appearance, TrioSettingsPart.Battery, TrioSettingsPart.Wifi,
         TrioSettingsPart.Mobile, TrioSettingsPart.Value, TrioSettingsPart.Bolt,
-        TrioSettingsPart.Type, TrioSettingsPart.Readouts) +
+        TrioSettingsPart.Type) +
+        (if (Prefs.OUT_RING_FEATURES) listOf(TrioSettingsPart.Readouts) else emptyList()) +
         if (slotted) listOf(TrioSettingsPart.Clock) else emptyList()
 }
 

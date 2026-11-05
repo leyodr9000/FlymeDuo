@@ -37,11 +37,15 @@ import top.yukonga.miuix.kmp.preference.SwitchPreference
  * out of ring" switch, and the "stacked signal" style that went with it, were asking the
  * user to choose between states the layout already decides.
  */
-internal enum class ContentControl(val owner: TrioSettingsPart) {
+internal enum class ContentControl(val owner: TrioSettingsPart?) {
     // --- placement: where the piece lives -------------------------------------
+    // Enabled / Exclude are drawn on the home master card and the style by the home style
+    // cards. Owner null keeps them out of every component sheet, so each has one home.
     /** Master switch, then layout: both decide what exists at all. */
-    Enabled(TrioSettingsPart.Appearance),
-    Style(TrioSettingsPart.Appearance),
+    Enabled(null),
+    /** Which regions keep Flyme's own battery; sits next to the master switch. */
+    Exclude(null),
+    Style(null),
     // --- per component: its own switch ----------------------------------------
     Wifi(TrioSettingsPart.Wifi),
     /**
@@ -81,6 +85,9 @@ internal enum class ContentControl(val owner: TrioSettingsPart) {
     Type(TrioSettingsPart.Type),
     /** Drops the label while the arcs are on; see Prefs.KEY_TYPE_HIDE_ON_WIFI. */
     TypeHideOnWifi(TrioSettingsPart.Type),
+    /** The twin of the row above, for the mobile-data switch. */
+    TypeHideOnDataOff(TrioSettingsPart.Type),
+
     // --- readouts and fixed pieces --------------------------------------------
     Power(TrioSettingsPart.Readouts),
     Temperature(TrioSettingsPart.Readouts),
@@ -88,12 +95,18 @@ internal enum class ContentControl(val owner: TrioSettingsPart) {
     Clock(TrioSettingsPart.Clock),
 }
 
+/** Rows that only configure the module's own out-of-ring pieces; see Prefs.OUT_RING_FEATURES. */
+private val OUT_RING_CONTROLS = setOf(
+    ContentControl.Stacked, ContentControl.DataSim,
+    ContentControl.Power, ContentControl.Temperature, ContentControl.ChargingTemp,
+)
+
 internal fun contentControlsFor(part: TrioSettingsPart): List<ContentControl> =
     ContentControl.entries.filter {
         // One entry per card, so a card's sheet shows that card's rows and nothing
         // else. The signal card is the one card that owns several rows, because its
         // three switches are three readings of the same ink.
-        it.owner == part
+        it.owner == part && (Prefs.OUT_RING_FEATURES || it !in OUT_RING_CONTROLS)
     }
 
 @Composable
@@ -106,7 +119,7 @@ internal fun ContentControlRow(
     val a = TrioAppearance.of(settings)
     val master = listOf(a.glyph to R.string.master_title)
     val positioned = when (control) {
-        ContentControl.Value -> TrioZones.Part.VALUE
+        ContentControl.Value -> TrioZones.Part.VALUE
         // Not a position row: it is a lens over the centre, not a place for the number.
         ContentControl.ChargingShowsValue -> null
         ContentControl.Bolt -> TrioZones.Part.BOLT
@@ -148,6 +161,17 @@ internal fun ContentControlRow(
     when (control) {
         ContentControl.Enabled -> ContentToggle(settings.enabled, R.string.master_title,
             null, emptyList()) { value -> update { it.setEnabled(value) } }
+        ContentControl.Exclude -> {
+            val regions = listOf(Prefs.REGION_ALL, Prefs.REGION_NO_CONTROL_CENTRE,
+                Prefs.REGION_NO_NOTIFICATION, Prefs.REGION_NO_BOTH)
+            ContentChoice(regions.indexOf(settings.excludeRegions).coerceAtLeast(0),
+                // No description on the home page row: the options name themselves, and the
+                // three-line explanation made the master card twice as tall.
+                R.string.exclude_regions_title, null,
+                listOf(R.string.exclude_regions_all, R.string.exclude_regions_no_control_centre,
+                    R.string.exclude_regions_no_notification, R.string.exclude_regions_no_both),
+                master) { index -> update { it.setExcludeRegions(regions[index]) } }
+        }
         ContentControl.Style -> {
             val styles = listOf(Prefs.STYLE_RING, Prefs.STYLE_CAPSULE)
             ContentChoice(styles.indexOf(a.style).coerceAtLeast(0), R.string.trio_style_title,
@@ -173,16 +197,14 @@ internal fun ContentControlRow(
             checked = a.showSim1,
             title = R.string.show_sim_1_title,
             summaryRes = null,
-            dependencies = master + (a.mobile to R.string.show_mobile_title) +
-                (signalInsideRing(a) to R.string.ring_position_mobile),
-        ) { value -> update { it.setShowSim1(value) } }
+            dependencies = master + (signalInsideRing(a) to R.string.ring_position_mobile),
+        ) { value -> update { if (value) it.setShowMobile(true); it.setShowSim1(value) } }
         ContentControl.Sim2 -> ContentToggle(
             checked = a.showSim2,
             title = R.string.show_sim_2_title,
             summaryRes = null,
-            dependencies = master + (a.mobile to R.string.show_mobile_title) +
-                (signalInsideRing(a) to R.string.ring_position_mobile),
-        ) { value -> update { it.setShowSim2(value) } }
+            dependencies = master + (signalInsideRing(a) to R.string.ring_position_mobile),
+        ) { value -> update { if (value) it.setShowMobile(true); it.setShowSim2(value) } }
         ContentControl.Value -> ContentToggle(a.value, R.string.show_value_title,
             null,
             master) { value -> update { it.setShowValue(value) } }
@@ -203,9 +225,11 @@ internal fun ContentControlRow(
         // placing the bolt in the layout like any other piece. A row here would be a second
         // answer to the same question, able to contradict the list it describes.
         ContentControl.Bolt -> Unit
+        // a.typeMode is already coerced: a stored OUT_RING reads as OFF while it is disabled.
         ContentControl.Type -> ContentChoice(a.typeMode, R.string.show_mobile_type_title,
             null,
-            listOf(R.string.mobile_type_off, R.string.mobile_type_inside, R.string.mobile_type_outside),
+            listOf(R.string.mobile_type_off, R.string.mobile_type_inside) +
+                if (Prefs.OUT_RING_FEATURES) listOf(R.string.mobile_type_outside) else emptyList(),
             master) { value -> update { it.setMobileTypeMode(value) } }
         // Only meaningful when the label is drawn somewhere: with the type off there is
         // nothing to step aside.
@@ -213,6 +237,14 @@ internal fun ContentControlRow(
             R.string.type_hide_on_wifi_title,
             R.string.type_hide_on_wifi_summary, master) { value ->
                 update { it.setTypeHideOnWifi(value) }
+            }
+        // The same question for the data switch, and the one this module was missing: with
+        // no Wi-Fi and no data the label still claimed a network, so the reading could not
+        // tell the user whether their data was even on.
+        ContentControl.TypeHideOnDataOff -> ContentToggle(settings.typeHideOnDataOff,
+            R.string.type_hide_on_data_off_title,
+            R.string.type_hide_on_data_off_summary, master) { value ->
+                update { it.setTypeHideOnDataOff(value) }
             }
         ContentControl.Power -> ContentToggle(settings.perfPower, R.string.perf_power_title,
             null, master) { value -> update { it.setPerfPower(value) } }
@@ -261,8 +293,11 @@ private fun SignalPositionControl(
  * them. The rectangle cannot, and [TrioAppearance.slotted] is what the callers gate on, so
  * this only has to answer the shared part.
  */
+// No `a.mobile` here: its switch was removed from the UI, so an install that once stored
+// show_mobile=false had both card rows greyed out with no way to turn it back on. Switching
+// a card on now writes show_mobile=true as well (see the Sim1/Sim2 rows).
 private fun signalInsideRing(a: TrioAppearance): Boolean =
-    a.mobile && a.slotted && !a.signalOutOfRing
+    a.slotted && !a.signalOutOfRing
 
 /**
  * One card's third, with the thirds the other card holds disabled.
@@ -410,7 +445,7 @@ private fun RingPositionControl(
     // is what produced the wrong label.
     val placedAt = zones.indexOfFirst { it.contains(id) }
     val slotIndex = if (placedAt < 0) 0 else slots.indexOf(TrioZones.Zone.entries[placedAt]) + 1
-    val outOfRing = part == TrioZones.Part.TYPE
+    val outOfRing = Prefs.OUT_RING_FEATURES && part == TrioZones.Part.TYPE
             && settings.mobileTypeMode == Prefs.MOBILE_TYPE_OUT_RING
     val selected = if (outOfRing) slots.size + 1 else slotIndex
     // The row's title is the SLOT it picks, never the component's own switch name.
@@ -438,7 +473,8 @@ private fun RingPositionControl(
                 else -> R.string.drawing_hint_bottom
             }
         } +
-            if (part == TrioZones.Part.TYPE) listOf(R.string.mobile_type_outside) else emptyList(),
+            if (Prefs.OUT_RING_FEATURES && part == TrioZones.Part.TYPE)
+                listOf(R.string.mobile_type_outside) else emptyList(),
         listOf(settings.enabled to R.string.master_title),
         // A signal row cannot be put in the middle band - see [middleBlocked]. The row is
         // mostly used by pieces that have no such restriction, so the set is empty for them

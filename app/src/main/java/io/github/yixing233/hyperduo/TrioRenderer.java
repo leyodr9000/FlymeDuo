@@ -483,9 +483,49 @@ final class TrioRenderer {
                 // The user's size multiplies the reference bead; the opening's room still
                 // caps it, so a large setting stops growing rather than overrunning the
                 // arc's caps. See TrioGeometry.arcRowDotR's four-argument form.
-                drawArcDotRow(c, active, z,
-                        TrioGeometry.arcRowDotR(z, a.ringStroke, width, a.dotScaleFactor()),
-                        fg, a);
+                final float rowBead = TrioGeometry.arcRowDotR(z, a.ringStroke, width,
+                        a.dotScaleFactor());
+                if (!r.stackedDual) {
+                    drawArcDotRow(c, active, z, rowBead, fg, a);
+                } else {
+                    // Both rows are this module's now, so the position setting moves the
+                    // PAIR rather than one extra row bolted beside the original: the reading
+                    // the user places and the second card are one element with one address.
+                    //
+                    // They ride concentric arcs, not a straight offset. The bead is the same
+                    // reference in both, so the pair cannot disagree about size, and the
+                    // spacing is the pitch the row already uses.
+                    // The second row is the OTHER card, whichever part drew the first. For
+                    // PART_MOBILE that is the second slot: reading levels[0] there, as an
+                    // earlier pass did, drew the same card twice.
+                    final int other = levels == null ? -1
+                            : (part == Prefs.PART_SIM_1
+                                    ? (levels.length > 1 ? levels[1] : -1)
+                            : part == Prefs.PART_SIM_2 ? levels[0]
+                            : (levels.length > 1 ? levels[1] : -1));
+                    final int otherActive = other < 0 ? 0 : Math.min(4, other);
+                    if (a.dualStackMatrix()) {
+                        // The reference form: two flat rows of four, centred under the ring's
+                        // middle. Its dots are a fifth of the ring's thickness, not a bead the
+                        // size of it - the pair is meant to be lighter than the outline, not
+                        // cut out of it.
+                        drawDualMatrix(c, z, active, otherActive, fg, a);
+                    } else {
+                        // Bead size follows the radius, with the resting position as 100%: a
+                        // row pushed outward reads larger and one pulled inward smaller, which
+                        // is how a slice of the same circle behaves - and it is the rule the
+                        // nested Wi-Fi arcs already follow.
+                        final float spacing = rowBead * 3f;
+                        final float outward = a.dualStackAtBottom() ? -spacing : spacing;
+                        final float rhoBase = TrioGeometry.B_R;
+                        final float rho1 = rhoBase + a.dualStackDy;
+                        final float rho2 = rho1 + outward;
+                        drawArcDotRow(c, active, z, rowBead * (rho1 / rhoBase), fg, a,
+                                a.dualStackDy);
+                        drawArcDotRow(c, otherActive, z, rowBead * (rho2 / rhoBase), fg, a,
+                                a.dualStackDy + outward);
+                    }
+                }
             } else {
                 final String text = part == Prefs.PART_VALUE ? String.valueOf(level)
                         : part == Prefs.PART_TYPE ? type : TrioState.sClockText;
@@ -517,12 +557,23 @@ final class TrioRenderer {
                     // to a fixed point instead of guessing once. (The first attempt at
                     // this multiplied the ink height by fitted/requested as well, which
                     // scaled it twice and never converged.)
-                    float fitted = maxByHeight;
+                    // The type is bounded by the WIDTH it spans - the official
+                    // constraint, and the one the size slider is meant to feel
+                    // like. The height term below is the third's ink capacity,
+                    // which for the two end thirds is the signal-dot box (28/20
+                    // design units): divided by the ink ratio it is a CONSTANT,
+                    // and it capped every label at about 32 in the top third and
+                    // 21 in the bottom no matter where the slider stood. For the
+                    // type the chord alone decides - the chord already narrows as
+                    // the ink grows, so the width fit is self-limiting - while
+                    // every other reading keeps both terms.
+                    final boolean widthOnly = part == Prefs.PART_TYPE;
+                    float fitted = widthOnly ? requested : maxByHeight;
                     for (int pass = 0; pass < 4; pass++) {
                         final float inkH = Math.max(1f, textInkHeight(text, fitted));
                         final float maxByWidth = fitSize(text, requested,
                                 TrioGeometry.zoneTextRoomW(z, a.ringStroke, inkH), suffixScale);
-                        final float next = Math.min(maxByHeight, maxByWidth);
+                        final float next = widthOnly ? maxByWidth : Math.min(maxByHeight, maxByWidth);
                         if (Math.abs(next - fitted) < 0.05f) {
                             fitted = next;
                             break;
@@ -582,6 +633,21 @@ final class TrioRenderer {
      */
     private static void drawArcDotRow(Canvas c, int active, int zone, float radius,
                                       int fg, TrioAppearance a) {
+        drawArcDotRow(c, active, zone, radius, fg, a, 0f);
+    }
+
+    /**
+     * The same row, on a concentric arc {@code rhoOffset} further out.
+     *
+     * <p>Moving the row RADIALLY rather than translating it is what keeps a second row part of
+     * the same circle. The sagitta, the end insets and the bead clearance are all derived from
+     * the arc radius, so a row pushed with a plain translate would keep the curvature of the arc
+     * it left behind and sit visibly off the ring.
+     *
+     * <p>{@code rhoOffset} of zero is the row exactly where it has always been.
+     */
+    private static void drawArcDotRow(Canvas c, int active, int zone, float radius,
+                                      int fg, TrioAppearance a, float rhoOffset) {
         final int inactive = withAlpha(fg, a.trackAlpha);
         if (zone == 1) {
             // The middle third is not a notch: the ring runs past it on both sides, so
@@ -602,7 +668,7 @@ final class TrioRenderer {
         //
         // Placed in the RING's frame, then converted back into this zone's local space
         // (the caller has already translated to (B_CX, ZONE_CY[z])).
-        final float rho = TrioGeometry.B_R;
+        final float rho = TrioGeometry.B_R + rhoOffset;
         // The bare arc this row sits in: the 12 o'clock notch above, the ring's own
         // opening below. Both are GAP_WIDTH_DEG wide.
         final float openingRad = (float) Math.toRadians(TrioGeometry.GAP_WIDTH_DEG);
@@ -739,11 +805,11 @@ final class TrioRenderer {
         // The interior's two cells divide its width by what they actually draw, so a size the
         // user asks for is not capped by width reserved for a string that is not on screen.
         drawCapsuleCell(canvas, stroke, TrioZones.Zone.TOP, cap, level, quickCharging,
-                wifiLevel, mobileType, fg, a);
+                wifiLevel, mobileLevel, slotLevels, mobileType, fg, a);
         drawCapsuleCell(canvas, stroke, TrioZones.Zone.CENTRE, cap, level, quickCharging,
-                wifiLevel, mobileType, fg, a);
+                wifiLevel, mobileLevel, slotLevels, mobileType, fg, a);
         drawCapsuleCell(canvas, stroke, TrioZones.Zone.BOTTOM, cap, level, quickCharging,
-                wifiLevel, mobileType, fg, a);
+                wifiLevel, mobileLevel, slotLevels, mobileType, fg, a);
 
         // Drawn AFTER the three cells on purpose: the left column and the interior can
         // both hold a reading now, and painting the column last is what keeps a wide
@@ -813,8 +879,69 @@ final class TrioRenderer {
                 drawCapsuleBolt(c, stroke, quickCharging ? TrioGeometry.QUICK_CHARGE : fg,
                         a, cx, cy);
                 break;
+            case Prefs.PART_MOBILE:
+            case Prefs.PART_SIM_1:
+            case Prefs.PART_SIM_2:
+                // A row in this cell, built here rather than by drawCapsuleDots: that one
+                // paints the two OPENINGS, whose y come from the outline's cut lines. An
+                // interior cell has no cut line, so its row hangs off the cell's own edge at
+                // the cell's own centre - the same edge the text in this column starts from.
+                drawCapsuleCellDots(c, rowValue(part, mobileLevel, slotLevels), stroke, fg, a,
+                        TrioGeometry.capLeftAlignedX(stroke) + a.capsuleLeftDx, cy, false);
+                break;
             default:
                 break;
+        }
+    }
+
+    /**
+     * The reading a signal row in a specific cell should show.
+     *
+     * <p>{@link Prefs#PART_MOBILE} is the aggregate meter the module has always drawn - the
+     * data SIM's level - while {@link Prefs#PART_SIM_1} / {@link Prefs#PART_SIM_2} are the
+     * per-card rows. A missing card reads {@code -1}, which the caller paints as an all-track
+     * row rather than as "zero bars", because an absent SIM is not a dead signal.
+     */
+    private static int rowValue(int part, int mobileLevel, int[] slotLevels) {
+        if (part == Prefs.PART_SIM_1) {
+            return (slotLevels != null && slotLevels.length > 0) ? slotLevels[0] : -1;
+        }
+        if (part == Prefs.PART_SIM_2) {
+            return (slotLevels != null && slotLevels.length > 1) ? slotLevels[1] : -1;
+        }
+        return mobileLevel;
+    }
+
+    /**
+     * A row of level beads, hung off {@code edge} inside one capsule cell.
+     *
+     * <p>The openings get their rows from {@link #drawCapsuleDots}, which is tied to the
+     * outline's own cut lines and is the only place the stroke is interrupted. A body cell has
+     * no cut line, so its row is built here: the same four beads at the same pitch, anchored
+     * to the cell's reading edge and grown inwards, {@code fromRight} mirroring that for the
+     * right-hand cell. Without this the capsule could be <em>configured</em> to hold a signal
+     * row - the model has allowed that cell for a long time, which is why the editing page
+     * offers it - but nothing was ever painted, so the setting looked dead.
+     *
+     * <p>{@code value < 0} is "no reading" and draws as an all-track row.
+     */
+    private static void drawCapsuleCellDots(Canvas c, int value, float stroke, int fg,
+                                            TrioAppearance a, float edge, float cy,
+                                            boolean fromRight) {
+        final int inactive = withAlpha(fg, a.trackAlpha);
+        final int active = value <= 0 ? 0 : Math.min(TrioGeometry.RECT_DOT_ROWS, value);
+        // The row may not overrun its cell: the pitch closes up before the beads do, because
+        // four smaller beads at the outline's own pitch stop reading as a row of readings.
+        final float room = TrioGeometry.capReadingTrackWidth(stroke);
+        final float maxPitch = (room - TrioGeometry.CAP_DOT_R * 2f)
+                / Math.max(1, TrioGeometry.RECT_DOT_ROWS - 1);
+        final float pitch = Math.min(TrioGeometry.CAP_DOT_PITCH, Math.max(0f, maxPitch));
+        final float span = pitch * (TrioGeometry.RECT_DOT_ROWS - 1);
+        final float first = fromRight ? edge - span : edge;
+        FILL.setStyle(Paint.Style.FILL);
+        for (int i = 0; i < TrioGeometry.RECT_DOT_ROWS; i++) {
+            FILL.setColor(i < active ? fg : inactive);
+            c.drawCircle(first + i * pitch, cy, TrioGeometry.CAP_DOT_R, FILL);
         }
     }
     /**
@@ -829,7 +956,8 @@ final class TrioRenderer {
      */
     private static void drawCapsuleCell(Canvas c, float stroke, TrioZones.Zone band,
                                         TrioAppearance.Capsule cap, int level,
-                                        boolean quickCharging, int wifiLevel, String type,
+                                        boolean quickCharging, int wifiLevel, int mobileLevel,
+                                        int[] slotLevels, String type,
                                         int fg, TrioAppearance a) {
         // A cell that draws nothing. The LEFT cell is deliberately not routed here:
         // it has its own centre and its own dispatcher, because it is the one cell
@@ -891,6 +1019,20 @@ final class TrioRenderer {
             case Prefs.PART_CLOCK:
                 drawCapsuleTime(c, stroke, fg, a, cx, cy, openingRoom(band, stroke),
                         opening ? SlotAlign.CENTRE : SlotAlign.RIGHT);
+                break;
+            case Prefs.PART_MOBILE:
+            case Prefs.PART_SIM_1:
+            case Prefs.PART_SIM_2:
+                // An OPENING already has its row: drawCapsuleDots paints both, tied to the
+                // outline's cut lines, and painting again here would double the ink and fight
+                // the gap. Only the body cell - which no other pass touches - draws its own.
+                if (opening) {
+                    break;
+                }
+                // Right-aligned against the cell's own edge, like the readings beside it: each
+                // body cell hangs off its own side and grows inwards.
+                drawCapsuleCellDots(c, rowValue(part, mobileLevel, slotLevels), stroke, fg, a,
+                        TrioGeometry.capReadingEdge(stroke, false) + a.capsuleRightDx, cy, true);
                 break;
             default:
                 break;
@@ -1450,8 +1592,19 @@ final class TrioRenderer {
      */
     static int roleColor(TrioAppearance a, int level, boolean charging,
                          boolean powerSave, boolean low, int fg) {
-        if (a == null || !a.roleColors) {
+        if (a == null) {
             return fg;
+        }
+        // Power saver tints the ring on its own switch, independent of the role colours,
+        // so it matches the stock battery (yellow) even with role colours off.
+        if (!a.roleColors) {
+            if (powerSave && a.powerSaveColor) {
+                return isDarkBackground(fg) ? a.lowOnDark : a.lowOnLight;
+            }
+            return fg;
+        }
+        if (powerSave && !a.powerSaveColor) {
+            powerSave = false;
         }
         final boolean dark = isDarkBackground(fg);
         if (level >= 0 && level < TrioGeometry.CRITICAL_LEVEL) {
@@ -1540,11 +1693,45 @@ final class TrioRenderer {
     // -------------------------------------------------------------------- wifi
 
 
+
     /**
-     * The arcs and the dot at their reference coordinates, with no transform of
-     * their own: each caller positions the group first. Both arrangements draw
-     * the identical group, which is what keeps the Wi-Fi icon the same in both.
+     * The two cards as a flat 2x4 matrix, the way a phone without a ring would show them.
+     *
+     * <p>Four dots per row, rows separated by the same pitch as the columns, the whole block
+     * centred on the ring's axis. Drawn in the zone's local frame, so the block is placed by
+     * offsetting from the ring centre rather than from whichever third the reading landed in -
+     * the matrix belongs to the ring, not to a third of it.
+     *
+     * <p>Dot radius is a fifth of the stroke: the reference keeps the dots clearly smaller than
+     * the outline, so the ring still reads as the dominant shape.
      */
+    private static void drawDualMatrix(Canvas c, int zone, int sim1, int sim2, int fg,
+                                       TrioAppearance a) {
+        // Its own size, and its own only: a percentage of the stroke, so it still tracks the
+        // outline the user chose, but never the arc pair's radius or its vertical nudge.
+        final float dot = Math.max(1.2f, a.ringStroke * (a.dualMatrixSize / 100f));
+        final float step = dot * (a.dualMatrixGap / 100f);
+        // Local y of the ring's centre for this zone (the caller translated to the zone).
+        final float ringCy = TrioGeometry.B_CY - TrioGeometry.ZONE_CY[zone];
+        // The block sits a little below (or above) the centre, clear of the middle reading.
+        // Local y grows DOWNWARD, so a positive sign is the lower half. This was inverted
+        // at first, and the matrix then jumped to the top exactly when the setting said
+        // bottom - landing on the type label and the Wi-Fi arcs.
+        final float sign = a.dualStackAtBottom() ? 1f : -1f;
+        final float base = ringCy + sign * (dot * 4.5f) + a.dualMatrixDy;
+        final int inactive = withAlpha(fg, a.trackAlpha);
+        FILL.setStyle(Paint.Style.FILL);
+        for (int row = 0; row < 2; row++) {
+            final int level = row == 0 ? sim1 : sim2;
+            final int active = Math.min(4, Math.max(0, level));
+            final float y = base + sign * row * step;
+            for (int k = 0; k < 4; k++) {
+                FILL.setColor(k < active ? fg : inactive);
+                c.drawCircle((k - 1.5f) * step, y, dot, FILL);
+            }
+        }
+    }
+
     private static void drawWifiArcs(Canvas c, int level, int fg, TrioAppearance a) {
         STROKE.setStrokeWidth(a.arcStroke);
         STROKE.setColor(fg);
@@ -2021,6 +2208,21 @@ final class TrioRenderer {
      * @return false when there is nothing to draw into, with {@code out} left
      *         alone so a caller cannot accidentally use a stale transform
      */
+    /**
+     * Whether a capsule zone holds anything at all this frame.
+     *
+     * <p>Ask from the listed candidates rather than from the resolved occupant: the fit has to
+     * know whether a strip is needed <em>before</em> the drawing decides what fills it, and a
+     * band whose head has no ink today will be refilled tomorrow without the layout changing.
+     * A non-empty list is therefore the right question - it means "this opening is in use".
+     */
+    private static boolean holdsAny(TrioAppearance a, TrioZones.Zone zone) {
+        if (a == null || a.ringZones == null) {
+            return false;
+        }
+        final int[] order = a.ringZones[zone.ordinal()];
+        return order != null && order.length > 0;
+    }
     static boolean designTransform(int w, int h, TrioAppearance appearance, float[] out) {
         if (w <= 0 || h <= 0 || appearance == null || out == null || out.length < 3) {
             return false;
@@ -2032,15 +2234,39 @@ final class TrioRenderer {
         // and the translate keeps it centred. Doing it anywhere else - a second
         // canvas.scale around the layout calls, say - would scale the stroke
         // widths differently from the radii and the glyph would come apart.
-        final float scale = inkScale(w, h, appearance.style) * appearance.glyphFit();
+        // The capsule's fitting box follows the bands it actually draws.
+        //
+        // The two strips above and below the outline exist to hold a reading placed in an
+        // opening. When both openings are empty there is no such ink, and fitting against the
+        // full banded box anyway is what made the capsule sit at about 70% of the row height
+        // while the ring - whose box IS its ink - filled the row. The capsule could not be
+        // made level with the ring at any setting, and a size correction only papered over it.
+        // Ask which strips are really in use and the answer falls out: with empty openings the
+        // body fills the row exactly, and each band that IS used takes back its own slice, so
+        // an opening reading never gets clipped.
+        final boolean capTopBand = appearance.capsule
+                && holdsAny(appearance, TrioZones.Zone.TOP);
+        final boolean capBottomBand = appearance.capsule
+                && holdsAny(appearance, TrioZones.Zone.BOTTOM);
+        final float capBoxTop = TrioGeometry.CAP_INK_Y
+                - (capTopBand ? TrioGeometry.CAP_BAND_H : 0f);
+        final float capBoxH = TrioGeometry.CAP_INK_H
+                + (capTopBand ? TrioGeometry.CAP_BAND_H : 0f)
+                + (capBottomBand ? TrioGeometry.CAP_BAND_H : 0f);
+        // The shared size, times the capsule's own correction. The two are separate keys on
+        // purpose: one number says how big the glyph is, and the shape whose box can still
+        // differ from the row says once how much it has to be drawn up to sit level.
+        final float scale = appearance.capsule
+                ? inkScale(w, h, TrioGeometry.capInkW(), capBoxH)
+                        * appearance.glyphFit() * appearance.capsuleFit()
+                : inkScale(w, h, appearance.style) * appearance.glyphFit();
         if (scale <= 0f) {
             return false;
         }
         out[0] = scale;
         if (appearance.capsule) {
-            final float boxH = TrioGeometry.CAP_INK_BOTTOM - TrioGeometry.CAP_INK_TOP;
             out[1] = (w - TrioGeometry.capInkW() * scale) / 2f - TrioGeometry.CAP_INK_X * scale;
-            out[2] = (h - boxH * scale) / 2f - TrioGeometry.CAP_INK_TOP * scale;
+            out[2] = (h - capBoxH * scale) / 2f - capBoxTop * scale;
         } else if (rect) {
             out[1] = (w - TrioGeometry.RECT_INK_W * scale) / 2f
                     - TrioGeometry.RECT_INK_X * scale;

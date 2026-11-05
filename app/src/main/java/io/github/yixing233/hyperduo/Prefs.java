@@ -83,6 +83,46 @@ public final class Prefs {
      * <p>A brand-new key with a brand-new name.
      */
     public static final String KEY_GLYPH_SCALE = "glyph_scale_pct";
+
+    /**
+     * Size correction for the capsule, in percent of the shared fit.
+     *
+     * <p>{@link #KEY_GLYPH_SCALE} is one number for every arrangement on purpose: a user who
+     * sized the glyph wants that size whichever shape is drawn. But the two shapes do not
+     * have the same ink box. The ring is a square whose ink <em>is</em> the glyph, so at 100%
+     * it fills the host. The capsule's box is a short stadium plus the strip either opening
+     * draws in, and the fit is taken against that taller box, so its body lands at roughly
+     * 70% of the row height - which puts the ring's smallest size and the capsule's largest
+     * at the same visual height and reads as the two styles being out of step.
+     *
+     * <p>This factor is the correction, applied to the capsule's fit only. Shared base plus a
+     * per-shape multiplier: the base stays one setting, and the shape that needs to be drawn
+     * bigger says so once.
+     */
+    public static final String KEY_CAPSULE_SCALE = "capsule_scale_pct";
+    /** Horizontal nudge of the whole glyph, in dp; negative moves left. */
+    public static final String KEY_GLYPH_OFFSET_X = "glyph_offset_x_dp";
+    /** Horizontal shift of the status bar's own icon area, in dp; independent of the glyph. */
+    public static final String KEY_ICON_OFFSET_X = "icon_offset_x_dp";
+    /** Vertical nudge of the whole glyph, in dp; negative moves up. */
+    public static final String KEY_GLYPH_OFFSET_Y = "glyph_offset_y_dp";
+    /** Demo two pretend cards, so a single-SIM device can preview the stacked readings. */
+
+    /**
+     * Draw both cards as two concentric arcs inside the ring, instead of one row across
+     * each of its two openings.
+     *
+     * <p>This is the space conflict stated plainly: the ring has exactly two mouths, a
+     * two-card reading wanted both of them, and the network type then had nowhere to sit -
+     * so either the label or the meter had to go. Curving the rows along the inside wall
+     * gives both cards a home that costs no notch, and both mouths close, which also makes
+     * the outline read as one circle instead of two broken segments.
+     */
+    public static final String KEY_DUAL_INSIDE_RING = "dual_inside_ring";
+    /** Where the stacked pair sits: {@link #DUAL_STACK_TOP} or {@link #DUAL_STACK_BOTTOM}. */
+    public static final String KEY_DUAL_STACK_POS = "dual_stack_pos";
+    /** Vertical nudge of the stacked pair, in design units. */
+    public static final String KEY_DUAL_STACK_DY = "dual_stack_dy";
     public static final String KEY_SHOW_WIFI = "show_wifi";
     public static final String KEY_SHOW_MOBILE = "show_mobile";
     public static final String KEY_SHOW_VALUE = "show_value";
@@ -1128,6 +1168,20 @@ public final class Prefs {
      * and an install that never touches this key must keep drawing what it drew.
      */
     public static final String KEY_TYPE_HIDE_ON_WIFI = "type_hide_on_wifi";
+    /**
+     * Drop the network type while mobile data is switched OFF.
+     *
+     * <p>Without this the label answers a question nobody asked: a phone with no Wi-Fi and
+     * no data still drew 5G, so the one thing the reading could not tell the user was whether
+     * their data was even on. The reference behaves the other way - the type appears only when
+     * cellular data is actually in use - and that is what this reproduces.
+     *
+     * <p>Applied by emptying the sampled type rather than by gating each drawing site: an
+     * empty type is exactly "no ink", so the ring notch closes by itself, the capsule cell
+     * falls through to its next candidate, and the out-of-ring label hides with no second
+     * rule to keep in step.
+     */
+    public static final String KEY_TYPE_HIDE_ON_DATA_OFF = "type_hide_on_data_off";
 
     /**
      * While charging, the ring's centre shows the percentage whatever the layout put there,
@@ -1145,6 +1199,8 @@ public final class Prefs {
     public static final String KEY_CHARGING_SHOWS_VALUE = "charging_shows_value";
     public static final boolean DEF_CHARGING_SHOWS_VALUE = false;
     public static final boolean DEF_TYPE_HIDE_ON_WIFI = false;
+    /** On by default: the point is that the label stops claiming a network nobody is using. */
+    public static final boolean DEF_TYPE_HIDE_ON_DATA_OFF = true;
     /**
      * Size of the ring's level-dot rows, as a percentage of the bead the stroke implies.
      *
@@ -1217,6 +1273,31 @@ public final class Prefs {
      * when there is no Wi-Fi, and draws no network type at all.
      */
     public static final int DEF_MOBILE_TYPE_MODE = MOBILE_TYPE_OFF;
+
+    /**
+     * Where the ring is NOT applied, leaving the stock battery alone.
+     *
+     * <p>Flyme draws a battery of its own in the control centre and in the
+     * notification shade; those can be kept stock while the status bar carries
+     * the ring. An int rather than three booleans so the choice stays one row:
+     * all, not the control centre, not the notification centre, or neither.
+     */
+    public static final String KEY_EXCLUDE_REGIONS = "exclude_regions";
+
+    /** The ring is applied everywhere. */
+    public static final int REGION_ALL = 0;
+    /** Stock battery kept in the control centre. */
+    public static final int REGION_NO_CONTROL_CENTRE = 1;
+    /** Stock battery kept in the notification shade. */
+    public static final int REGION_NO_NOTIFICATION = 2;
+    /** Stock battery kept in both. */
+    public static final int REGION_NO_BOTH = 3;
+
+    public static final int DEF_EXCLUDE_REGIONS = REGION_ALL;
+
+    /** Highest valid {@link #KEY_EXCLUDE_REGIONS} value. */
+    public static final int MAX_EXCLUDE_REGIONS = REGION_NO_BOTH;
+
     /**
      * Off by default: the shipped look keeps the Wi-Fi arcs in the middle of the
      * ring and the battery reading small in the 12 o'clock notch.
@@ -1349,6 +1430,104 @@ public final class Prefs {
      * settable, so an install that never touches the slider draws what it drew.
      */
     public static final int DEF_GLYPH_SCALE = 100;
+    /** The capsule's own correction; 100 means "whatever the shared fit says". */
+    public static final int DEF_CAPSULE_SCALE = 100;
+    /** Centered by default; see {@link #KEY_GLYPH_OFFSET_X} / {@link #KEY_GLYPH_OFFSET_Y}. */
+    public static final int DEF_GLYPH_OFFSET = 0;
+    /** Same span as the glyph nudge; see {@link #KEY_ICON_OFFSET_X}. */
+    public static final int DEF_ICON_OFFSET = 0;
+    /** Off by default: the demo draws signal levels that no radio is reporting. */
+
+    /**
+     * Pretend a second card is present, so a one-SIM install can see the stacked reading.
+     *
+     * <p>Display only: the second level exists inside the drawing and never reaches
+     * telephony. Named after the demo switches it sits beside.
+     */
+    public static final String KEY_DEMO_DUAL_SIM = "demo_dual_sim";
+    public static final boolean DEF_DEMO_DUAL_SIM = false;
+    /**
+     * Show Flyme's own charging bolt beside the glyph while charging (Flyme only).
+     *
+     * <p>The module draws into Flyme's battery view and replaces its whole onDraw, so the
+     * stock bolt went with it. This mounts the stock drawable as a sibling; excluded regions
+     * keep the stock battery and therefore their own bolt either way.
+     */
+    public static final String KEY_SYS_CHARGE_ICON = "sys_charge_icon";
+    /**
+     * Master gate for the module's own out-of-ring pieces (stacked signal reading, out-of-ring
+     * type label, power/temperature readouts and their order strip). On, as upstream; the Flyme
+     * fork switched it off (1.7.5-flyme.74), which hid the settings and read the stored values
+     * as "off" (TrioAppearance). Kept as a switch so the gate stays in one place.
+     */
+    public static final boolean OUT_RING_FEATURES = true;
+    public static final boolean DEF_SYS_CHARGE_ICON = false;
+    /** Which side of the glyph the bolt sits on: left (stock Flyme order, default) or right. */
+    public static final String KEY_SYS_CHARGE_ICON_LEFT = "sys_charge_icon_left";
+    public static final boolean DEF_SYS_CHARGE_ICON_LEFT = true;
+    /**
+     * Colour the battery ring with the low-battery colour (yellow by default) while the
+     * system power saver is on, independent of the per-role colour switch.
+     */
+    public static final String KEY_POWER_SAVE_COLOR = "power_save_color";
+    public static final boolean DEF_POWER_SAVE_COLOR = true;
+    /** On by default: the stacked form is the one that leaves the label a place to live. */
+    public static final boolean DEF_DUAL_INSIDE_RING = true;
+    public static final int DUAL_STACK_TOP = 0;
+    public static final int DUAL_STACK_BOTTOM = 1;
+    public static final int DEF_DUAL_STACK_POS = DUAL_STACK_TOP;
+    public static final int DEF_DUAL_STACK_NUDGE = 0;
+    /** Same span as the glyph nudge: a few design units either way is what the ring can use. */
+    public static final int MIN_DUAL_STACK_NUDGE = -20;
+    public static final int MAX_DUAL_STACK_NUDGE = 20;
+    /**
+     * How the two cards are stacked: concentric arcs that follow the ring, or a flat 2x4
+     * matrix inside it.
+     *
+     * <p>Both are answers to the same problem - the ring has one opening and two cards - but
+     * they read very differently. The arcs keep the pair part of the outline; the matrix is
+     * what a phone that never had a ring does, and its dots are much smaller than a bead, so
+     * the glyph looks lighter.
+     */
+    public static final String KEY_DUAL_STACK_MATRIX = "dual_stack_matrix";
+    public static final boolean DEF_DUAL_STACK_MATRIX = false;
+    /** Dot radius of the matrix, as a percentage of the ring stroke. */
+    public static final String KEY_DUAL_MATRIX_SIZE = "dual_matrix_size_pct";
+    /** Centre-to-centre pitch of the matrix, as a percentage of the dot diameter. */
+    public static final String KEY_DUAL_MATRIX_GAP = "dual_matrix_gap_pct";
+    /** Vertical nudge of the matrix, in design units - its own, not the arc pair's. */
+    public static final String KEY_DUAL_MATRIX_DY = "dual_matrix_dy";
+    public static final int DEF_DUAL_MATRIX_SIZE = 42;
+    public static final int DEF_DUAL_MATRIX_GAP = 300;
+    public static final int DEF_DUAL_MATRIX_DY = 0;
+    /**
+     * Extra mouth width, in degrees, that the ring gives the matrix.
+     *
+     * <p>A setting rather than a constant because the right answer is a look, not a number:
+     * the first attempt opened 40 degrees, which read as too much of a gap against the
+     * reference. Halving it was the fix, and a knob keeps the next adjustment from being a
+     * release. Zero restores the plain ring.
+     */
+    public static final String KEY_DUAL_MOUTH_EXTRA = "dual_mouth_extra_deg";
+    public static final int DEF_DUAL_MOUTH_EXTRA = 18;
+    public static final int MIN_DUAL_MOUTH_EXTRA = 0;
+    public static final int MAX_DUAL_MOUTH_EXTRA = 60;
+    /** Gap between the system charging bolt and the glyph, dp. */
+    public static final String KEY_CHARGE_GAP_GLYPH = "charge_gap_glyph_dp";
+    public static final int DEF_CHARGE_GAP_GLYPH = 2;
+    public static final int MIN_CHARGE_GAP_GLYPH = 0;
+    public static final int MAX_CHARGE_GAP_GLYPH = 16;
+    /** Gap between the system charging bolt and the neighbouring system icon, dp. */
+    public static final String KEY_CHARGE_GAP_ICON = "charge_gap_icon_dp";
+    public static final int DEF_CHARGE_GAP_ICON = 4;
+    public static final int MIN_CHARGE_GAP_ICON = 0;
+    public static final int MAX_CHARGE_GAP_ICON = 16;
+    public static final int MIN_DUAL_MATRIX_SIZE = 14;
+    public static final int MAX_DUAL_MATRIX_SIZE = 80;
+    public static final int MIN_DUAL_MATRIX_GAP = 160;
+    public static final int MAX_DUAL_MATRIX_GAP = 420;
+    public static final int MIN_DUAL_STACK_POS = DUAL_STACK_TOP;
+    public static final int MAX_DUAL_STACK_POS = DUAL_STACK_BOTTOM;
 
     /**
      * Horizontal and vertical nudge for each of the capsule's two INTERIOR cells.
@@ -1535,6 +1714,15 @@ public final class Prefs {
      */
     public static final int DEF_OUT_SIGNAL_MARGIN = 2;
     /**
+     * The gap between the out-of-ring signal and the battery, in dp.
+     *
+     * <p>Its own key because the left margin cannot reach this side: the two views are
+     * siblings in a LinearLayout and the battery is not something this module can push.
+     * Only the signal carries it - it is the piece that sits against the glyph.
+     */
+    public static final String KEY_OUT_SIGNAL_MARGIN_RIGHT = "out_signal_margin_right_dp";
+    public static final int DEF_OUT_SIGNAL_MARGIN_RIGHT = 2;
+    /**
      * 65% for the trailing "A": the reference's {@code 56/86} ratio, measured
      * from {@code docs/ref-5ga.png}. 100 turns the shrink off.
      */
@@ -1653,9 +1841,9 @@ public final class Prefs {
     public static final int MIN_CLOCK_WEIGHT = 100;
     public static final int MAX_CLOCK_WEIGHT = 900;
     public static final int MIN_TYPE_SIZE = 16;
-    public static final int MAX_TYPE_SIZE = 44;
+    public static final int MAX_TYPE_SIZE = 56;
     /** The network type's ceiling in the CAPSULE; see {@link #MAX_CAPSULE_VALUE_SIZE}. */
-    public static final int MAX_CAPSULE_TYPE_SIZE = 50;
+    public static final int MAX_CAPSULE_TYPE_SIZE = 62;
     public static final int MIN_OUT_TYPE_SIZE = 16;
     /**
      * Higher than {@link #MAX_TYPE_SIZE} on purpose: the out-of-ring label sits
@@ -1679,7 +1867,7 @@ public final class Prefs {
      * a span that keeps the label inside the row.
      */
     public static final int MIN_OUT_TYPE_SIZE_DP = 8;
-    public static final int MAX_OUT_TYPE_SIZE_DP = 26;
+    public static final int MAX_OUT_TYPE_SIZE_DP = 44;
     /**
      * The physical span the slider offers, in density pixels: 6dp (18px at
      * density 3) is where the four bars stop being distinguishable, and 20dp
@@ -1754,6 +1942,37 @@ public final class Prefs {
      */
     public static final int MIN_GLYPH_SCALE = 60;
     public static final int MAX_GLYPH_SCALE = 100;
+    /**
+     * The capsule's optional fine-tune, in percent of the shared fit.
+     *
+     * <p><b>Default 100: one ruler for both shapes.</b> The shared {@code glyph_scale} is what
+     * the user thinks of as the size of the icon, so 100 there has to mean the same thing in
+     * both arrangements - and it now does, because the capsule's fitting box follows the
+     * opening bands it actually draws instead of always reserving both. An install that never
+     * touched this slider therefore sees the capsule grow to match the ring on its own.
+     *
+     * <p>The knob exists for the one case the box cannot answer on its own: with a reading
+     * placed in an opening, that strip is real ink, the box includes it, and the body comes
+     * out proportionally smaller. 100..140 is the room to take that back by eye - it is not a
+     * second notion of size, and it never shrinks the capsule below the shared setting.
+     */
+    /**
+     * What counts as 100% for the capsule slider: <b>75, not 100</b>.
+     *
+     * <p>The number had to be rebased rather than tuned. Even with the fitting box no longer
+     * reserving empty opening bands, the capsule's body still reads smaller than the ring at
+     * the same percentage - the ring's ink IS a full square, while the capsule's is a short
+     * stadium and its caps are drawn to the same stroke. Rather than leave every value in the
+     * slider meaning something different from what the eye expects, 75 now renders what 100
+     * used to, and the range above it is real headroom instead of a correction nobody could
+     * calibrate by eye.
+     */
+    public static final int CAPSULE_SCALE_UNIT = 75;
+    public static final int MIN_CAPSULE_SCALE = 75;
+    public static final int MAX_CAPSULE_SCALE = 140;
+    /** The nudge span, in dp: a few each way is what the row can visibly use. */
+    public static final int MIN_GLYPH_OFFSET = -24;
+    public static final int MAX_GLYPH_OFFSET = 24;
     /**
      * The performance-readout size span, in percent of the size the adaptive fit
      * settles on.
